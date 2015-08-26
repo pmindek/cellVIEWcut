@@ -16,8 +16,6 @@
 	float4x4 _CameraModelView;
 
 	sampler2D _NoiseTex;
-	int _UseMask;
-	Texture2D<int> _MaskTex;
 	float4 _Params1; // Noise Size / Sample Radius / Intensity / Distance
 	float4 _Params2; // Bias / Luminosity Contribution / Distance Cutoff / Cutoff Falloff
 	float4 _OcclusionColor;
@@ -178,11 +176,6 @@
 		#else
 		ao = lerp(1.0 - ao, 1.0, saturate(invlerp(_Params2.z - _Params2.w, _Params2.z, eyeDepth)));
 		#endif
-
-		if(_UseMask == 1 && _MaskTex[uv * _ScreenParams.xy] != -2)
-		{
-			ao = 1;
-		} 
 
 		return ao;
 	}

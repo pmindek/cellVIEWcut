@@ -33,8 +33,6 @@ public class SSAOPro : MonoBehaviour
 		V12
 	}
 
-    public string Tag;
-
 	public AOMode Mode = AOMode.V12;
 	public Texture2D NoiseTexture;
 
@@ -88,8 +86,6 @@ public class SSAOPro : MonoBehaviour
 	protected Camera m_Camera;
 	protected Camera m_RWSCamera;
 	protected RenderTextureFormat m_RTFormat = RenderTextureFormat.RFloat;
-    
-    public RenderTexture MaskTexture;
 
 	public Material Material
 	{
@@ -291,8 +287,6 @@ public class SSAOPro : MonoBehaviour
 		}
 
 		Material.SetTexture("_NoiseTex", NoiseTexture);
-        Material.SetTexture("_MaskTex", MaskTexture);
-        Material.SetInt("_UseMask", MaskTexture == null ? 0 : 1);
 		Material.SetVector("_Params1", new Vector4(NoiseTexture == null ? 0f : NoiseTexture.width, Radius, Intensity, Distance));
 		Material.SetVector("_Params2", new Vector4(Bias, LumContribution, CutoffDistance, CutoffFalloff));
 		Material.SetColor("_OcclusionColor", OcclusionColor);

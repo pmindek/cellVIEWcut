@@ -14,7 +14,6 @@ public class SSAOProEditor : Editor
 
 	SerializedProperty p_aoMode;
 	SerializedProperty p_noiseTexture;
-	//SerializedProperty p_maskTexture;
 
 #if UNITY_4_X
 	SerializedProperty p_useHighPrecisionDepthMap;
@@ -26,7 +25,6 @@ public class SSAOProEditor : Editor
 	SerializedProperty p_intensity;
 	SerializedProperty p_distance;
 	SerializedProperty p_bias;
-	SerializedProperty p_tag;
 	SerializedProperty p_lumContribution;
 	SerializedProperty p_occlusionColor;
 	SerializedProperty p_cutoffDistance;
@@ -41,7 +39,6 @@ public class SSAOProEditor : Editor
 	{
 		p_aoMode = serializedObject.FindProperty("Mode");
 		p_noiseTexture = serializedObject.FindProperty("NoiseTexture");
-		//p_maskTexture = serializedObject.FindProperty("MaskTexture");
 
 #if UNITY_4_X
 		p_useHighPrecisionDepthMap = serializedObject.FindProperty("UseHighPrecisionDepthMap");
@@ -53,7 +50,6 @@ public class SSAOProEditor : Editor
 		p_intensity = serializedObject.FindProperty("Intensity");
 		p_distance = serializedObject.FindProperty("Distance");
 		p_bias = serializedObject.FindProperty("Bias");
-		p_tag = serializedObject.FindProperty("Tag");
 		p_lumContribution = serializedObject.FindProperty("LumContribution");
 		p_occlusionColor = serializedObject.FindProperty("OcclusionColor");
 		p_cutoffDistance = serializedObject.FindProperty("CutoffDistance");
@@ -90,24 +86,13 @@ public class SSAOProEditor : Editor
 				if (GUILayout.Button("N", EditorStyles.miniButtonRight)) noise = null;
 			EditorGUILayout.EndHorizontal();
 		EditorGUILayout.EndHorizontal();
-        
+
 		p_noiseTexture.objectReferenceValue = noise;
-
-        //Texture2D mask = (Texture2D)p_maskTexture.objectReferenceValue;
-
-        //EditorGUILayout.BeginHorizontal();
-        //    EditorGUILayout.PrefixLabel("Mask Texture");
-        //    EditorGUILayout.BeginHorizontal();
-        //    mask = (Texture2D)EditorGUILayout.ObjectField(mask, typeof(Texture2D), false);
-        //    EditorGUILayout.EndHorizontal();
-        //EditorGUILayout.EndHorizontal();
-
-        //p_maskTexture.objectReferenceValue = mask;
 
 #if UNITY_4_X
 		EditorGUILayout.PropertyField(p_useHighPrecisionDepthMap, new GUIContent("High Precision Depth Map", "Use a higher precision depth map. Slower but higher quality. You don\'t need this with Unity 5 !"));
 #endif
-        EditorGUILayout.PropertyField(p_tag, new GUIContent("Tag", "..."));
+
 		EditorGUILayout.PropertyField(p_samples, new GUIContent("Sample Count", "Number of ambient occlusion samples (higher is slower)"));
 		EditorGUILayout.PropertyField(p_downsampling, new GUIContent("Downsampling", "The resolution at which calculations should be performed (for example, a downsampling value of 2 will work at half the screen resolution)"));
 		EditorGUILayout.PropertyField(p_intensity, new GUIContent("Intensity", "Occlusion multiplier (degree of darkness added by ambient occlusion)"));
