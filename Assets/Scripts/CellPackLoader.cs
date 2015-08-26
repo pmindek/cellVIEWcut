@@ -105,7 +105,7 @@ public static class CellPackLoader
     {
 		for (int j = 0; j < recipeDictionary.Count; j++)
 		{
-            if (recipeDictionary[j].Count > 3)
+            if (recipeDictionary[j]["nbCurve"] != null)
             {
                 AddCurveIngredients(recipeDictionary[j], prefix);
             }
@@ -123,7 +123,6 @@ public static class CellPackLoader
         var center = (bool)ingredientDictionary["source"]["transform"]["center"].AsBool;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
         
-
         if (pdbName == "") return;
         if (pdbName == "null") return;
         if (pdbName == "None") return;

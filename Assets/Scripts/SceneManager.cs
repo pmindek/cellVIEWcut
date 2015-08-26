@@ -174,7 +174,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.yellow;
 
-            var atomSpheres = PdbLoader.LoadAtomSpheres("basepair");
+            var atomSpheres = PdbLoader.LoadAtomSpheres(pdbName);
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
@@ -186,7 +186,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.red;
 
-            var atomSpheres = PdbLoader.LoadAtomSpheres("basesingle");
+            var atomSpheres = PdbLoader.LoadAtomSpheres(pdbName);
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
