@@ -125,7 +125,7 @@ public class SceneManager : MonoBehaviour
 
             foreach (var level in clusterLevels)
             {
-                var numClusters = atomSpheres.Count * level;
+                var numClusters = Math.Max(atomSpheres.Count * level, 5);
                 var clusterSpheres = KMeansClustering.GetClusters(atomSpheres, (int)numClusters);
 
                 ProteinAtomClusterCount.Add(clusterSpheres.Count);
@@ -161,8 +161,6 @@ public class SceneManager : MonoBehaviour
     public void AddCurveIngredient(string name, string pdbName)
     {
         if (ProteinNames.Contains(name)) return;
-
-        Debug.Log(pdbName);
         
         int numSteps = 1;
         float twistAngle = 0;

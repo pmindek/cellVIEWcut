@@ -103,15 +103,11 @@ public static class CellPackLoader
 
 	public static void AddRecipeIngredients(JSONNode recipeDictionary, Color baseColor, string prefix)
     {
-		//from the baseColor we take variation around analogous color
-		//IEnumerator<Color> colorList = ColorGenerator.Generate (recipeDictionary.Count).Skip .GetEnumerator();
-		// = ColorGenerator.Generate(recipeDictionary.Count+2).Skip(2).ToList(); 
-
 		for (int j = 0; j < recipeDictionary.Count; j++)
 		{
             if (recipeDictionary[j].Count > 3)
             {
-                //AddCurveIngredients(recipeDictionary[j]);
+                AddCurveIngredients(recipeDictionary[j], prefix);
             }
             else
             {
@@ -127,32 +123,29 @@ public static class CellPackLoader
         var center = (bool)ingredientDictionary["source"]["transform"]["center"].AsBool;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
         
+
         if (pdbName == "") return;
         if (pdbName == "null") return;
         if (pdbName == "None") return;
         if (pdbName.StartsWith("EMDB")) return;
         if (pdbName.Contains("1PI7_1vpu_biounit")) return;
 
+        // Disable biomts until loading problem is resolved
         if (biomt) return;
-        //if (!pdbName.Contains("2plv")) return;
-        //if (!pdbName.Contains("3j3q_1vu4")) return;
-        //if (!pdbName.Contains("3gau")) return;
-
+        
         // Load atom set from pdb file
         var atomSet = PdbLoader.LoadAtomSet(pdbName);
-        var atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
-
-        if (biomt)
-        {
-            var biomtTransforms = PdbLoader.LoadBiomtTransforms(pdbName);
-            atomSpheres = AtomHelper.BuildBiomt(atomSpheres, biomtTransforms);
-        }
-
+        
         // If the set is empty return
-        if (atomSpheres.Count == 0) return;
+        if (atomSet.Count == 0) return;
 
-        // Store center position
+        var atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
         var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;
+        
+        var biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
+        var biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms);
+        
+        var containsACarbonOnly = AtomHelper.ContainsACarbonOnly(atomSet);
 
         // Center atoms
         AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
@@ -169,14 +162,16 @@ public static class CellPackLoader
         var color = new Color(c[0], c[1], c[2]);
 
         // Define cluster decimation levels
-        var clusterLevels = (AtomHelper.ContainsCarbonOnly(atomSet))
+        var clusterLevels = (containsACarbonOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
             : new List<float>() {0.10f, 0.05f, 0.01f};
 
         // Add ingredient type
+        //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);
         SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color, clusterLevels);
-
-        // Add individual instances
+        
+        int instanceCount = 0;
+        
         for (int k = 0; k < ingredientDictionary["results"].Count; k++)
         {
             var p = ingredientDictionary["results"][k][0];
@@ -189,29 +184,44 @@ public static class CellPackLoader
             var euler = Helper.euler_from_matrix(mat);
             rotation = Helper.MayaRotationToUnity(euler);
 
-            // Find centered position
-            if (!center) position += Helper.QuaternionTransform(rotation, centerPosition);
-            
-            // Add instance to scene
-            SceneManager.Instance.AddIngredientInstance(name, position, rotation);
+            if (!biomt)
+            {
+                // Find centered position
+                if (!center) position += Helper.QuaternionTransform(rotation, centerPosition);
+                SceneManager.Instance.AddIngredientInstance(name, position, rotation);
+                instanceCount++;
+            }
+            else
+            {
+                foreach (var transform in biomtTransforms)
+                {
+                    var biomtOffset = Helper.RotationMatrixToQuaternion(transform) * centerPosition;
+                    var biomtInstanceRot = rotation * Helper.RotationMatrixToQuaternion(transform);
+                    var biomtInstancePos = rotation * (new Vector3(transform.m03, transform.m13, transform.m23) + biomtOffset) + position - biomtCenter;
+
+                    SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);
+                    instanceCount++;
+                }
+            }
         }
 
         Debug.Log("*****");
         Debug.Log("Added ingredient: " + name);
-        Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSpheres.Count + " *** " + "Num instances: " + ingredientDictionary["results"].Count + " *** " + "Total atom count: " + atomSpheres.Count * ingredientDictionary["results"].Count);
+        if (containsACarbonOnly) Debug.Log("Alpha-carbons only");
+        Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSpheres.Count + " *** " + "Num instances: " + instanceCount + " *** " + "Total atom count: " + atomSpheres.Count * instanceCount);
     }
 
-    public static void AddCurveIngredients(JSONNode ingredientDictionary)
+    public static void AddCurveIngredients(JSONNode ingredientDictionary, string prefix)
     {
         //in case there is curveN, grab the data if more than 4 points
         //use the given PDB for the representation.
-        var numCurve = ingredientDictionary["nbCurve"].AsInt;
-        var curveIngredientName = ingredientDictionary["name"].Value;
+        var numCurves = ingredientDictionary["nbCurve"].AsInt;
+        var curveIngredientName = prefix + "_" + ingredientDictionary["name"].Value;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
-        
+
         SceneManager.Instance.AddCurveIngredient(curveIngredientName, pdbName);
         
-        for (int i = 0; i < numCurve; i++)
+        for (int i = 0; i < numCurves; i++)
         {
             //if (i < nCurve-10) continue;
             var controlPoints = new List<Vector4>();
@@ -226,6 +236,10 @@ public static class CellPackLoader
             SceneManager.Instance.AddCurve(curveIngredientName, controlPoints);
             //break;
         }
+
+        Debug.Log("*****");
+        Debug.Log("Added curve ingredient: " + curveIngredientName);
+        Debug.Log("Num curves: " + numCurves);
     }
 	
     public static void DebugMethod()

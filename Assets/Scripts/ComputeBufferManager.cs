@@ -6,7 +6,7 @@ public class ComputeBufferManager : MonoBehaviour
 {
     public static int NumLodMax = 10;
     public static int NumProteinMax = 100;
-    public static int NumProteinAtomMax = 200000;
+    public static int NumProteinAtomMax = 3000000;
     public static int NumProteinAtomClusterMax = 100000;
     public static int NumProteinInstancesMax = 100000;
     public static int NumProteinSphereBatchesMax = 1000000;

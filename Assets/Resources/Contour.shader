@@ -51,8 +51,8 @@
 				int id1 = _IdTexture[uv + offset[1].xy];				
 				int id7 = _IdTexture[uv + offset[7].xy];	
 
-				if(id3 != id5 && abs(id3 - id5) > 1) { c3 = float3(0,0,0); c5 = float3(1,1,1) * _ContourStrength; }	
-				if(id1 != id7 && abs(id1 - id7) > 1) { c1 = float3(0,0,0); c7 = float3(1,1,1) * _ContourStrength; }			
+				if(id3 != id5 ) { c3 = float3(0,0,0); c5 = float3(1,1,1) * _ContourStrength; }	
+				if(id1 != id7 ) { c1 = float3(0,0,0); c7 = float3(1,1,1) * _ContourStrength; }			
 				
 				float3 cd0 = c3 * (-0.5) + c5 * (+0.5);
 				float3 cd1 = c1 * (+0.5) + c7 * (-0.5);
@@ -65,6 +65,9 @@
 				if(_ContourOptions == 0) finalColor = OffsetHSV(color, float3(0,0,-contour.x * _ContourStrength)); //color - contour;
 				else if(_ContourOptions == 1) finalColor = color;
 				else if(_ContourOptions == 2) finalColor = float3(1,1,1) - contour;
+
+				if(id3 < 0 && abs(id3-id5) == 1) finalColor = color;
+				if(id1 < 0 && abs(id1-id7) == 1) finalColor = color;
 
 				return float4(finalColor, 1);			
 				//return float4(1,0,1, 1);			

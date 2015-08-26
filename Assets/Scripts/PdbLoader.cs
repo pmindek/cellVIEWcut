@@ -47,21 +47,21 @@ public static class PdbLoader
 
         if (!File.Exists(filePath))
         {
-            var result = "";
+            filePath = "";
 
             // Download from protein data bank
-            if (fileName.Count() == 4)
+            if (fileName.Count() <= 4)
             {
-                result = DownloadPdbFile(fileName, "http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&compression=NO&structureId=", directory);
+                filePath = DownloadPdbFile(fileName, "http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&compression=NO&structureId=", directory);
             }
 
             // Download from cellPACK repository
             if (string.IsNullOrEmpty(filePath))
             {
-                result = DownloadPdbFile(fileName, "https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/other/", directory, ".pdb");
+                filePath = DownloadPdbFile(fileName, "https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/other/", directory, ".pdb");
             }
 
-            if (string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(filePath))
             {
                 throw new Exception("File not found: " + fileName);
             }
@@ -85,7 +85,7 @@ public static class PdbLoader
 #if UNITY_EDITOR
         while (!www.isDone)
         {
-            EditorUtility.DisplayProgressBar("Download", "Downloading...", www.progress);
+            EditorUtility.DisplayProgressBar("Downloading " + fileName, "Downloading...", www.progress);
         }
         EditorUtility.ClearProgressBar();
 #endif
@@ -103,7 +103,7 @@ public static class PdbLoader
     }
 
     //http://deposit.rcsb.org/adit/docs/pdb_atom_format.html#ATOM
-    private static List<Atom> ReadAtomData(string path)
+    public static List<Atom> ReadAtomData(string path)
     {
         if (!File.Exists(path)) throw new Exception("File not found at: " + path);
 
@@ -152,7 +152,7 @@ public static class PdbLoader
 
 
     //http://www.rcsb.org/pdb/101/static101.do?p=education_discussion/Looking-at-Structures/bioassembly_tutorial.html
-    private static List<Matrix4x4> ReadBiomtData(string path)
+    public static List<Matrix4x4> ReadBiomtData(string path)
     {
         if (!File.Exists(path)) throw new Exception("File not found at: " + path);
 
@@ -230,7 +230,7 @@ public static class AtomHelper
         new Color(255,200,50) / 255       // S        yellow      
     };
 
-    public static bool ContainsCarbonOnly(List<Atom> atoms)
+    public static bool ContainsACarbonOnly(List<Atom> atoms)
     {
         return atoms.All(atom => String.CompareOrdinal(atom.name, "CA") == 0);
     }
@@ -358,5 +358,27 @@ public static class AtomHelper
         }
 
         return biomtSpheres;
+    }
+
+    public static Vector3 GetBiomtCenter(List<Matrix4x4> transforms)
+    {
+        if (transforms.Count <= 0) return Vector3.zero;
+
+        var bbMin = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+        var bbMax = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+
+        foreach (var transform in transforms)
+        {
+            var posBiomt = new Vector3(transform.m03, transform.m13, transform.m23);
+
+            bbMin = Vector3.Min(bbMin, new Vector3(posBiomt.x, posBiomt.y, posBiomt.z));
+            bbMax = Vector3.Max(bbMax, new Vector3(posBiomt.x, posBiomt.y, posBiomt.z));
+        }
+
+        var bbSize = bbMax - bbMin;
+        var bbCenter = bbMin + bbSize * 0.5f;
+        var bounds = new Bounds(bbCenter, bbSize);
+
+        return bounds.center;
     }
 }
