@@ -123,10 +123,7 @@ public class SSAOProEditor : Editor
 		EditorGUI.indentLevel--;
 
 		p_debugAO.boolValue = GUILayout.Toggle(p_debugAO.boolValue, "Show AO", EditorStyles.miniButton);
-
-		if (GUILayout.Button("About", EditorStyles.miniButton))
-			SP_StartupWindow.Init(true);
-
+        
 		serializedObject.ApplyModifiedProperties();
 	}
 }
