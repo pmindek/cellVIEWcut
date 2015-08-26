@@ -18,8 +18,8 @@ uniform float4 _FrustrumPlanes[6];
 
 uniform	StructuredBuffer<int> _ProteinAtomCount;
 uniform	StructuredBuffer<int> _ProteinAtomStart;
-uniform	StructuredBuffer<float4> _ProteinClusterCount;
-uniform	StructuredBuffer<float4> _ProteinClusterStart;
+uniform	StructuredBuffer<int> _ProteinClusterCount;
+uniform	StructuredBuffer<int> _ProteinClusterStart;
 
 uniform	StructuredBuffer<int> _ProteinVisibilityFlag;
 uniform StructuredBuffer<int> _ProteinInstanceCullFlags;
@@ -46,54 +46,30 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 	if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
 	if(frustrumTest || crossSectionTest || _ProteinVisibilityFlag[infos.x] == 0) return;
 				
+	int lodLevel = 0;		
 	float cameraDistance = dot(sphere.xyz - _CameraPosition.xyz, _CameraForward.xyz);
-
-	int lodLevel = 0;				
+		
+	// Compute lod level from lod infos
 	for(int i = 0; i < _NumLevels; i++) { lodLevel = (cameraDistance < _LodLevelsInfos[i].x) ? lodLevel : i+1; }	
 
 	lodLevel = _EnableLod == 0 ? 0 : lodLevel;
 	int clusterLevel = max(lodLevel - 1, 0);	
-	int sphereIndex = (lodLevel == 0) ? _ProteinAtomStart[infos.x] : _ProteinClusterStart[infos.x][clusterLevel];
-	int sphereCount = (lodLevel == 0) ? _ProteinAtomCount[infos.x] : _ProteinClusterCount[infos.x][clusterLevel];
-	
+		
+	// Find the count / start index of the protein
+	int sphereCount = (lodLevel == 0) ? _ProteinAtomCount[infos.x] : _ProteinClusterCount[infos.x * _NumLevels + clusterLevel];
+	int sphereStart = (lodLevel == 0) ? _ProteinAtomStart[infos.x] : _ProteinClusterStart[infos.x * _NumLevels + clusterLevel];
+
+	// Find the number of batches for this protein
 	int numBatches = ceil((float)sphereCount / (float)MAX_SPHERE_COUNT_PER_BATCH);	
 	int sphereCountPerBatch = ceil(float(sphereCount) / float(numBatches));
 
-	int batchIndex = 0;
+	int batchStart = 0;
 	int batchCount = sphereCountPerBatch;		
 
 	for(int j = 0; j < numBatches; j++)
 	{
-		batchCount = min(batchIndex + sphereCountPerBatch, sphereCount) - batchIndex;			
-		_ProteinSphereBatchInfos.Append(int4(id.x, lodLevel, batchCount, sphereIndex + batchIndex));
-		batchIndex += batchCount;
+		batchCount = min(batchStart + sphereCountPerBatch, sphereCount) - batchStart;			
+		_ProteinSphereBatchInfos.Append(int4(id.x, lodLevel, batchCount, sphereStart + batchStart));
+		batchStart += batchCount;
 	}		
-}
-
-#pragma kernel LipidFillBatchBuffer
-
-uniform	int _NumPatches;
-uniform StructuredBuffer<int> _LipidPatchCullFlags;
-uniform	StructuredBuffer<float4> _LipidPatchInfos;
-uniform	StructuredBuffer<float4> _LipidPatchPositions;	
-uniform AppendStructuredBuffer<int4> _LipidSphereBatches;
-
-[numthreads(1,1,1)]
-void LipidFillBatchBuffer (uint3 id : SV_DispatchThreadID)
-{
-	//if(id.x >= (uint)_NumPatches) return;
-			
-	float4 infos = _LipidPatchInfos[id.x];
-	float4 sphere = _LipidPatchPositions[id.x] * _Scale;
-		
-	int cullFlag = _LipidPatchCullFlags[id.x];
-	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);
-	bool crossSectionTest = _EnableCrossSection && SpherePlaneTest(_CrossSectionPlane, float4(sphere.xyz, -sphere.w));
-		
-	// if instance is culled return	
-	if(frustrumTest || crossSectionTest) return;
-	if(_CullFlagFilter == -1 && cullFlag == 0) return;	
-	if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
-				
-	_LipidSphereBatches.Append(int4(id.x, 0, infos.xy));	
 }

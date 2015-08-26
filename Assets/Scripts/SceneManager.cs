@@ -32,8 +32,8 @@ public class SceneManager : MonoBehaviour
     public List<Vector4> ProteinColors = new List<Vector4>();
     public List<float> ProteinBoundingSpheres = new List<float>();
     public List<Vector4> ProteinAtomClusters = new List<Vector4>();
-    public List<Vector4> ProteinAtomClusterCount = new List<Vector4>();
-    public List<Vector4> ProteinAtomClusterStart = new List<Vector4>();
+    public List<int> ProteinAtomClusterCount = new List<int>();
+    public List<int> ProteinAtomClusterStart = new List<int>();
 
     // Curve ingredients data
     
@@ -49,7 +49,7 @@ public class SceneManager : MonoBehaviour
 
     public int NumLodLevels = 0;
     public int SelectedElement = -1;
-    public int NumProteinAtoms = 0;
+    public int TotalNumProteinAtoms = 0;
 
     public int NumProteinInstances
     {
@@ -101,48 +101,38 @@ public class SceneManager : MonoBehaviour
 
     #region Protein_functions
 
-    public void AddIngredient(string ingredientName, Bounds bounds,
-                              List<Vector4> atoms,
-                              Color ingr_color,
-                              List<List<Vector4>> clusters = null)
+    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null)
     {
         if (ProteinNames.Contains(ingredientName)) return;
 
-        if (NumLodLevels != 0 && NumLodLevels != clusters.Count)
+        if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
             throw new Exception("Uneven cluster levels number: " + ingredientName);
 
-        ProteinToggleFlags.Add(1);
+        if (color == null) { color = Helper.GetRandomColor(); }
+        
         ProteinNames.Add(ingredientName);
-        if (ingr_color == null)
-        {
-            ingr_color = Helper.GetRandomColor();
-        }
-        ProteinColors.Add(ingr_color);
+        ProteinColors.Add(color);
+        ProteinToggleFlags.Add(1);
         ProteinBoundingSpheres.Add(Vector3.Magnitude(bounds.extents));
 
-        ProteinAtomCount.Add(atoms.Count);
+        ProteinAtomCount.Add(atomSpheres.Count);
         ProteinAtomStart.Add(ProteinAtoms.Count);
-        ProteinAtoms.AddRange(atoms);
+        ProteinAtoms.AddRange(atomSpheres);
 
-        var clusterCount = new Vector4(0, 0, 0, 0);
-        var clusterStart = new Vector4(0, 0, 0, 0);
-
-        if (clusters != null)
+        if (clusterLevels != null)
         {
-            NumLodLevels = clusters.Count;
+            NumLodLevels = clusterLevels.Count;
 
-            for (int i = 0; i < Mathf.Min(clusters.Count, 4); i++)
+            foreach (var level in clusterLevels)
             {
-                clusterCount[i] = clusters[i].Count;
-                clusterStart[i] = ProteinAtomClusters.Count;
-                ProteinAtomClusters.AddRange(clusters[i]);
+                var numClusters = atomSpheres.Count * level;
+                var clusterSpheres = KMeansClustering.GetClusters(atomSpheres, (int)numClusters);
+
+                ProteinAtomClusterCount.Add(clusterSpheres.Count);
+                ProteinAtomClusterStart.Add(ProteinAtomClusters.Count);
+                ProteinAtomClusters.AddRange(clusterSpheres);
             }
         }
-
-        ProteinAtomClusterCount.Add(clusterCount);
-        ProteinAtomClusterStart.Add(clusterStart);
-
-        NumProteinAtoms += atoms.Count;
     }
 
     public void AddIngredientInstance(string ingredientName, Vector3 position, Quaternion rotation, int unitId = 0)
@@ -160,6 +150,8 @@ public class SceneManager : MonoBehaviour
         ProteinInstanceInfos.Add(new Vector4(ingredientId, (int)InstanceState.Normal, unitId));
         ProteinInstancePositions.Add(instancePosition);
         ProteinInstanceRotations.Add(Helper.QuanternionToVector4(rotation));
+
+        TotalNumProteinAtoms += ProteinAtomCount[ingredientId];
     }
 
     #endregion
@@ -184,7 +176,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.yellow;
 
-            var atomSpheres = PdbLoader.ReadAtomSpheres(PdbLoader.DefaultPdbDirectory + "basepair.pdb");
+            var atomSpheres = PdbLoader.LoadAtomSpheres("basepair");
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
@@ -196,7 +188,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.red;
 
-            var atomSpheres = PdbLoader.ReadAtomSpheres(PdbLoader.DefaultPdbDirectory + "basesingle.pdb");
+            var atomSpheres = PdbLoader.LoadAtomSpheres("basesingle");
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
@@ -369,6 +361,7 @@ public class SceneManager : MonoBehaviour
 
         NumLodLevels = 0;
         SelectedElement = -1;
+        TotalNumProteinAtoms = 0;
 
         // Clear scene data
         ProteinInstanceInfos.Clear();
@@ -405,23 +398,27 @@ public class SceneManager : MonoBehaviour
         CurveControlPointsInfos.Clear();
     }
 
+    private void CheckBufferSizes()
+    {
+        if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusters.Count >= ComputeBufferManager.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusterCount.Count >= ComputeBufferManager.NumProteinMax * ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinInstancePositions.Count >= ComputeBufferManager.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
+
+        if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+    }
+
     public void UploadAllData()
     {
-        //Debug.Log("Init GPU buffer and upload all the data to GPU");
+        CheckBufferSizes();
 
-        ComputeBufferManager.Instance.NumProteinSphereBatchesMax = Mathf.Max(1000000, ProteinInstancePositions.Count * 2);
-
-        ComputeBufferManager.Instance.NumProteinAtomMax = ProteinAtoms.Count + 1;
-        ComputeBufferManager.Instance.NumIngredientsMax = ProteinNames.Count + 1;
-        ComputeBufferManager.Instance.NumProteinInstancesMax = ProteinInstancePositions.Count + 1;
-        //ComputeBufferManager.Instance.NumProteinSphereBatchesMax = ProteinInstancePositions.Count * 2 + 1; ;
-
-        ComputeBufferManager.Instance.NumDnaAtomsMax = CurveIngredientsAtoms.Count + 1;
-        ComputeBufferManager.Instance.NumCurveControlPointsMax = CurveControlPointsPositions.Count + 1;
-
-        ComputeBufferManager.Instance.InitBuffers();
+        //ComputeBufferManager.Instance.InitBuffers();
         ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
-        
+
         // Upload ingredient data
         ComputeBufferManager.Instance.ProteinColors.SetData(ProteinColors.ToArray());
         ComputeBufferManager.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());

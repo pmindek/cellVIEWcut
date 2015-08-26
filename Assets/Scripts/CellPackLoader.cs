@@ -12,7 +12,6 @@ public static class CellPackLoader
 	public static List<Vector3> ColorsPalette;
 	public static List<Vector3> ColorsPalette2;
 	public static Dictionary<int,List<int>> usedColors;
-	public static readonly string ProteinDiretory = Application.dataPath + "/../Data/proteins/";
    
     public static void LoadCellPackResults()
     {
@@ -33,7 +32,8 @@ public static class CellPackLoader
         PersistantSettings.Instance.LastSceneLoaded = path;
         LoadIngredients(path);
 
-        Debug.Log("Num protein atoms " + SceneManager.Instance.NumProteinAtoms);
+        Debug.Log("*****");
+        Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
 
         // Upload scene data to the GPU
         SceneManager.Instance.UploadAllData();
@@ -41,10 +41,9 @@ public static class CellPackLoader
 
     public static void LoadIngredients(string recipePath)
     {
-        Debug.Log("Loading: " + recipePath);
+        Debug.Log("*****");
+        Debug.Log("Loading scene: " + recipePath);
         
-        if (!Directory.Exists(ProteinDiretory)) throw new Exception("No directory found at: " + ProteinDiretory);
-
         var cellPackSceneJsonPath = recipePath;//Application.dataPath + "/../Data/HIV/cellPACK/BloodHIV1.0_mixed_fixed_nc1.json";
         if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
 
@@ -110,24 +109,20 @@ public static class CellPackLoader
 
 		for (int j = 0; j < recipeDictionary.Count; j++)
 		{
-            var iname = prefix + "_"+ recipeDictionary[j]["name"];
-            
             if (recipeDictionary[j].Count > 3)
             {
-                AddCurveIngredients(recipeDictionary[j]);
+                //AddCurveIngredients(recipeDictionary[j]);
             }
             else
             {
-                //AddProteinIngredient(recipeDictionary[j]);
+                AddProteinIngredient(recipeDictionary[j], prefix);
             }
-			
-			Debug.Log("Added: " + iname + " num instances: " + recipeDictionary[j]["results"].Count);
-			Debug.Log("*****");
         }
 	}
 
-    public static void AddProteinIngredient(JSONNode ingredientDictionary)
+    public static void AddProteinIngredient(JSONNode ingredientDictionary, string prefix)
     {
+        var name = prefix + "_" + ingredientDictionary["name"];
         var biomt = (bool)ingredientDictionary["source"]["biomt"].AsBool;
         var center = (bool)ingredientDictionary["source"]["transform"]["center"].AsBool;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
@@ -138,88 +133,50 @@ public static class CellPackLoader
         if (pdbName.StartsWith("EMDB")) return;
         if (pdbName.Contains("1PI7_1vpu_biounit")) return;
 
-        // Debug biomt
-        //if (!biomt) continue;
-        //if (!pdbName.Contains("2plv")) continue;
-        //if (!pdbName.Contains("3j3q_1vu4")) continue;
-        //if (!pdbName.Contains("3gau")) continue;
+        if (biomt) return;
+        //if (!pdbName.Contains("2plv")) return;
+        //if (!pdbName.Contains("3j3q_1vu4")) return;
+        //if (!pdbName.Contains("3gau")) return;
 
-        var pdbPath = ProteinDiretory + pdbName + ".pdb";
-        if (!File.Exists(pdbPath))
-        {
-            if (pdbName.Length == 4)
-            {
-                PdbLoader.DownloadPdbFile(pdbName, ProteinDiretory); // If the pdb file does not exist try to download it
-            }
-            else
-            {
-                PdbLoader.DownloadPdbFromRecipeFile(pdbName, ProteinDiretory);
-            }
-        }
+        // Load atom set from pdb file
+        var atomSet = PdbLoader.LoadAtomSet(pdbName);
+        var atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
 
-        // Load all data from text files
-        var atoms = PdbLoader.ReadAtomData(pdbPath);
-        var atomClusters = new List<List<Vector4>>();
-        var biomtTransforms = (biomt) ? PdbLoader.ReadBiomtData(pdbPath) : new List<Matrix4x4>();
-
-        var atomSpheres = new List<Vector4>();
-        var atomClustersL1 = new List<Vector4>();
-        var atomClustersL2 = new List<Vector4>();
-        var atomClustersL3 = new List<Vector4>();
-
-        // Treat this protein separatly as it has only CA in the pdb
-        if (PdbLoader.IsCarbonOnly(atoms))
-        {
-            return;
-            //atomSpheres = PdbLoader.ClusterAtomsByResidue(atoms, 1, 3);
-            //atomClustersL1 = PdbLoader.ClusterAtomsByResidue(atoms, 1, 4);
-            //atomClustersL2 = PdbLoader.ClusterAtomsByChain(atoms, 3, 8);
-            //atomClustersL3 = PdbLoader.ClusterAtomsByChain(atoms, 10, 10);
-        }
-        else
-        {
-            atomSpheres = PdbLoader.GetAtomSpheres(atoms);
-            atomClustersL1.AddRange(KMeansClustering.GetClusters(atomSpheres, atomSpheres.Count * 15 / 100));
-            atomClustersL2.AddRange(KMeansClustering.GetClusters(atomSpheres, atomSpheres.Count * 5 / 100));
-            atomClustersL3.AddRange(KMeansClustering.GetClusters(atomSpheres, atomSpheres.Count * 3 / 100));
-        }
-
-        // use biomt as one single instance until I find  better solution
         if (biomt)
         {
-            atomSpheres = PdbLoader.BuildBiomt(atomSpheres, biomtTransforms);
-            atomClustersL1 = PdbLoader.BuildBiomt(atomClustersL1, biomtTransforms);
-            atomClustersL2 = PdbLoader.BuildBiomt(atomClustersL2, biomtTransforms);
-            atomClustersL3 = PdbLoader.BuildBiomt(atomClustersL3, biomtTransforms);
+            var biomtTransforms = PdbLoader.LoadBiomtTransforms(pdbName);
+            atomSpheres = AtomHelper.BuildBiomt(atomSpheres, biomtTransforms);
         }
 
-        var bounds = PdbLoader.GetBounds(atomSpheres);
-        PdbLoader.OffsetPoints(ref atomSpheres, bounds.center);
-        PdbLoader.OffsetPoints(ref atomClustersL1, bounds.center);
-        PdbLoader.OffsetPoints(ref atomClustersL2, bounds.center);
-        PdbLoader.OffsetPoints(ref atomClustersL3, bounds.center);
+        // If the set is empty return
+        if (atomSpheres.Count == 0) return;
 
-        atomClusters.Add(atomClustersL1);
-        atomClusters.Add(atomClustersL2);
-        atomClusters.Add(atomClustersL3);
+        // Store center position
+        var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;
 
-        // Add ingredient to scene manager
-        //Color ingrColor = ColorsPalette[current_color];// colorList.Current;
+        // Center atoms
+        AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
 
-        int cid = ColorPaletteGenerator.GetRandomUniqFromSample(current_color, usedColors[current_color]);
+        // Compute bounds
+        var bounds = AtomHelper.ComputeBounds(atomSpheres);
+
+        // Get ingredient color
+        // TODO: Move color palette code into dedicated function
+        var cid = ColorPaletteGenerator.GetRandomUniqFromSample(current_color, usedColors[current_color]);
         usedColors[current_color].Add(cid);
-        Vector3 sample = ColorPaletteGenerator.colorSamples[cid];
-        //we could some weigthing
-        //sample[0]*=2*((float)atoms.Count/8000f);//weigth per atoms.Count
-        Vector3 c = ColorPaletteGenerator.lab2rgb(sample) / 255.0f;
-        Color ingrColor = new Color(c[0], c[1], c[2]);
-        //Debug.Log ("color "+current_color+" "+N+" "+ingrColor.ToString());
-        //should try to pick most disctinct one ?
-        //shouldnt use the pdbName for the name of the ingredient, but rather the actual name
-        SceneManager.Instance.AddIngredient(pdbName, bounds, atomSpheres, ingrColor, atomClusters);
-        //colorList.MoveNext();
-        //current_color+=1;
+        var sample = ColorPaletteGenerator.colorSamples[cid];
+        var c = ColorPaletteGenerator.lab2rgb(sample) / 255.0f;
+        var color = new Color(c[0], c[1], c[2]);
 
+        // Define cluster decimation levels
+        var clusterLevels = (AtomHelper.ContainsCarbonOnly(atomSet))
+            ? new List<float>() {0.85f, 0.25f, 0.1f}
+            : new List<float>() {0.10f, 0.05f, 0.01f};
+
+        // Add ingredient type
+        SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color, clusterLevels);
+
+        // Add individual instances
         for (int k = 0; k < ingredientDictionary["results"].Count; k++)
         {
             var p = ingredientDictionary["results"][k][0];
@@ -233,24 +190,15 @@ public static class CellPackLoader
             rotation = Helper.MayaRotationToUnity(euler);
 
             // Find centered position
-            if (!center) position += Helper.QuaternionTransform(rotation, bounds.center);
-            SceneManager.Instance.AddIngredientInstance(pdbName, position, rotation);
-
-            //if (biomt)
-            //{
-            //    foreach (var matBiomt in biomtTransforms)
-            //    {
-            //        var rotBiomt = Helper.RotationMatrixToQuaternion(matBiomt);
-            //        var posBiomt = new Vector3(matBiomt.m03, matBiomt.m13, matBiomt.m23) + position + bounds.center;
-
-            //        SceneManager.Instance.AddIngredientInstance(pdbName, posBiomt, rotBiomt);
-            //    }
-            //}
-            //else
-            //{
-            //     SceneManager.Instance.AddIngredientInstance(pdbName, position, rotation);
-            //}
+            if (!center) position += Helper.QuaternionTransform(rotation, centerPosition);
+            
+            // Add instance to scene
+            SceneManager.Instance.AddIngredientInstance(name, position, rotation);
         }
+
+        Debug.Log("*****");
+        Debug.Log("Added ingredient: " + name);
+        Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSpheres.Count + " *** " + "Num instances: " + ingredientDictionary["results"].Count + " *** " + "Total atom count: " + atomSpheres.Count * ingredientDictionary["results"].Count);
     }
 
     public static void AddCurveIngredients(JSONNode ingredientDictionary)
@@ -282,7 +230,6 @@ public static class CellPackLoader
 	
     public static void DebugMethod()
     {
-        //var half = new Half(16.8f);
-        Debug.Log("Hello");
+        Debug.Log("Hello World");
     }
 }

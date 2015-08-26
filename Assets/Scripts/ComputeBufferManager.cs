@@ -4,41 +4,16 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class ComputeBufferManager : MonoBehaviour
 {
-    //public int NumProteinAtomMax = 1000000;        
-    //public int NumIngredientsMax = 1000;    
-    //public int NumProteinInstancesMax = 25000000;      
-    //public int NumProteinSphereBatchesMax = 25000000;  
-    //public int NumLipidAtomMax = 8000000;    
-    //public int NumLipidInstancesMax = 25000000;
-    //public int NumDnaAtomsMax = 1000;
-    //public int NumDnaControlPointsMax = 1000000;
+    public static int NumLodMax = 10;
+    public static int NumProteinMax = 100;
+    public static int NumProteinAtomMax = 200000;
+    public static int NumProteinAtomClusterMax = 100000;
+    public static int NumProteinInstancesMax = 100000;
+    public static int NumProteinSphereBatchesMax = 1000000;
 
-    [NonSerialized]
-    public int NumProteinAtomMax = 0;
-
-    [NonSerialized]
-    public int NumIngredientsMax = 0;
-
-    [NonSerialized]
-    public int NumProteinInstancesMax = 0;
-
-    [NonSerialized]
-    public int NumProteinSphereBatchesMax = 0;
-
-    [NonSerialized]
-    public int NumLipidAtomMax = 0;
-
-    [NonSerialized]
-    public int NumLipidMax = 0;
-
-    [NonSerialized]
-    public int NumLipidInstancesMax = 0;
-
-    [NonSerialized]
-    public int NumDnaAtomsMax = 0;
-
-    [NonSerialized]
-    public int NumCurveControlPointsMax = 0;
+    public static int NumCurveIngredientMax = 10;
+    public static int NumCurveIngredientAtomsMax = 1000;
+    public static int NumCurveControlPointsMax = 1000000;
 
     public ComputeBuffer LodInfos;
     public ComputeBuffer SphereBatchBuffer;
@@ -127,29 +102,24 @@ public class ComputeBufferManager : MonoBehaviour
     {
         ReleaseBuffers();
     }
-
+    
     public void InitBuffers ()
     {
-        if (NumProteinInstancesMax == 0) return;
-
-        // Before declaring new buffers make sure that all the previous buffers are cleared
-        ReleaseBuffers();
-
         if (LodInfos == null) LodInfos = new ComputeBuffer(8, 16);
         if (SphereBatchBuffer == null) SphereBatchBuffer = new ComputeBuffer(NumProteinSphereBatchesMax, 16, ComputeBufferType.Append);
 
         //*****//
 
-        if (ProteinColors == null) ProteinColors = new ComputeBuffer(NumIngredientsMax, 16);
-        if (ProteinToggleFlags == null) ProteinToggleFlags = new ComputeBuffer(NumIngredientsMax, 4);
+        if (ProteinColors == null) ProteinColors = new ComputeBuffer(NumProteinMax, 16);
+        if (ProteinToggleFlags == null) ProteinToggleFlags = new ComputeBuffer(NumProteinMax, 4);
 
         if (ProteinAtoms == null) ProteinAtoms = new ComputeBuffer(NumProteinAtomMax, 16);
-        if (ProteinAtomCount == null) ProteinAtomCount = new ComputeBuffer(NumIngredientsMax, 4);
-        if (ProteinAtomStart == null) ProteinAtomStart = new ComputeBuffer(NumIngredientsMax, 4);
+        if (ProteinAtomClusters == null) ProteinAtomClusters = new ComputeBuffer(NumProteinAtomClusterMax, 16);
 
-        if (ProteinAtomClusters == null) ProteinAtomClusters = new ComputeBuffer(NumProteinAtomMax, 16);
-        if (ProteinAtomClusterCount == null) ProteinAtomClusterCount = new ComputeBuffer(NumIngredientsMax, 16);
-        if (ProteinAtomClusterStart == null) ProteinAtomClusterStart = new ComputeBuffer(NumIngredientsMax, 16);
+        if (ProteinAtomCount == null) ProteinAtomCount = new ComputeBuffer(NumProteinMax, 4);
+        if (ProteinAtomStart == null) ProteinAtomStart = new ComputeBuffer(NumProteinMax, 4);
+        if (ProteinAtomClusterCount == null) ProteinAtomClusterCount = new ComputeBuffer(NumProteinMax * NumLodMax, 4);
+        if (ProteinAtomClusterStart == null) ProteinAtomClusterStart = new ComputeBuffer(NumProteinMax * NumLodMax, 4);
 
         if (ProteinInstanceInfos == null) ProteinInstanceInfos = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstanceCullFlags == null) ProteinInstanceCullFlags = new ComputeBuffer(NumProteinInstancesMax, 4);
@@ -158,13 +128,13 @@ public class ComputeBufferManager : MonoBehaviour
 
         //*****//
 
-        if (CurveIngredientsInfos == null) CurveIngredientsInfos = new ComputeBuffer(32, 16);
-        if (CurveIngredientsColors == null) CurveIngredientsColors = new ComputeBuffer(32, 16);
-        if (CurveIngredientsToggleFlags == null) CurveIngredientsToggleFlags = new ComputeBuffer(32, 4);
-        
-        if (CurveIngredientsAtomCount == null) CurveIngredientsAtomCount = new ComputeBuffer(32, 4);
-        if (CurveIngredientsAtomStart == null) CurveIngredientsAtomStart = new ComputeBuffer(32, 4);
-        if (CurveIngredientsAtoms == null) CurveIngredientsAtoms = new ComputeBuffer(NumDnaAtomsMax, 16);
+        if (CurveIngredientsInfos == null) CurveIngredientsInfos = new ComputeBuffer(NumCurveIngredientMax, 16);
+        if (CurveIngredientsColors == null) CurveIngredientsColors = new ComputeBuffer(NumCurveIngredientMax, 16);
+        if (CurveIngredientsToggleFlags == null) CurveIngredientsToggleFlags = new ComputeBuffer(NumCurveIngredientMax, 4);
+
+        if (CurveIngredientsAtomCount == null) CurveIngredientsAtomCount = new ComputeBuffer(NumCurveIngredientMax, 4);
+        if (CurveIngredientsAtomStart == null) CurveIngredientsAtomStart = new ComputeBuffer(NumCurveIngredientMax, 4);
+        if (CurveIngredientsAtoms == null) CurveIngredientsAtoms = new ComputeBuffer(NumCurveIngredientAtomsMax, 16);
         
         if (CurveControlPointsInfos == null) CurveControlPointsInfos = new ComputeBuffer(NumCurveControlPointsMax, 16);
         if (CurveControlPointsNormals == null) CurveControlPointsNormals = new ComputeBuffer(NumCurveControlPointsMax, 16);
