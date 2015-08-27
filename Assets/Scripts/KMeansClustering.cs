@@ -32,7 +32,7 @@ public class KMeansClustering
         pointBuffer.SetData(atoms.ToArray());
 
         var membershipBuffer = new ComputeBuffer(atoms.Count, sizeof(int));
-
+        
         ComputeShaderManager.Instance.KMeansCS.SetInt("_NumPoints", atoms.Count);
         ComputeShaderManager.Instance.KMeansCS.SetInt("_NumCentroids", numCentroids);
 
@@ -41,7 +41,7 @@ public class KMeansClustering
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(0, "_PointBuffer", pointBuffer);
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(0, "_CentroidBuffer", centroidBuffer);
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(0, "_MembershipBuffer", membershipBuffer);
-            ComputeShaderManager.Instance.KMeansCS.Dispatch(0, Mathf.CeilToInt(atoms.Count / 1), 1, 1);
+            ComputeShaderManager.Instance.KMeansCS.Dispatch(0, Mathf.CeilToInt(atoms.Count / 64.0f), 1, 1);
             
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(1, "_PointBuffer", pointBuffer);
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(1, "_NewCentroidBuffer", centroidBuffer);

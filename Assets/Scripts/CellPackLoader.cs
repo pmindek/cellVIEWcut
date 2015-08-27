@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SimpleJSON;
-using UnityEditor;
+
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 
 public static class CellPackLoader
 {
@@ -15,28 +19,32 @@ public static class CellPackLoader
    
     public static void LoadCellPackResults()
     {
-        var directory = "";
+        #if UNITY_EDITOR
 
-        if (string.IsNullOrEmpty(PersistantSettings.Instance.LastSceneLoaded) || !Directory.Exists(Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded)))
-        {
-            directory = Application.dataPath;
-        }
-        else
-        {
-            directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
-        }
+            var directory = "";
+
+            if (string.IsNullOrEmpty(PersistantSettings.Instance.LastSceneLoaded) || !Directory.Exists(Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded)))
+            {
+                directory = Application.dataPath;
+            }
+            else
+            {
+                directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
+            }
+
+            var path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
+            if (string.IsNullOrEmpty(path)) return;
         
-        var path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
-        if (string.IsNullOrEmpty(path)) return;
+            PersistantSettings.Instance.LastSceneLoaded = path;
+            LoadIngredients(path);
 
-        PersistantSettings.Instance.LastSceneLoaded = path;
-        LoadIngredients(path);
+            Debug.Log("*****");
+            Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
 
-        Debug.Log("*****");
-        Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
+            // Upload scene data to the GPU
+            SceneManager.Instance.UploadAllData();
 
-        // Upload scene data to the GPU
-        SceneManager.Instance.UploadAllData();
+        #endif
     }
 
     public static void LoadIngredients(string recipePath)
@@ -128,7 +136,8 @@ public static class CellPackLoader
         if (pdbName == "None") return;
         if (pdbName.StartsWith("EMDB")) return;
         if (pdbName.Contains("1PI7_1vpu_biounit")) return;
-
+        //if (!pdbName.Contains("1TWT_1TWV")) return;
+        
         // Disable biomts until loading problem is resolved
         if (biomt) return;
         
@@ -164,7 +173,7 @@ public static class CellPackLoader
         var clusterLevels = (containsACarbonOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
             : new List<float>() {0.10f, 0.05f, 0.01f};
-
+        
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);
         SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color, clusterLevels);

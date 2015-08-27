@@ -14,7 +14,7 @@ uniform	RWStructuredBuffer<int> _MembershipBuffer;
 //groupshared float3 sharedCentroid[1024];
 //groupshared int sharedMembershipChange[1];
 
-[numthreads(1,1,1)]
+[numthreads(64,1,1)]
 void FindCentroid (uint3 id : SV_DispatchThreadID, uint3 groupThreadId : SV_GroupThreadID)
 {
 	if(id.x >= (uint)_NumPoints) return;

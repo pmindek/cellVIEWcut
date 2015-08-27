@@ -11,6 +11,9 @@
             #pragma vertex vert_img
             #pragma fragment frag
 			  
+			#pragma only_renderers d3d11
+			#pragma target 5.0	
+
 			#include "Helper.cginc"	
             #include "UnityCG.cginc"  
 			        

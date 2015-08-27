@@ -36,13 +36,9 @@
 			ZTest Lequal
 
             CGPROGRAM
-            
 			
-			#pragma only_renderers d3d11
-			#pragma target 5.0		
-
-			#pragma vertex vert_img
             #pragma fragment frag
+			#pragma vertex vert_img
 
             #include "UnityCG.cginc"
 
@@ -70,9 +66,11 @@
 			ZTest Always
 
             CGPROGRAM
+            #pragma fragment frag
             #pragma vertex vert_img
-            #pragma fragment frag			
-			#pragma target 5.0		
+						
+			#pragma target 5.0	
+			#pragma only_renderers d3d11			
 
             #include "UnityCG.cginc"
 			
@@ -93,8 +91,10 @@
 
             CGPROGRAM
             #pragma vertex vert_img
-            #pragma fragment frag			
-			#pragma target 5.0		
+            #pragma fragment frag	
+					
+			#pragma target 5.0	
+			#pragma only_renderers d3d11	
 
             #include "UnityCG.cginc"
 			#include "Helper.cginc"	
