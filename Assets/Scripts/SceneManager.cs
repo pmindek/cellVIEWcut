@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using SimpleJSON;
 
 enum InstanceState
 {
@@ -34,6 +35,7 @@ public class SceneManager : MonoBehaviour
     public List<Vector4> ProteinAtomClusters = new List<Vector4>();
     public List<int> ProteinAtomClusterCount = new List<int>();
     public List<int> ProteinAtomClusterStart = new List<int>();
+	public JSONNode AllIngredients;
 
     // Curve ingredients data
     
