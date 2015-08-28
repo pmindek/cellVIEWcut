@@ -391,7 +391,69 @@ public static class Helper
 		var resultData = Helper.ParseJson(path);
 		return resultData;
 	}
+	public static JSONNode GetAllRecipeInfo()
+	{
+		Debug.Log("Downloading all ingredients file");
+		//could use a special file for cellView
+		var www = new WWW("https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/autopack_recipe.json");
+		var path = PdbLoader.DefaultPdbDirectory + "autopack_recipe.json";
+		if (!File.Exists (path)) {
+			while (!www.isDone)
+			{
+				#if UNITY_EDITOR
+				EditorUtility.DisplayProgressBar("Downloading recipes available infos", "Downloading...", www.progress);
+				#endif
+			}
+			#if UNITY_EDITOR
+			EditorUtility.ClearProgressBar();
+			#endif
+			
+			if (!string.IsNullOrEmpty (www.error))
+				throw new Exception ("autopack_recipe.json" + www.error);
+			//var path = (string.IsNullOrEmpty (dstPath) ? DefaultPdbDirectory : dstPath) + "allIngredients.json";
+			File.WriteAllText (path, www.text);
+		}
+		var resultData = Helper.ParseJson(path);
+		return resultData;
+	}
+	public static string GetResultsFile(string url)
+	{
+		Debug.Log("Downloading results file "+url);
+		var www = new WWW(url);
+		string fname = GetFileName (url);
+		var path = PdbLoader.DefaultPdbDirectory + fname;
+		if (!File.Exists (path)) {
+			while (!www.isDone)
+			{
+				#if UNITY_EDITOR
+				EditorUtility.DisplayProgressBar("Downloading recipes results file", "Downloading...", www.progress);
+				#endif
+			}
+			#if UNITY_EDITOR
+			EditorUtility.ClearProgressBar();
+			#endif
+			
+			if (!string.IsNullOrEmpty (www.error))
+				throw new Exception (fname + www.error);
+			//var path = (string.IsNullOrEmpty (dstPath) ? DefaultPdbDirectory : dstPath) + "allIngredients.json";
+			File.WriteAllText (path, www.text);
+		}
+		//var resultData = Helper.ParseJson(path);
+		return path;
+	}
 
+	public static string GetFileName(string hrefLink)
+	{
+		string[] parts = hrefLink.Split('/');
+		string fileName = "";
+		
+		if (parts.Length > 0)
+			fileName = parts[parts.Length - 1];
+		else
+			fileName = hrefLink;
+		
+		return fileName;
+	}
 }
 
 

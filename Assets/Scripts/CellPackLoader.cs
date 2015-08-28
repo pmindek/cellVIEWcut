@@ -22,6 +22,7 @@ public static class CellPackLoader
         #if UNITY_EDITOR
 
             var directory = "";
+			var path = "";
 
             if (string.IsNullOrEmpty(PersistantSettings.Instance.LastSceneLoaded) || !Directory.Exists(Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded)))
             {
@@ -31,10 +32,16 @@ public static class CellPackLoader
             {
                 directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
             }
-
-            var path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
-            if (string.IsNullOrEmpty(path)) return;
-        
+			if (SceneManager.Instance.sceneid==SceneManager.Instance.AllRecipes.Count){
+            	path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
+            	if (string.IsNullOrEmpty(path)) return;
+			}
+			else {
+				string url = SceneManager.Instance.AllRecipes[SceneManager.Instance.sceneid][0]["resultfile"];
+				url=url.Replace("autoPACKserver","https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/");
+				//fetch the results file from the server
+				path = Helper.GetResultsFile(url);
+			}
             PersistantSettings.Instance.LastSceneLoaded = path;
             LoadIngredients(path);
 
@@ -131,11 +138,13 @@ public static class CellPackLoader
         var center = (bool)ingredientDictionary["source"]["transform"]["center"].AsBool;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
         
-        if (pdbName == "") return;
-        if (pdbName == "null") return;
-        if (pdbName == "None") return;
+		if ((pdbName == "") || (pdbName == "null") || (pdbName == "None")) {
+			//check for sphere file//information in the file. if not in file is it on disk ? on repo ?
+			//possibly read the actuall recipe definition ?
+			return;
+		};
         if (pdbName.StartsWith("EMDB")) return;
-        if (pdbName.Contains("1PI7_1vpu_biounit")) return;
+        if (pdbName.Contains("1PI7_1vpu_biounit")) return;//??
         //if (!pdbName.Contains("1TWT_1TWV")) return;
         
         // Disable biomts until loading problem is resolved
@@ -254,4 +263,93 @@ public static class CellPackLoader
     {
         Debug.Log("Hello World");
     }
+
+	public static void LoadLipidsTest(){
+		//use Library compute from RMSD
+		//read atomic info
+		
+		Dictionary<string,List<List<float>>> tri_res = new Dictionary<string,List<List<float>>> ();
+		
+		var Lib = Helper.ReadBytesAsFloats(Application.dataPath + "/../Data/membrane/library_myco.bin");
+		int step = 5;//resid,x,y,z,atomtype	
+		int count = 0;
+		List<Vector4> atomSpheres=new List<Vector4>();
+		int previd = 0;
+		Bounds bounds;
+		List<List<Vector4>> atomClusters;
+		Color ingrColor;
+		Vector3 centerPosition;
+		var clusterLevels = new List<float>() {0.80f, 0.55f, 0.21f};
+		for (var i = 0; i < Lib.Length; i += step) {
+			var currentAtom = new Vector4 (Lib [i + 1], Lib [i + 2], Lib [i + 3], AtomHelper.AtomRadii [(int)Lib [i + 4]]);
+			var resid = (int)Lib [i];
+			//Debug.Log (resid.ToString()+" "+previd.ToString()+" "+atomSpheres.Count.ToString());
+			if (previd != resid) {		
+				centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;
+				atomClusters = new List<List<Vector4>> ();
+				// Center atoms
+				AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
+				// Compute bounds
+				bounds = AtomHelper.ComputeBounds(atomSpheres);
+				//PdbLoader.OffsetPoints (ref atomSpheres, bounds.center);//center
+				//List<Vector4> atomCl1 = PdbLoader.ClusterAtomsPointsKmeans(atomSpheres,atomSpheres.Count/2 , 1.0f);
+				//List<Vector4> atomCl2 = PdbLoader.ClusterAtomsPointsKmeans(atomSpheres,atomSpheres.Count/4 , 1.0f);
+				//List<Vector4> atomCl3 = PdbLoader.ClusterAtomsPointsKmeans(atomSpheres,atomSpheres.Count/8 , 1.0f);
+				//atomClusters.Add (atomCl1);
+				//atomClusters.Add (atomCl2);
+				//atomClusters.Add (atomCl3);
+				ingrColor = new Color (0, 1, 0);
+				// Define cluster decimation levels
+				SceneManager.Instance.AddIngredient ("lipids" + previd.ToString (), bounds, atomSpheres, ingrColor, clusterLevels);
+				atomSpheres.Clear ();
+				//Debug.Log ("added lipids" + previd.ToString ());
+			}
+			atomSpheres.Add (currentAtom);
+			previd=resid;
+		}
+		//add the last one
+		centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;//PdbLoader.GetBounds (atomSpheres);
+		//atomClusters = new List<List<Vector4>> ();
+		// Center atoms
+		AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
+		// Compute bounds
+		bounds = AtomHelper.ComputeBounds(atomSpheres);
+
+		//bounds = PdbLoader.GetBounds (atomSpheres);
+		//atomClusters = new List<List<Vector4>> ();
+		//check the cluster radius, seems too large
+		//List<Vector4> atomClustersL1 = PdbLoader.ClusterAtomsPointsKmeans(atomSpheres,atomSpheres.Count/2 , 1.0f);
+		//List<Vector4> atomClustersL2 = PdbLoader.ClusterAtomsPointsKmeans(atomSpheres,atomSpheres.Count/4 , 1.0f);
+		//List<Vector4> atomClustersL3 = PdbLoader.ClusterAtomsPointsKmeans(atomSpheres,atomSpheres.Count/8 , 1.0f);
+		//PdbLoader.OffsetPoints (ref atomSpheres, bounds.center);//center
+		//PdbLoader.OffsetPoints(ref atomClustersL1, bounds.center);
+		//PdbLoader.OffsetPoints(ref atomClustersL2, bounds.center);
+		//PdbLoader.OffsetPoints(ref atomClustersL3, bounds.center);
+		//
+		//atomClusters.Add (atomClustersL1);
+		//atomClusters.Add (atomClustersL2);
+		//atomClusters.Add (atomClustersL3);
+		ingrColor = new Color (0, 1, 0);
+		SceneManager.Instance.AddIngredient ("lipids" + previd.ToString (), bounds, atomSpheres, ingrColor, clusterLevels);
+		atomSpheres.Clear ();
+		Debug.Log ("added lipids" + previd.ToString ());
+		
+		var Lipids = Helper.ReadBytesAsFloats(Application.dataPath + "/../Data/membrane/lipid_pos_myco.bin");
+		step=8;//rid,pos,rot,
+		Debug.Log ("total lipids " + (Lipids.Length / step).ToString ());
+		for (var i = 0; i < Lipids.Length; i += step) {
+			var position = new Vector3(-Lipids[i+1], Lipids[i+2],Lipids[i+3]);
+			var rotation = new Quaternion(Lipids[i+4], Lipids[i+5], Lipids[i+6], Lipids[i+7]);			
+			//Debug.Log (rotation.ToString ());
+			var mat = Helper.quaternion_matrix(rotation);//.transpose;
+			var euler = Helper.euler_from_matrix(mat);
+			//Debug.Log (position.ToString()+ " " +euler.ToString ());
+			rotation = Helper.MayaRotationToUnity(euler);//-Y-Z
+			var resid = (int)Lipids [i];
+			SceneManager.Instance.AddIngredientInstance("lipids" + resid.ToString (), position, rotation);
+		}
+	}
+
+
+
 }

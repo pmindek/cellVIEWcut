@@ -1,6 +1,8 @@
 ﻿//C# Example
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,6 +13,7 @@ public class CustomWindow : EditorWindow
     //{
     //    //CellPackLoader.Debug();
     //}
+	private static string[] _sceneOptionsLabels;
 
     // Add menu item named "My Window" to the Window menu
     [MenuItem("cellVIEW/Load cellPACK results")]
@@ -33,6 +36,7 @@ public class CustomWindow : EditorWindow
     [MenuItem("cellVIEW/Show Window")]
     public static void ShowWindow()
     {
+		gatherRecipes ();
         //Show existing window instance. If one doesn't exist, make one.
         GetWindow(typeof(CustomWindow));
     }
@@ -44,22 +48,39 @@ public class CustomWindow : EditorWindow
 
     private Vector2 _scrollPos;
     private readonly string[] _contourOptionsLabels = { "Show Contour", "Hide Contour", "Contour Only" };
-	
-    void OnGUI()
+
+
+	static void  gatherRecipes(){
+		if (SceneManager.Instance.AllRecipes == null) 
+			SceneManager.Instance.AllRecipes = Helper.GetAllRecipeInfo ();
+		if (_sceneOptionsLabels==null) {
+			var listesRecipe = SceneManager.Instance.AllRecipes.GetAllKeys();
+			listesRecipe.Add ("Browse");
+			_sceneOptionsLabels=listesRecipe.ToArray();
+		}
+	}
+
+	void OnGUI()
     {
         EditorUtility.SetDirty(PersistantSettings.Instance);
 
         GUIStyle style_1 = new GUIStyle();
         style_1.margin = new RectOffset(10, 10, 10, 10);
-
+		gatherRecipes ();
         // Begin scroll view
         _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, style_1, GUILayout.ExpandWidth(true));
         {
+			if (_sceneOptionsLabels!=null)SceneManager.Instance.sceneid  = EditorGUILayout.Popup("Scenes :", SceneManager.Instance.sceneid, _sceneOptionsLabels);
             if (GUILayout.Button("Load cellPACK results"))
             {
                 CellPackLoader.LoadCellPackResults();
             }
-            
+			if (GUILayout.Button("Load lipids membrane results"))
+			{
+				CellPackLoader.LoadLipidsTest();
+				SceneManager.Instance.UploadAllData();
+			}
+
             if (GUILayout.Button("Clear Scene"))
             {
                 ClearScene();

@@ -36,7 +36,8 @@ public class SceneManager : MonoBehaviour
     public List<int> ProteinAtomClusterCount = new List<int>();
     public List<int> ProteinAtomClusterStart = new List<int>();
 	public JSONNode AllIngredients;
-
+	public JSONNode AllRecipes;
+	public int sceneid=0;
     // Curve ingredients data
     
     public List<int> CurveIngredientsAtomStart = new List<int>();
@@ -400,16 +401,16 @@ public class SceneManager : MonoBehaviour
 
     private void CheckBufferSizes()
     {
-        if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusters.Count >= ComputeBufferManager.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusterCount.Count >= ComputeBufferManager.NumProteinMax * ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinInstancePositions.Count >= ComputeBufferManager.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
+		if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow NumLodLevels");
+		if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow ProteinNames.Count");
+		if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow ProteinAtoms.Count");
+		if (Instance.ProteinAtomClusters.Count >= ComputeBufferManager.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow ProteinAtomClusters.Count");
+		if (Instance.ProteinAtomClusterCount.Count >= ComputeBufferManager.NumProteinMax * ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow ProteinAtomClusterCount.Count");
+		if (Instance.ProteinInstancePositions.Count >= ComputeBufferManager.NumProteinInstancesMax) throw new Exception("GPU buffer overflow ProteinInstancePositions.Count");
 
-        if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+		if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow CurveIngredientsNames.Count");
+		if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow CurveControlPointsPositions.Count");
+		if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow CurveIngredientsAtoms.Count");
     }
 
     public void UploadAllData()
