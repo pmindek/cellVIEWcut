@@ -220,7 +220,16 @@ public class SceneManager : MonoBehaviour
         }
         else
         {
-            throw new Exception("Curve ingredient unknown");
+			numSteps = 10;
+			twistAngle = 0;
+			segmentLength = 20;
+			color = Color.green;
+			
+			var atomSphere = new Vector4(0, 0, 0, 8);
+			CurveIngredientsAtomCount.Add(1);
+			CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
+			CurveIngredientsAtoms.Add(atomSphere);
+			//throw new Exception("Curve ingredient unknown");
         }
 
         CurveIngredientsNames.Add(name);

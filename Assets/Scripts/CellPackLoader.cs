@@ -45,23 +45,21 @@ public static class CellPackLoader
             PersistantSettings.Instance.LastSceneLoaded = path;
             LoadIngredients(path);
 
-            Debug.Log("*****");
-            Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
-
             // Upload scene data to the GPU
             SceneManager.Instance.UploadAllData();
-
-        #endif
-    }
-
-    public static void LoadIngredients(string recipePath)
+			Debug.Log("*****");
+			Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
+		#endif
+	}
+	
+	public static void LoadIngredients(string recipePath)
     {
         Debug.Log("*****");
         Debug.Log("Loading scene: " + recipePath);
         
         var cellPackSceneJsonPath = recipePath;//Application.dataPath + "/../Data/HIV/cellPACK/BloodHIV1.0_mixed_fixed_nc1.json";
         if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
-
+		//this assume a result file from cellpack, not a recipe file.
         var resultData = Helper.ParseJson(cellPackSceneJsonPath);
 
         //we can traverse the json dictionary and gather ingredient source (PDB,center), sphereTree, instance.geometry if we want.
@@ -137,32 +135,42 @@ public static class CellPackLoader
         var biomt = (bool)ingredientDictionary["source"]["biomt"].AsBool;
         var center = (bool)ingredientDictionary["source"]["transform"]["center"].AsBool;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
-        
+		List<Vector4> atomSpheres;
+		List<Matrix4x4> biomtTransforms = new List<Matrix4x4>();
+		Vector3 biomtCenter = Vector3.zero;
+		bool containsACarbonOnly = false;
+
 		if ((pdbName == "") || (pdbName == "null") || (pdbName == "None")) {
 			//check for sphere file//information in the file. if not in file is it on disk ? on repo ?
 			//possibly read the actuall recipe definition ?
-			return;
-		};
-        if (pdbName.StartsWith("EMDB")) return;
-        if (pdbName.Contains("1PI7_1vpu_biounit")) return;//??
-        //if (!pdbName.Contains("1TWT_1TWV")) return;
+			if (ingredientDictionary ["radii"] != null) {
+				atomSpheres = Helper.gatherSphereTree(ingredientDictionary)[0];
+				Debug.Log ("nbprim "+atomSpheres.Count.ToString());//one sphere
+			} else {
+				return;
+			}
+		} else {
+			if (pdbName.StartsWith("EMDB")) return;
+			if (pdbName.Contains("1PI7_1vpu_biounit")) return;//??
+			// Load atom set from pdb file
+			var atomSet = PdbLoader.LoadAtomSet(pdbName);
+			
+			// If the set is empty return
+			if (atomSet.Count == 0) return;
+		
+			atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
+			containsACarbonOnly = AtomHelper.ContainsACarbonOnly(atomSet);
+			biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
+			biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms);
+		}
+		
+		//if (!pdbName.Contains("1TWT_1TWV")) return;
         
         // Disable biomts until loading problem is resolved
         if (biomt) return;
         
-        // Load atom set from pdb file
-        var atomSet = PdbLoader.LoadAtomSet(pdbName);
-        
-        // If the set is empty return
-        if (atomSet.Count == 0) return;
 
-        var atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
-        var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;
-        
-        var biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
-        var biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms);
-        
-        var containsACarbonOnly = AtomHelper.ContainsACarbonOnly(atomSet);
+        var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;       
 
         // Center atoms
         AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);

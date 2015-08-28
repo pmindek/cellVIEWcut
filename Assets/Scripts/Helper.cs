@@ -275,9 +275,10 @@ public static class Helper
         //JSONNode.Parse (filestring);
         //StreamReader inp_stm = new StreamReader(file_path);
         //return JSONNode.LoadFromFile (filePath);
-        var sourse = new StreamReader(filePath);
-        var fileContents = sourse.ReadToEnd();
+        var source = new StreamReader(filePath);
+        var fileContents = source.ReadToEnd();
         var data = JSONNode.Parse(fileContents);
+		source.Close ();
         return data;
     }
 
@@ -367,6 +368,24 @@ public static class Helper
 
         return pixelId[0];
     }
+
+	//---------------------------helper for autopack file system -----------------------------------
+	public static List<List<Vector4>> gatherSphereTree(JSONNode idic){
+		List<List<Vector4>> spheres = new List<List<Vector4>> ();
+		
+		for (int ilevel = 0; ilevel < idic["positions"].Count; ilevel++)
+		{
+			spheres.Add (new List<Vector4>());
+			for (int isph=0;isph < idic["positions"][ilevel].Count;isph++)
+			{
+				var p = idic["positions"][ilevel][isph];
+				var r = idic["radii"][ilevel][isph].AsFloat;
+				spheres[ilevel].Add (new Vector4(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat,r));
+			}
+		}
+		return spheres;
+	}
+
 	public static JSONNode GetAllIngredientsInfo()
 	{
 		Debug.Log("Downloading all ingredients file");
@@ -395,8 +414,9 @@ public static class Helper
 	{
 		Debug.Log("Downloading all ingredients file");
 		//could use a special file for cellView
-		var www = new WWW("https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/autopack_recipe.json");
-		var path = PdbLoader.DefaultPdbDirectory + "autopack_recipe.json";
+		var www = new WWW("https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/autopack_recipe_cellview.json");
+		//var path = PdbLoader.DefaultPdbDirectory + "autopack_recipe.json";
+		var path = Application.dataPath + "/../Data/packing_results/autopack_recipe_cellview.json";
 		if (!File.Exists (path)) {
 			while (!www.isDone)
 			{
@@ -421,7 +441,8 @@ public static class Helper
 		Debug.Log("Downloading results file "+url);
 		var www = new WWW(url);
 		string fname = GetFileName (url);
-		var path = PdbLoader.DefaultPdbDirectory + fname;
+		//var path = PdbLoader.DefaultPdbDirectory + fname;
+		var path = Application.dataPath + "/../Data/packing_results/"+fname;
 		if (!File.Exists (path)) {
 			while (!www.isDone)
 			{

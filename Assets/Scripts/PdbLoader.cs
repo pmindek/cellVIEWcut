@@ -303,7 +303,7 @@ public static class AtomHelper
 
         return new Bounds(bbCenter, bbSize);
     }
-
+	//this doesnt use the sphere radius ?
     public static Bounds ComputeBounds(List<Vector4> spheres)
     {
         var bbMin = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
@@ -317,7 +317,10 @@ public static class AtomHelper
 
         var bbSize = bbMax - bbMin;
         var bbCenter = bbMin + bbSize * 0.5f;
-
+		if (spheres.Count == 1) {
+			bbSize = new Vector3(spheres[0].w-0.5f,spheres[0].w-0.5f,spheres[0].w-0.5f);
+			bbCenter = new Vector3(spheres[0].x,spheres[0].y,spheres[0].z);
+		}
         return new Bounds(bbCenter, bbSize);
     }
 
