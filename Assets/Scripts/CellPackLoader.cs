@@ -61,7 +61,7 @@ public static class CellPackLoader
         if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
 		//this assume a result file from cellpack, not a recipe file.
         var resultData = Helper.ParseJson(cellPackSceneJsonPath);
-
+		int nCompartemnts = 0;
         //we can traverse the json dictionary and gather ingredient source (PDB,center), sphereTree, instance.geometry if we want.
         //the recipe is optional as it will gave more information than just the result file.
 
@@ -69,26 +69,41 @@ public static class CellPackLoader
         current_color = 0;
         //first grab the total number of object
         int nIngredients = 0;
-        if (resultData["cytoplasme"] != null)
-            nIngredients += resultData["cytoplasme"]["ingredients"].Count;
+        if (resultData ["cytoplasme"] != null) {
+			nIngredients += resultData ["cytoplasme"] ["ingredients"].Count;
+			nCompartemnts+=1;
+		}
         for (int i = 0; i < resultData["compartments"].Count; i++)
         {
             nIngredients += resultData["compartments"][i]["interior"]["ingredients"].Count;
             nIngredients += resultData["compartments"][i]["surface"]["ingredients"].Count;
+			nCompartemnts+=2;
         }
+		//if (nCompartemnts < 5)
+		//	nCompartemnts = 5;
         //generate the palette
         //ColorsPalette   = ColorGenerator.Generate(nIngredients).Skip(2).ToList(); 
-        ColorsPalette = ColorGenerator.Generate(8).Skip(2).ToList();//.Skip(2).ToList();
-        List<Vector3> startKmeans = new List<Vector3>(ColorsPalette);
+        //ColorsPalette = ColorGenerator.Generate(8).Skip(2).ToList();//.Skip(2).ToList();
+        //List<Vector3> startKmeans = new List<Vector3>(ColorsPalette);
         //paletteGenerator.initKmeans (startKmeans);
-
+		DateTime start = DateTime.Now;
+		// the code that you want to measure comes here
         usedColors = new Dictionary<int, List<int>>();
         ColorsPalette2 = ColorPaletteGenerator.generate(
-                6, // Colors
+				nCompartemnts, // Colors
                 ColorPaletteGenerator.testfunction,
                 false, // Using Force Vector instead of k-Means
-                50 // Steps (quality)
+                50, // Steps (quality)
+				false
                 );
+		/*
+		 * TimeSpan timeItTook = DateTime.Now - start;
+		Debug.Log ("time to generate palette " + timeItTook.ToString ());
+		foreach (Vector3 v in ColorsPalette2) {
+			Debug.Log ("color "+v.ToString());
+			var c = ColorPaletteGenerator.lab2rgb(v);
+			Debug.Log ("color rgb "+c.ToString());
+		}*/
         // Sort colors by differenciation first
         //ColorsPalette2 = paletteGenerator.diffSort(ColorsPalette2);
         //check if cytoplasme present

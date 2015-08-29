@@ -286,7 +286,7 @@ public static class ColorPaletteGenerator  {
 				forceMode = false;
 		if(quality == null)
 				quality = 50;
-		ultra_precision = ultra_precision || false;
+		//ultra_precision = ultra_precision || false;
 		int steps = 0;
 		if(forceMode){
 				// Force Vector Mode
