@@ -5,7 +5,7 @@ using UnityEngine;
 public class ComputeBufferManager : MonoBehaviour
 {
     //cutaways
-    const int NumCutsMax = 100;
+    public static int NumCutsMax = 100;
 
     public static int NumLodMax = 10;
     public static int NumProteinMax = 100;

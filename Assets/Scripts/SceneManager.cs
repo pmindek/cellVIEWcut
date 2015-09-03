@@ -463,6 +463,7 @@ public class SceneManager : MonoBehaviour
 
     private void CheckBufferSizes()
     {
+        if (Instance.NumCutObjects >= ComputeBufferManager.NumCutsMax) throw new Exception("GPU buffer overflow");
         if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
         if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
         if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
@@ -478,7 +479,9 @@ public class SceneManager : MonoBehaviour
     public void UploadAllData()
     {
         CheckBufferSizes();
-        
+
+        ComputeBufferManager.Instance.InitBuffers();
+
         ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data
