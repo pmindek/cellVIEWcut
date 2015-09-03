@@ -96,7 +96,8 @@ public class NavigateCamera : MonoBehaviour
 
     private void OnGUI()
     {
-        #if UNITY_EDITOR
+        
+#if UNITY_EDITOR
         if (Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint)
         {
             EditorUtility.SetDirty(this); // this is important, if omitted, "Mouse down" will not be display

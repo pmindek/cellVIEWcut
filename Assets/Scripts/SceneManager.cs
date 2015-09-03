@@ -13,12 +13,29 @@ enum InstanceState
 [ExecuteInEditMode]
 public class SceneManager : MonoBehaviour
 {
-    //Cutaways
-    public List<int> CutTypes = new List<int>();
-    public List<int> CutVertexCounts = new List<int>();
-    public List<int> CutFirstVertexIndexes = new List<int>();
-    public List<Vector4> CutVertices = new List<Vector4>();
-    public int NumCuts;
+    // Cutaways
+    // No need to serialize tjat, the values are stored in scene game objects instead
+    [NonSerialized]
+    public List<int> CutItems = new List<int>();
+
+    [NonSerialized]
+    public List<Vector4> CutInfos = new List<Vector4>();
+    
+    [NonSerialized]
+    public List<Vector4> CutScales = new List<Vector4>();
+
+    [NonSerialized]
+    public List<Vector4> CutPositions = new List<Vector4>();
+
+    [NonSerialized]
+    public List<Vector4> CutRotations = new List<Vector4>();
+    
+    // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
+    // The cache will be filled automatically via the CutObject script onEnable
+    [NonSerialized]
+    public List<CutObject> CutObjects = new List<CutObject>();
+
+    //*******
 
     // Scene data
     public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
@@ -63,6 +80,11 @@ public class SceneManager : MonoBehaviour
         get { return ProteinInstancePositions.Count; }
     }
 
+    public int NumCutObjects
+    {
+        get { return CutObjects.Count; }
+    }
+
     public int NumDnaControlPoints
     {
         get { return CurveControlPointsPositions.Count; }
@@ -99,87 +121,43 @@ public class SceneManager : MonoBehaviour
 
     //--------------------------------------------------------------
 
+    public void AddCutObject(CutType type)
+    {
+        var cutObject = Instantiate(Resources.Load("CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
+        var script = cutObject.GetComponent<CutObject>();
+        
+        script.CutType = type;
+        script.SetCutItems(ProteinNames);
+        script.SetMesh();
+    }
+
     void Update()
     {
-        //CUTAWAY
-        GameObject cuts = GameObject.Find("/Cuts");
+        // Todo: proceed only if changes are made 
 
-        NumCuts = 0;
+        CutInfos.Clear();
+        CutScales.Clear();
+        CutPositions.Clear();
+        CutRotations.Clear();
 
-        CutTypes.Clear();
-        CutVertexCounts.Clear();
-        CutFirstVertexIndexes.Clear();
-        CutVertices.Clear();
+        //Debug.Log(CutObjects.Count);
 
         //traverse all cuts (first-level children of a root GameObject Cuts
-        foreach (Transform cut in cuts.transform)
+        foreach (var cut in CutObjects)
         {
-            Debug.Log(cut.name);
-            var mesh = cut.gameObject.GetComponent<MeshFilter>().mesh;
+            CutScales.Add(cut.transform.localScale);
+            CutPositions.Add(cut.transform.position);
+            CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, 0));
+            CutRotations.Add(Helper.QuanternionToVector4(cut.transform.rotation));
 
-            if (mesh.name.Equals("Quad Instance"))
-            {
-                Vector3[] vertices = mesh.vertices;
-
-                Vector4 p0 = cut.TransformPoint(vertices[0]);
-                Vector4 p1 = cut.TransformPoint(vertices[1]);
-                Vector4 p2 = cut.TransformPoint(vertices[2]);
-
-                //add infos about cutting plane (3 vertices)
-                CutTypes.Add(0);
-                CutVertexCounts.Add(3);
-                CutFirstVertexIndexes.Add(CutVertices.Count);
-                CutVertices.Add(p0);
-                CutVertices.Add(p1);
-                CutVertices.Add(p2);
-
-                NumCuts++;
-
-                //upload to the compute shader
-            }
-            else if (mesh.name.Equals("Sphere Instance"))
-            {
-                var sphereCollider = cut.gameObject.GetComponent<SphereCollider>();
-
-                Vector4 p0 = cut.TransformPoint(mesh.bounds.center);
-                p0.w = cut.lossyScale.x * sphereCollider.radius;
-                Debug.Log("~~~---" + p0.w);
-
-                //add infos about cutting sphere (1 vertex, w coordinate is the sphere radius)
-                CutTypes.Add(1);
-                CutVertexCounts.Add(1);
-                CutFirstVertexIndexes.Add(CutVertices.Count);
-                CutVertices.Add(p0);
-
-                NumCuts++;
-            }
-            else if (mesh.name.Equals("Cube Instance"))
-            {
-                Vector3[] vertices = mesh.vertices;
-
-                Vector4[] p = new Vector4[8];
-
-                Debug.Log("CUBE");
-                //add infos about cutting cube (8 vertices)
-                CutTypes.Add(2);
-                CutVertexCounts.Add(8);
-                CutFirstVertexIndexes.Add(CutVertices.Count);
-                for (int i = 0; i < 8; i++)
-                {
-                    p[i] = cut.TransformPoint(vertices[i]);
-                    //Debug.Log(vertices[i]);
-                    CutVertices.Add(p[i]);
-                }
-
-                NumCuts++;
-            }
-
+            // todo: add cutitems
         }
 
-        ComputeBufferManager.Instance.CutTypes.SetData(CutTypes.ToArray());
-        ComputeBufferManager.Instance.CutVertexCounts.SetData(CutVertexCounts.ToArray());
-        ComputeBufferManager.Instance.CutFirstVertexIndexes.SetData(CutFirstVertexIndexes.ToArray());
-        ComputeBufferManager.Instance.CutVertices.SetData(CutVertices.ToArray());
+        ComputeBufferManager.Instance.CutInfos.SetData(CutInfos.ToArray());
+        ComputeBufferManager.Instance.CutScales.SetData(CutScales.ToArray());
+        ComputeBufferManager.Instance.CutPositions.SetData(CutPositions.ToArray());
+        ComputeBufferManager.Instance.CutRotations.SetData(CutRotations.ToArray());
+
         //UploadAllData();
     }
 
@@ -435,7 +413,8 @@ public class SceneManager : MonoBehaviour
         Debug.Log("Reload Scene");
 
         //_instance.ClearScene();
-        _instance.UploadAllData();
+        UploadAllData();
+        ResetCutObjects();
     }
 
     // Scene data gets serialized on each reload, to clear the scene call this function
@@ -499,14 +478,7 @@ public class SceneManager : MonoBehaviour
     public void UploadAllData()
     {
         CheckBufferSizes();
-        //ComputeBufferManager.Instance.InitBuffers();
-
-        //Cutaways
-        ComputeBufferManager.Instance.CutTypes.SetData(CutTypes.ToArray());
-        ComputeBufferManager.Instance.CutVertexCounts.SetData(CutVertexCounts.ToArray());
-        ComputeBufferManager.Instance.CutFirstVertexIndexes.SetData(CutFirstVertexIndexes.ToArray());
-        ComputeBufferManager.Instance.CutVertices.SetData(CutVertices.ToArray());
-
+        
         ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data
@@ -543,7 +515,29 @@ public class SceneManager : MonoBehaviour
     {
         ComputeBufferManager.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
         ComputeBufferManager.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
-    }  
+    }
+
+    public void ResetCutObjects()
+    {
+        var cutObjects = FindObjectsOfType<CutObject>();
+
+        foreach (var cutObject in cutObjects)
+        {
+            cutObject.ResetCutItems(ProteinNames);
+        }
+    }
+
+
+    public void SetCutObjects()
+    {
+        var cutObjects = FindObjectsOfType<CutObject>();
+
+        foreach (var cutObject in cutObjects)
+        {
+            cutObject.CutItems.Clear();
+            cutObject.SetCutItems(ProteinNames);
+        }
+    }
 
     #endregion
 }

@@ -333,6 +333,28 @@ public static class Helper
         return floatArray;
     }
 
+    public static GameObject FindChildByName(GameObject root, string name)
+    {
+        GameObject child = null;
+
+        for (int i = 0; i < root.transform.childCount; i++)
+        {
+            child = root.transform.GetChild(i).gameObject;
+
+            if (string.CompareOrdinal(child.name, name) == 0)
+            {
+                return child;
+            }
+            else 
+            {
+                var child_2 = FindChildByName(child, name);
+                if (child_2 != null) return child_2;
+            }
+        }
+
+        return null;
+    }
+
     public static float[] FrustrumPlanesAsFloats(Camera _camera)
     {
         var planes = GeometryUtility.CalculateFrustumPlanes(_camera);

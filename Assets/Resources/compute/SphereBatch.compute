@@ -32,10 +32,10 @@ uniform AppendStructuredBuffer<int4> _ProteinSphereBatchInfos;
 
 // Cutaways
 uniform int _NumCuts;
-uniform StructuredBuffer<int> _CutTypes;	
-uniform	StructuredBuffer<int> _CutVertexCounts;
-uniform	StructuredBuffer<int> _CutFirstVertexIndexes;	
-uniform StructuredBuffer<float4> _CutVertices;
+uniform StructuredBuffer<float4> _CutInfos;	
+uniform	StructuredBuffer<float4> _CutScales;
+uniform	StructuredBuffer<float4> _CutPositions;	
+uniform StructuredBuffer<float4> _CutRotations;
 
 float pointPlaneSignedDistance(float3 p, float3 v0, float3 v1, float3 v2)
 {
@@ -97,66 +97,57 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 
 	int batchStart = 0;
 	int batchCount = sphereCountPerBatch;		
+    
+	////cutaways
 
+	///*if (sphere.x > 0.0 && sphere.y > 0.0)
+	//	return;*/
 
+	//for (int j = 0; j < _NumCuts; j++)
+	//{
+	//	int _ = _CutFirstVertexIndexes[j];
 
+	//	//plane
+	//	if (_CutTypes[j] == 0)
+	//	{
+	//		float dist = pointPlaneSignedDistance(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz, _CutVertices[_ + 2].xyz);
+	//		float size = length(_CutVertices[_ + 0].xyz - _CutVertices[_ + 1].xyz);
+	//		float normalDist = dist / size;
+	//		float nd = -normalDist * 6.0;
 
+	//		if (normalDist < 0.0 && rand(id.x) * 0.9 <= pow(nd, 0.2))
+	//			return;
 
-	//cutaways
+	//		/*if (isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz, _CutVertices[_ + 2].xyz))
+	//		{
+	//			if (rand(id.x) < 0.99)
+	//				return;
+	//		}*/
+	//	}
 
-	/*if (sphere.x > 0.0 && sphere.y > 0.0)
-		return;*/
+	//	//sphere
+	//	else if (_CutTypes[j] == 1)
+	//	{
+	//		if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
+	//		{
+	//			return;
+	//		}
+	//	}
 
-	for (int j = 0; j < _NumCuts; j++)
-	{
-		int _ = _CutFirstVertexIndexes[j];
-
-		//plane
-		if (_CutTypes[j] == 0)
-		{
-			float dist = pointPlaneSignedDistance(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz, _CutVertices[_ + 2].xyz);
-			float size = length(_CutVertices[_ + 0].xyz - _CutVertices[_ + 1].xyz);
-			float normalDist = dist / size;
-			float nd = -normalDist * 6.0;
-
-			if (normalDist < 0.0 && rand(id.x) * 0.9 <= pow(nd, 0.2))
-				return;
-
-			/*if (isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz, _CutVertices[_ + 2].xyz))
-			{
-				if (rand(id.x) < 0.99)
-					return;
-			}*/
-		}
-
-		//sphere
-		else if (_CutTypes[j] == 1)
-		{
-			if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
-			{
-				return;
-			}
-		}
-
-		//cube
-		else if (_CutTypes[j] == 2)
-		{
-			if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
-				isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
-				isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
-				isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
-				isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
-				isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
-			{
-				return;
-			}
-		}
-	}
-
-
-
-
-
+	//	//cube
+	//	else if (_CutTypes[j] == 2)
+	//	{
+	//		if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
+	//			isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
+	//			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
+	//			isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
+	//			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
+	//			isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
+	//		{
+	//			return;
+	//		}
+	//	}
+	//}
 
 	for(int j = 0; j < numBatches; j++)
 	{

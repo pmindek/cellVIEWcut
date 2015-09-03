@@ -44,8 +44,13 @@ public static class CellPackLoader
             // Upload scene data to the GPU
             SceneManager.Instance.UploadAllData();
 
+            //
+            SceneManager.Instance.SetCutObjects();
+
         #endif
     }
+
+    
 
     public static void LoadIngredients(string recipePath)
     {

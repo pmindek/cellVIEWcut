@@ -6,13 +6,6 @@ public class ComputeBufferManager : MonoBehaviour
 {
     //cutaways
     const int NumCutsMax = 100;
-    const int NumCutVerticesMax = 800;
-    public ComputeBuffer CutTypes;
-    public ComputeBuffer CutVertexCounts;
-    public ComputeBuffer CutFirstVertexIndexes;
-    public ComputeBuffer CutVertices;
-
-
 
     public static int NumLodMax = 10;
     public static int NumProteinMax = 100;
@@ -58,6 +51,14 @@ public class ComputeBufferManager : MonoBehaviour
     public ComputeBuffer CurveControlPointsInfos;
     public ComputeBuffer CurveControlPointsNormals;
     public ComputeBuffer CurveControlPointsPositions;
+
+    // Cut Objects
+    
+    public ComputeBuffer CutItems;
+    public ComputeBuffer CutInfos;
+    public ComputeBuffer CutScales;
+    public ComputeBuffer CutPositions;
+    public ComputeBuffer CutRotations;
 
     //*****//
 
@@ -115,16 +116,6 @@ public class ComputeBufferManager : MonoBehaviour
     
     public void InitBuffers ()
     {
-        // Cutaways
-        if (CutTypes == null) CutTypes = new ComputeBuffer(NumCutsMax, 4);
-        if (CutVertexCounts == null) CutVertexCounts = new ComputeBuffer(NumCutsMax, 4);
-        if (CutFirstVertexIndexes == null) CutFirstVertexIndexes = new ComputeBuffer(NumCutsMax, 4);
-        if (CutVertices == null) CutVertices = new ComputeBuffer(NumCutVerticesMax, 16);
-
-
-
-
-
         if (LodInfos == null) LodInfos = new ComputeBuffer(8, 16);
         if (SphereBatchBuffer == null) SphereBatchBuffer = new ComputeBuffer(NumProteinSphereBatchesMax, 16, ComputeBufferType.Append);
 
@@ -159,19 +150,27 @@ public class ComputeBufferManager : MonoBehaviour
         if (CurveControlPointsInfos == null) CurveControlPointsInfos = new ComputeBuffer(NumCurveControlPointsMax, 16);
         if (CurveControlPointsNormals == null) CurveControlPointsNormals = new ComputeBuffer(NumCurveControlPointsMax, 16);
         if (CurveControlPointsPositions == null) CurveControlPointsPositions = new ComputeBuffer(NumCurveControlPointsMax, 16);
-	}
+
+        //*****//
+
+        // Cutaways
+        if (CutInfos == null) CutInfos = new ComputeBuffer(NumCutsMax, 16);
+        if (CutScales == null) CutScales = new ComputeBuffer(NumCutsMax, 16);
+        if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
+        if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);
+
+    }
 	
 	// Flush buffers on exit
 	void ReleaseBuffers ()
     {
         // Cutaways
-        if (CutTypes != null) { CutTypes.Release(); CutTypes = null; }
-        if (CutVertexCounts != null) { CutVertexCounts.Release(); CutVertexCounts = null; }
-        if (CutFirstVertexIndexes != null) { CutFirstVertexIndexes.Release(); CutFirstVertexIndexes = null; }
-        if (CutVertices != null) { CutVertices.Release(); CutVertices = null; }
+        if (CutInfos != null) { CutInfos.Release(); CutInfos = null; }
+        if (CutScales != null) { CutScales.Release(); CutScales = null; }
+        if (CutPositions != null) { CutPositions.Release(); CutPositions = null; }
+        if (CutRotations != null) { CutRotations.Release(); CutRotations = null; }
 
-
-
+        //*****//
 
         if (LodInfos != null) { LodInfos.Release(); LodInfos = null; }
         if (SphereBatchBuffer != null) { SphereBatchBuffer.Release(); SphereBatchBuffer = null; }

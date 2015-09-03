@@ -125,7 +125,7 @@ public class SceneRenderer : MonoBehaviour
         _renderCurveIngredientsMaterial.SetBuffer("_DnaControlPoints", ComputeBufferManager.Instance.CurveControlPointsPositions);
     }
 
-    void SetProteinShaderParams()
+    private void SetProteinShaderParams()
     {
         // Protein params
         _renderProteinsMaterial.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
@@ -135,22 +135,17 @@ public class SceneRenderer : MonoBehaviour
 
         _renderProteinsMaterial.SetBuffer("_LodLevelsInfos", ComputeBufferManager.Instance.LodInfos);
         _renderProteinsMaterial.SetBuffer("_ProteinInstanceInfo", ComputeBufferManager.Instance.ProteinInstanceInfos);
-        _renderProteinsMaterial.SetBuffer("_ProteinInstancePositions", ComputeBufferManager.Instance.ProteinInstancePositions);
-        _renderProteinsMaterial.SetBuffer("_ProteinInstanceRotations", ComputeBufferManager.Instance.ProteinInstanceRotations);
+        _renderProteinsMaterial.SetBuffer("_ProteinInstancePositions",
+            ComputeBufferManager.Instance.ProteinInstancePositions);
+        _renderProteinsMaterial.SetBuffer("_ProteinInstanceRotations",
+            ComputeBufferManager.Instance.ProteinInstanceRotations);
 
         _renderProteinsMaterial.SetBuffer("_ProteinColors", ComputeBufferManager.Instance.ProteinColors);
         _renderProteinsMaterial.SetBuffer("_ProteinAtomPositions", ComputeBufferManager.Instance.ProteinAtoms);
         _renderProteinsMaterial.SetBuffer("_ProteinClusterPositions", ComputeBufferManager.Instance.ProteinAtomClusters);
         _renderProteinsMaterial.SetBuffer("_ProteinSphereBatchInfos", ComputeBufferManager.Instance.SphereBatchBuffer);
-
-
-        //cutaways
-        _renderProteinsMaterial.SetBuffer("_CutTypes", ComputeBufferManager.Instance.CutTypes);
-        _renderProteinsMaterial.SetBuffer("_CutVertexCounts", ComputeBufferManager.Instance.CutVertexCounts);
-        _renderProteinsMaterial.SetBuffer("_CutFirstVertexIndexes", ComputeBufferManager.Instance.CutFirstVertexIndexes);
-        _renderProteinsMaterial.SetBuffer("_CutVertices", ComputeBufferManager.Instance.CutVertices);
     }
-    
+
     //void ComputeDNAStrands()
     //{
     //    if (!DisplaySettings.Instance.EnableDNAConstraints) return;
@@ -285,17 +280,17 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinClusterCount", ComputeBufferManager.Instance.ProteinAtomClusterCount);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinClusterStart", ComputeBufferManager.Instance.ProteinAtomClusterStart);
 
+        // Cutaway
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumCuts", SceneManager.Instance.NumCutObjects);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutInfos", ComputeBufferManager.Instance.CutInfos);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutScales", ComputeBufferManager.Instance.CutScales);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutPositions", ComputeBufferManager.Instance.CutPositions);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutRotations", ComputeBufferManager.Instance.CutRotations);
+
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 
         // Count sphere batches
         ComputeBuffer.CopyCount(ComputeBufferManager.Instance.SphereBatchBuffer, _argBuffer, 0);
-
-
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumCuts", SceneManager.Instance.NumCuts);
-        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutTypes", ComputeBufferManager.Instance.CutTypes);
-        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutVertexCounts", ComputeBufferManager.Instance.CutVertexCounts);
-        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutFirstVertexIndexes", ComputeBufferManager.Instance.CutFirstVertexIndexes);
-        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutVertices", ComputeBufferManager.Instance.CutVertices);
     }
     
     int GetBatchCount()
@@ -314,6 +309,8 @@ public class SceneRenderer : MonoBehaviour
     [ImageEffectOpaque]
     void OnRenderImage(RenderTexture src, RenderTexture dst)
     {
+        
+
         // Return if no instances to draw
         if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumDnaSegments == 0)
         {
