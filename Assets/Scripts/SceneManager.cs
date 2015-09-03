@@ -13,6 +13,13 @@ enum InstanceState
 [ExecuteInEditMode]
 public class SceneManager : MonoBehaviour
 {
+    //Cutaways
+    public List<int> CutTypes = new List<int>();
+    public List<int> CutVertexCounts = new List<int>();
+    public List<int> CutFirstVertexIndexes = new List<int>();
+    public List<Vector4> CutVertices = new List<Vector4>();
+    public int NumCuts;
+
     // Scene data
     public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
     public List<Vector4> ProteinInstancePositions = new List<Vector4>();
@@ -91,10 +98,89 @@ public class SceneManager : MonoBehaviour
     }
 
     //--------------------------------------------------------------
-    
+
     void Update()
     {
+        //CUTAWAY
+        GameObject cuts = GameObject.Find("/Cuts");
 
+        NumCuts = 0;
+
+        CutTypes.Clear();
+        CutVertexCounts.Clear();
+        CutFirstVertexIndexes.Clear();
+        CutVertices.Clear();
+
+        //traverse all cuts (first-level children of a root GameObject Cuts
+        foreach (Transform cut in cuts.transform)
+        {
+            Debug.Log(cut.name);
+            var mesh = cut.gameObject.GetComponent<MeshFilter>().mesh;
+
+            if (mesh.name.Equals("Quad Instance"))
+            {
+                Vector3[] vertices = mesh.vertices;
+
+                Vector4 p0 = cut.TransformPoint(vertices[0]);
+                Vector4 p1 = cut.TransformPoint(vertices[1]);
+                Vector4 p2 = cut.TransformPoint(vertices[2]);
+
+                //add infos about cutting plane (3 vertices)
+                CutTypes.Add(0);
+                CutVertexCounts.Add(3);
+                CutFirstVertexIndexes.Add(CutVertices.Count);
+                CutVertices.Add(p0);
+                CutVertices.Add(p1);
+                CutVertices.Add(p2);
+
+                NumCuts++;
+
+                //upload to the compute shader
+            }
+            else if (mesh.name.Equals("Sphere Instance"))
+            {
+                var sphereCollider = cut.gameObject.GetComponent<SphereCollider>();
+
+                Vector4 p0 = cut.TransformPoint(mesh.bounds.center);
+                p0.w = cut.lossyScale.x * sphereCollider.radius;
+                Debug.Log("~~~---" + p0.w);
+
+                //add infos about cutting sphere (1 vertex, w coordinate is the sphere radius)
+                CutTypes.Add(1);
+                CutVertexCounts.Add(1);
+                CutFirstVertexIndexes.Add(CutVertices.Count);
+                CutVertices.Add(p0);
+
+                NumCuts++;
+            }
+            else if (mesh.name.Equals("Cube Instance"))
+            {
+                Vector3[] vertices = mesh.vertices;
+
+                Vector4[] p = new Vector4[8];
+
+                Debug.Log("CUBE");
+                //add infos about cutting cube (8 vertices)
+                CutTypes.Add(2);
+                CutVertexCounts.Add(8);
+                CutFirstVertexIndexes.Add(CutVertices.Count);
+                for (int i = 0; i < 8; i++)
+                {
+                    p[i] = cut.TransformPoint(vertices[i]);
+                    //Debug.Log(vertices[i]);
+                    CutVertices.Add(p[i]);
+                }
+
+                NumCuts++;
+            }
+
+        }
+
+        ComputeBufferManager.Instance.CutTypes.SetData(CutTypes.ToArray());
+        ComputeBufferManager.Instance.CutVertexCounts.SetData(CutVertexCounts.ToArray());
+        ComputeBufferManager.Instance.CutFirstVertexIndexes.SetData(CutFirstVertexIndexes.ToArray());
+        ComputeBufferManager.Instance.CutVertices.SetData(CutVertices.ToArray());
+        //UploadAllData();
     }
 
     //--------------------------------------------------------------
@@ -413,8 +499,14 @@ public class SceneManager : MonoBehaviour
     public void UploadAllData()
     {
         CheckBufferSizes();
-
         //ComputeBufferManager.Instance.InitBuffers();
+
+        //Cutaways
+        ComputeBufferManager.Instance.CutTypes.SetData(CutTypes.ToArray());
+        ComputeBufferManager.Instance.CutVertexCounts.SetData(CutVertexCounts.ToArray());
+        ComputeBufferManager.Instance.CutFirstVertexIndexes.SetData(CutFirstVertexIndexes.ToArray());
+        ComputeBufferManager.Instance.CutVertices.SetData(CutVertices.ToArray());
+
         ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data

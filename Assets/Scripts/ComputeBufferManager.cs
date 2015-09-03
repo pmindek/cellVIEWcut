@@ -4,6 +4,16 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class ComputeBufferManager : MonoBehaviour
 {
+    //cutaways
+    const int NumCutsMax = 100;
+    const int NumCutVerticesMax = 800;
+    public ComputeBuffer CutTypes;
+    public ComputeBuffer CutVertexCounts;
+    public ComputeBuffer CutFirstVertexIndexes;
+    public ComputeBuffer CutVertices;
+
+
+
     public static int NumLodMax = 10;
     public static int NumProteinMax = 100;
     public static int NumProteinAtomMax = 3000000;
@@ -105,6 +115,16 @@ public class ComputeBufferManager : MonoBehaviour
     
     public void InitBuffers ()
     {
+        // Cutaways
+        if (CutTypes == null) CutTypes = new ComputeBuffer(NumCutsMax, 4);
+        if (CutVertexCounts == null) CutVertexCounts = new ComputeBuffer(NumCutsMax, 4);
+        if (CutFirstVertexIndexes == null) CutFirstVertexIndexes = new ComputeBuffer(NumCutsMax, 4);
+        if (CutVertices == null) CutVertices = new ComputeBuffer(NumCutVerticesMax, 16);
+
+
+
+
+
         if (LodInfos == null) LodInfos = new ComputeBuffer(8, 16);
         if (SphereBatchBuffer == null) SphereBatchBuffer = new ComputeBuffer(NumProteinSphereBatchesMax, 16, ComputeBufferType.Append);
 
@@ -144,6 +164,15 @@ public class ComputeBufferManager : MonoBehaviour
 	// Flush buffers on exit
 	void ReleaseBuffers ()
     {
+        // Cutaways
+        if (CutTypes != null) { CutTypes.Release(); CutTypes = null; }
+        if (CutVertexCounts != null) { CutVertexCounts.Release(); CutVertexCounts = null; }
+        if (CutFirstVertexIndexes != null) { CutFirstVertexIndexes.Release(); CutFirstVertexIndexes = null; }
+        if (CutVertices != null) { CutVertices.Release(); CutVertices = null; }
+
+
+
+
         if (LodInfos != null) { LodInfos.Release(); LodInfos = null; }
         if (SphereBatchBuffer != null) { SphereBatchBuffer.Release(); SphereBatchBuffer = null; }
 
