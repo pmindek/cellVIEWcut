@@ -12,6 +12,9 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class NavigateCamera : MonoBehaviour
 {
+    private SelectionState _currentState = SelectionState.Translate;
+    private TransformHandle _selectedTransformHandle;
+
     const float DefaultDistance = 5.0f;
 
     public Vector3 TargetPosition;
@@ -102,10 +105,10 @@ public class NavigateCamera : MonoBehaviour
         {
             EditorUtility.SetDirty(this); // this is important, if omitted, "Mouse down" will not be display
         }
-        #endif
+#endif
 
         // Arc ball rotation
-        if (Event.current.alt && Event.current.type == EventType.mouseDrag &&Event.current.button == 0)
+        if (Event.current.alt && Event.current.type == EventType.mouseDrag && Event.current.button == 0)
         {
             EulerAngleX += Event.current.delta.x * AcrBallRotationSpeed;
             EulerAngleY += Event.current.delta.y * AcrBallRotationSpeed; 
@@ -118,7 +121,7 @@ public class NavigateCamera : MonoBehaviour
         }
 
         // Fps rotation
-        if (!Event.current.alt && Event.current.type == EventType.mouseDrag && Event.current.button == 0)
+        if (Event.current.type == EventType.mouseDrag && Event.current.button == 1)
         {
             EulerAngleX += Event.current.delta.x * FpsRotationSpeed;
             EulerAngleY += Event.current.delta.y * FpsRotationSpeed; 
@@ -194,5 +197,72 @@ public class NavigateCamera : MonoBehaviour
         {
             right = Event.current.type == EventType.KeyDown;
         }
+
+        //*********//
+        // Object picking
+        //*********//
+
+        if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+        {
+            var mousePos = Event.current.mousePosition;
+            Ray CameraRay = Camera.main.ScreenPointToRay(new Vector3(mousePos.x, Screen.height - mousePos.y, 0));
+            RaycastHit hit;
+
+            // If we hit an object
+            if (Physics.Raycast(CameraRay, out hit, 500))
+            {
+                var transformGizmo = hit.collider.gameObject.GetComponent<TransformHandle>();
+
+                // If we hit a new selectable object
+                if (transformGizmo != null && transformGizmo != _selectedTransformHandle)
+                {
+                    if (_selectedTransformHandle != null)
+                    {
+                        Debug.Log("Reset");
+                        _selectedTransformHandle.Disable();
+                    }
+
+                    Debug.Log("Set");
+                    transformGizmo.Enable();
+                    transformGizmo.SetSelectionState(_currentState);
+                    _selectedTransformHandle = transformGizmo;
+                }
+                // If we hit a non-selectable object
+                else if (transformGizmo == null)
+                {
+                    Debug.Log("Reset");
+                    _selectedTransformHandle.Disable();
+                    _selectedTransformHandle = null;
+                }
+            }
+            // If we miss a hit
+            else if (_selectedTransformHandle != null)
+            {
+                Debug.Log("Reset");
+                _selectedTransformHandle.Disable();
+                _selectedTransformHandle = null;
+            }
+        }
+
+        if (Event.current.keyCode == KeyCode.Alpha1)
+        {
+            _currentState = SelectionState.Translate;
+        }
+
+        if (Event.current.keyCode == KeyCode.Alpha2)
+        {
+            _currentState = SelectionState.Rotate;
+        }
+
+        if (Event.current.keyCode == KeyCode.Alpha3)
+        {
+            _currentState = SelectionState.Scale;
+        }
+
+        if (_selectedTransformHandle)
+        {
+            _selectedTransformHandle.SetSelectionState(_currentState);
+        }
     }
 }
+

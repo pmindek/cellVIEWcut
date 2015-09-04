@@ -95,6 +95,11 @@ public class SceneManager : MonoBehaviour
         get { return Math.Max(CurveControlPointsPositions.Count - 1, 0); }
     }
 
+    public static bool CheckInstance()
+    {
+        return _instance != null;
+    }
+
     //--------------------------------------------------------------
     // Declare the scene manager as a singleton
     private static SceneManager _instance = null;
@@ -123,12 +128,15 @@ public class SceneManager : MonoBehaviour
 
     public void AddCutObject(CutType type)
     {
-        var cutObject = Instantiate(Resources.Load("CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
-        var script = cutObject.GetComponent<CutObject>();
-        
-        script.CutType = type;
-        script.SetCutItems(ProteinNames);
-        script.SetMesh();
+        var gameObject = Instantiate(Resources.Load("CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
+        var cutObject = gameObject.GetComponent<CutObject>();
+        cutObject.CutType = type;
+        cutObject.SetCutItems(ProteinNames);
+        cutObject.SetMesh();
+
+        var collider = gameObject.AddComponent<BoxCollider>();
+        collider.bounds.Encapsulate(cutObject.GetComponent<MeshFilter>().sharedMesh.bounds.size);
+
     }
 
     void Update()
@@ -145,11 +153,13 @@ public class SceneManager : MonoBehaviour
         //traverse all cuts (first-level children of a root GameObject Cuts
         foreach (var cut in CutObjects)
         {
+            if(cut == null) throw new Exception("Cut object not found");
+
             CutScales.Add(cut.transform.localScale);
             CutPositions.Add(cut.transform.position);
             CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, 0));
             CutRotations.Add(Helper.QuanternionToVector4(cut.transform.rotation));
-
+            
             // todo: add cutitems
         }
 

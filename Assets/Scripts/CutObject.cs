@@ -56,7 +56,7 @@ public class CutObject : MonoBehaviour
     void OnDisable()
     {
         // De-register this object in the cut object cache
-        if (SceneManager.Instance.CutObjects.Contains(this))
+        if (SceneManager.CheckInstance() && SceneManager.Instance.CutObjects.Contains(this))
         {
             SceneManager.Instance.CutObjects.Remove(this);
         }
