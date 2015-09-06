@@ -64,7 +64,7 @@
 		// Decode the view space normal
 		float3 nn = tex2D(_CameraDepthNormalsTexture, uv).xyz * float3(3.5554, 3.5554, 0) + float3(-1.7777, -1.7777, 1.0);
 		float g = 2.0 / dot(nn.xyz, nn.xyz);
-		return float3(g * nn.xy, g - 1.0); // View space
+		return float3(0,0,1); // float3(g * nn.xy, g - 1.0); // View space
 	}
 
 	inline float3 getWSNormal(float2 uv)

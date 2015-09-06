@@ -53,12 +53,12 @@ public class ComputeBufferManager : MonoBehaviour
     public ComputeBuffer CurveControlPointsPositions;
 
     // Cut Objects
-    
     public ComputeBuffer CutItems;
     public ComputeBuffer CutInfos;
     public ComputeBuffer CutScales;
     public ComputeBuffer CutPositions;
     public ComputeBuffer CutRotations;
+    public ComputeBuffer ProteinCutFilters;
 
     //*****//
 
@@ -152,12 +152,12 @@ public class ComputeBufferManager : MonoBehaviour
         if (CurveControlPointsPositions == null) CurveControlPointsPositions = new ComputeBuffer(NumCurveControlPointsMax, 16);
 
         //*****//
-
-        // Cutaways
+        
         if (CutInfos == null) CutInfos = new ComputeBuffer(NumCutsMax, 16);
         if (CutScales == null) CutScales = new ComputeBuffer(NumCutsMax, 16);
         if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
         if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);
+        if (ProteinCutFilters == null) ProteinCutFilters = new ComputeBuffer(NumCutsMax * NumProteinMax, 4);
 
     }
 	
@@ -169,6 +169,7 @@ public class ComputeBufferManager : MonoBehaviour
         if (CutScales != null) { CutScales.Release(); CutScales = null; }
         if (CutPositions != null) { CutPositions.Release(); CutPositions = null; }
         if (CutRotations != null) { CutRotations.Release(); CutRotations = null; }
+        if (ProteinCutFilters != null) { ProteinCutFilters.Release(); ProteinCutFilters = null; }
 
         //*****//
 

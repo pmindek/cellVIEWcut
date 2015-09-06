@@ -21,7 +21,7 @@ public class MyHandleUtility
     {
         get
         {
-            if (_cubeMesh == null) _cubeMesh = Resources.Load("Handles/Cube") as Mesh;
+            if (_cubeMesh == null) _cubeMesh = Resources.Load("Meshes/Cube") as Mesh;
             return _cubeMesh;
         }
     }
@@ -30,7 +30,7 @@ public class MyHandleUtility
     {
         get
         {
-            if (_coneMesh == null) _coneMesh = Resources.Load("Handles/Cone") as Mesh;
+            if (_coneMesh == null) _coneMesh = Resources.Load("Meshes/Cone") as Mesh;
             return _coneMesh;
         }
     }
@@ -39,7 +39,7 @@ public class MyHandleUtility
     {
         get
         {
-            if (_cylinderMesh == null) _cylinderMesh = Resources.Load("Handles/Cylinder") as Mesh;
+            if (_cylinderMesh == null) _cylinderMesh = Resources.Load("Meshes/Cylinder") as Mesh;
             return _cylinderMesh;
         }
     }
@@ -48,7 +48,7 @@ public class MyHandleUtility
     {
         get
         {
-            if (_sphereMesh == null) _sphereMesh = Resources.Load("Handles/Sphere") as Mesh;
+            if (_sphereMesh == null) _sphereMesh = Resources.Load("Meshes/Sphere") as Mesh;
             return _sphereMesh;
         }
     }

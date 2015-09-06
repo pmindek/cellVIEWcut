@@ -23,25 +23,37 @@ public class CutItem
 [ExecuteInEditMode]
 public class CutObject : MonoBehaviour
 {
-    public Mesh SphereMesh;
-    public Mesh PlaneMesh;
-    public Mesh CubeMesh;
+    public Material CutObjectMaterial;
 
-    public float Value1;
-    public float Value2;
-
-    [HideInInspector]
     public CutType CutType;
 
     [HideInInspector]
-    public List<CutItem> CutItems = new List<CutItem>();
+    public CutType PreviousCutType;
+    
+    public bool Display = true;
+    
+    [Range(0,1)]
+    public float Value1;
+
+    [Range(0, 1)]
+    public float Value2;
+
+    [HideInInspector]
+    public List<CutItem> ProteinCutFilters = new List<CutItem>();
 
     public void SetCutItems(List<string> names)
     {
         foreach(var name in names)
         {
-            CutItems.Add(new CutItem() { Name = name, State = true });
+            ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
         }
+    }
+
+    void Awake()
+    {
+        Debug.Log("Init cut object");
+        ProteinCutFilters.Clear();
+        SetCutItems(SceneManager.Instance.ProteinNames);
     }
 
     void OnEnable()
@@ -73,7 +85,7 @@ public class CutObject : MonoBehaviour
         foreach (var a in names)
         {
             var contains = false;
-            foreach (var b in CutItems.Where(b => b.Name == a))
+            foreach (var b in ProteinCutFilters.Where(b => b.Name == a))
             {
                 contains = true;
             }
@@ -84,7 +96,7 @@ public class CutObject : MonoBehaviour
         // find elements present in the destination but not in the source
         // these elements will be removed from the input source
         var BA = new List<string>();
-        foreach (var b in CutItems)
+        foreach (var b in ProteinCutFilters)
         {
             var contains = false;
             foreach (var a in names.Where(a => b.Name == a))
@@ -98,7 +110,7 @@ public class CutObject : MonoBehaviour
         // add new elements
         foreach (var a in AB)
         {
-            CutItems.Add(new CutItem() { Name = a, State = true });
+            ProteinCutFilters.Add(new CutItem() { Name = a, State = true });
         }
 
         // remove old elements
@@ -106,17 +118,36 @@ public class CutObject : MonoBehaviour
         {
             // find index of the element to remove 
             var index = -1;
-            for (var i = 0; i < CutItems.Count; i++)
+            for (var i = 0; i < ProteinCutFilters.Count; i++)
             {
-                if (CutItems[i].Name != b) continue;
+                if (ProteinCutFilters[i].Name != b) continue;
                 index = i;
                 break;
             }
 
             if(index == -1) throw new Exception();
 
-            CutItems.RemoveAt(index);
+            ProteinCutFilters.RemoveAt(index);
         }
+    }
+    
+    void OnRenderObject()
+    {
+        if (!Display) return;
+
+        if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
+        {
+            SetMesh();
+            PreviousCutType = CutType;
+        }
+
+        var depthBuffer = RenderTexture.GetTemporary(Screen.width, Screen.height, 32, RenderTextureFormat.Depth);
+        Graphics.SetRenderTarget(Graphics.activeColorBuffer, depthBuffer.depthBuffer);
+
+        CutObjectMaterial.SetPass(0);
+        Graphics.DrawMeshNow(gameObject.GetComponent<MeshFilter>().sharedMesh, transform.localToWorldMatrix);
+
+        RenderTexture.ReleaseTemporary(depthBuffer);
     }
 
     public void SetMesh()
@@ -124,15 +155,33 @@ public class CutObject : MonoBehaviour
         switch (CutType)
         {
             case CutType.Plane:
-                GetComponent<MeshFilter>().mesh = PlaneMesh;
-            break;
+                gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Plane") as Mesh;
+                DestroyImmediate(gameObject.GetComponent<Collider>());
+                gameObject.AddComponent<MeshCollider>();
+                break;
 
             case CutType.Sphere:
-                GetComponent<MeshFilter>().mesh = SphereMesh;
+                gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Sphere") as Mesh;
+                DestroyImmediate(gameObject.GetComponent<Collider>());
+                gameObject.AddComponent<SphereCollider>();
                 break;
 
             case CutType.Cube:
-                GetComponent<MeshFilter>().mesh = CubeMesh;
+                gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Cube") as Mesh;
+                DestroyImmediate(gameObject.GetComponent<Collider>());
+                gameObject.AddComponent<MeshCollider>();
+                break;
+
+            case CutType.Cone:
+                gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Cone") as Mesh;
+                DestroyImmediate(gameObject.GetComponent<Collider>());
+                gameObject.AddComponent<MeshCollider>();
+                break;
+
+            case CutType.Cylinder:
+                gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Cylinder") as Mesh;
+                DestroyImmediate(gameObject.GetComponent<Collider>());
+                gameObject.AddComponent<MeshCollider>();
                 break;
         }
     }

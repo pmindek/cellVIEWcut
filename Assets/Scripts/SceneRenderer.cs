@@ -281,11 +281,12 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinClusterStart", ComputeBufferManager.Instance.ProteinAtomClusterStart);
 
         // Cutaway
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumCuts", SceneManager.Instance.NumCutObjects);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumCutObjects", SceneManager.Instance.NumCutObjects);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutInfos", ComputeBufferManager.Instance.CutInfos);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutScales", ComputeBufferManager.Instance.CutScales);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutPositions", ComputeBufferManager.Instance.CutPositions);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutRotations", ComputeBufferManager.Instance.CutRotations);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinCutFilters", ComputeBufferManager.Instance.ProteinCutFilters);
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 
@@ -305,11 +306,10 @@ public class SceneRenderer : MonoBehaviour
         // Clear append buffer
         ComputeBufferManager.ClearAppendBuffer(ComputeBufferManager.Instance.SphereBatchBuffer);
     }
-    
+
     [ImageEffectOpaque]
     void OnRenderImage(RenderTexture src, RenderTexture dst)
     {
-        
 
         // Return if no instances to draw
         if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumDnaSegments == 0)
@@ -395,12 +395,13 @@ public class SceneRenderer : MonoBehaviour
         GL.Clear(true, true, new Color(1, 1, 1, 1));
         Graphics.Blit(src, _compositeMaterial, 1);
 
-        // Blit final color buffer to dst buffer
-        Graphics.Blit(colorCompositeBuffer, dst);
-
         // Set final depth buffer to global depth
         Shader.SetGlobalTexture("_CameraDepthTexture", depthCompositeBuffer);
-        Shader.SetGlobalTexture("_CameraDepthNormalsTexture ", depthNormalsBuffer); // It is important to set this otherwise AO will show ghosts
+        Shader.SetGlobalTexture("_CameraDepthNormalsTexture ", depthNormalsBuffer);
+
+        // Blit final color buffer to dst buffer
+        Graphics.SetRenderTarget(dst.colorBuffer, dst.depthBuffer);
+        Graphics.Blit(colorCompositeBuffer, dst, _compositeMaterial, 0);
 
         /*** Object Picking ***/
 

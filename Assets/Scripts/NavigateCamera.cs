@@ -209,7 +209,7 @@ public class NavigateCamera : MonoBehaviour
             RaycastHit hit;
 
             // If we hit an object
-            if (Physics.Raycast(CameraRay, out hit, 500))
+            if (Physics.Raycast(CameraRay, out hit, 1000))
             {
                 var transformGizmo = hit.collider.gameObject.GetComponent<TransformHandle>();
 
@@ -228,7 +228,7 @@ public class NavigateCamera : MonoBehaviour
                     _selectedTransformHandle = transformGizmo;
                 }
                 // If we hit a non-selectable object
-                else if (transformGizmo == null)
+                else if (transformGizmo == null && _selectedTransformHandle != null)
                 {
                     Debug.Log("Reset");
                     _selectedTransformHandle.Disable();

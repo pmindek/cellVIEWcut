@@ -37,14 +37,14 @@ public class CutObjectWindow : EditorWindow
 
             EditorGUILayout.Space();
 
-            cutObject.Value1 = EditorGUILayout.Slider("Value 1: ", cutObject.Value1, 0, 1);
-            cutObject.Value2 = EditorGUILayout.Slider("Value 2: ", cutObject.Value2, 0, 1);
+            //cutObject.Value1 = EditorGUILayout.Slider("Value 1: ", cutObject.Value1, 0, 1);
+            //cutObject.Value2 = EditorGUILayout.Slider("Value 2: ", cutObject.Value2, 0, 1);
 
             EditorGUILayout.BeginVertical();
             {
-                for (int i = 0; i < cutObject.CutItems.Count; i++)
+                for (int i = 0; i < cutObject.ProteinCutFilters.Count; i++)
                 {
-                    cutObject.CutItems[i].State = EditorGUILayout.ToggleLeft(cutObject.CutItems[i].Name, cutObject.CutItems[i].State);
+                    cutObject.ProteinCutFilters[i].State = EditorGUILayout.ToggleLeft(cutObject.ProteinCutFilters[i].Name, cutObject.ProteinCutFilters[i].State);
                     GUILayout.Space(3);
                 }
             }
@@ -107,55 +107,14 @@ public class CustomWindow : EditorWindow
     {
         SceneManager.Instance.AddCutObject(CutType.Cube);
     }
-    
+
     //// Add menu item named "My Window" to the Window menu
     //[MenuItem("cellVIEW/Load asset bundle")]
     //public static void LoadAssetBundle()
     //{
-    //    var mesh = new Mesh();
-
-    //    GameObject gameObject = (GameObject)EditorGUIUtility.Load("SceneView/HandlesGO.fbx");
-    //    if (!(bool)((UnityEngine.Object)gameObject))
-    //        Debug.Log((object)"ARGH - We couldn't find SceneView/HandlesGO.fbx");
-    //    gameObject.SetActive(false);
-    //    foreach (Transform transform in gameObject.transform)
-    //    {
-    //        MeshFilter component = transform.GetComponent<MeshFilter>();
-    //        string name = transform.name;
-
-    //        if (name != null && component.sharedMesh != null)
-    //        {
-    //            mesh = (Mesh)Instantiate(component.sharedMesh);
-
-    //            AssetDatabase.CreateAsset(mesh, "Assets/"+ name +".asset");
-
-    //            int a = 0;
-    //            //switch (num)
-    //            //{
-    //            //    case 0:
-    //            //        Handles.s_CubeMesh = component.sharedMesh;
-    //            //        continue;
-    //            //    case 1:
-    //            //        Handles.s_SphereMesh = component.sharedMesh;
-    //            //        continue;
-    //            //    case 2:
-    //            //        Handles.s_ConeMesh = component.sharedMesh;
-    //            //        continue;
-    //            //    case 3:
-    //            //        Handles.s_CylinderMesh = component.sharedMesh;
-    //            //        continue;
-    //            //    case 4:
-    //            //        Handles.s_QuadMesh = component.sharedMesh;
-    //            //        continue;
-    //            //    default:
-    //            //        continue;
-    //            //}
-    //        }
-    //    }
-
-    //    //var s_HandleMaterial = Resources.Load("Handles/HandleMat") as Material;
-
-    //    // int a = 0;
+    //    GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+    //    var mesh = (Mesh)Instantiate(primitive.GetComponent<MeshFilter>().sharedMesh);
+    //    AssetDatabase.CreateAsset(mesh, "Assets/Cylinder.asset");
     //}
 
     private bool showOptions;

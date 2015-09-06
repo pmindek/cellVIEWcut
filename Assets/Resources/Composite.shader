@@ -8,6 +8,7 @@
 	{
 		Tags { "RenderType"="Opaque" }
 		
+		// Blit with depth
 		Pass 
 		{
 			ZWrite On

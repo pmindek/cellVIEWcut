@@ -29,13 +29,13 @@ uniform	StructuredBuffer<float4> _ProteinInstanceInfo;
 uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
 uniform AppendStructuredBuffer<int4> _ProteinSphereBatchInfos;
 
-
 // Cutaways
-uniform int _NumCuts;
+uniform int _NumCutObjects;
 uniform StructuredBuffer<float4> _CutInfos;	
 uniform	StructuredBuffer<float4> _CutScales;
 uniform	StructuredBuffer<float4> _CutPositions;	
 uniform StructuredBuffer<float4> _CutRotations;
+uniform StructuredBuffer<int> _ProteinCutFilters;
 
 float pointPlaneSignedDistance(float3 p, float3 v0, float3 v1, float3 v2)
 {
@@ -60,23 +60,70 @@ float rand(in int id)
     return abs(noise.x + noise.y) * 0.5;
 }
 
+float CutAwayTest(float4 sphere, int proteinType)
+{
+    bool cut = false;
+    for (int i = 0; i < _NumCutObjects; i++)
+    {
+        int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+
+        if (proteinCutFilter == 1)
+        {
+            float4 info = _CutInfos[i];
+            float3 position = _CutPositions[i].xyz;
+            float4 rotation = _CutRotations[i];
+
+            if (info.x == 0)
+            {
+                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+                float4 plane = ComputePlane(normal, position);
+                bool test = SpherePlaneTest(plane, float4(sphere.xyz, 0));
+                if (test) return true;
+            }
+        }    
+
+        //	//sphere
+        //	else if (_CutTypes[j] == 1)
+        //	{
+        //		if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
+        //		{
+        //			return;
+        //		}
+        //	}
+
+        //	//cube
+        //	else if (_CutTypes[j] == 2)
+        //	{
+        //		if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
+        //		{
+        //			return;
+        //		}
+        //	}
+    }
+
+    return cut;
+}
 
 [numthreads(1,1,1)]
 void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 {
-	if(id.x >= (uint)_NumInstances) return;
-			
+	if(id.x >= (uint)_NumInstances) return;[]
 	float4 infos = _ProteinInstanceInfo[id.x];
 	float4 sphere = _ProteinInstancePositions[id.x] * _Scale;
 		
 	int cullFlag = _ProteinInstanceCullFlags[id.x];
 	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);
-	bool crossSectionTest = _EnableCrossSection && SpherePlaneTest(_CrossSectionPlane, float4(sphere.xyz, 0));
-		
+	bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x);
+	
 	// if instance is culled return
 	if(_CullFlagFilter == -1 && cullFlag == 0) return;	
 	if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
-	if(frustrumTest || crossSectionTest || _ProteinVisibilityFlag[infos.x] == 0) return;
+	if(frustrumTest || cutAwayTest || _ProteinVisibilityFlag[infos.x] == 0) return;
 				
 	int lodLevel = 0;		
 	float cameraDistance = dot(sphere.xyz - _CameraPosition.xyz, _CameraForward.xyz);
@@ -96,60 +143,9 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 	int sphereCountPerBatch = ceil(float(sphereCount) / float(numBatches));
 
 	int batchStart = 0;
-	int batchCount = sphereCountPerBatch;		
-    
-	////cutaways
+	int batchCount = sphereCountPerBatch;
 
-	///*if (sphere.x > 0.0 && sphere.y > 0.0)
-	//	return;*/
-
-	//for (int j = 0; j < _NumCuts; j++)
-	//{
-	//	int _ = _CutFirstVertexIndexes[j];
-
-	//	//plane
-	//	if (_CutTypes[j] == 0)
-	//	{
-	//		float dist = pointPlaneSignedDistance(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz, _CutVertices[_ + 2].xyz);
-	//		float size = length(_CutVertices[_ + 0].xyz - _CutVertices[_ + 1].xyz);
-	//		float normalDist = dist / size;
-	//		float nd = -normalDist * 6.0;
-
-	//		if (normalDist < 0.0 && rand(id.x) * 0.9 <= pow(nd, 0.2))
-	//			return;
-
-	//		/*if (isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz, _CutVertices[_ + 2].xyz))
-	//		{
-	//			if (rand(id.x) < 0.99)
-	//				return;
-	//		}*/
-	//	}
-
-	//	//sphere
-	//	else if (_CutTypes[j] == 1)
-	//	{
-	//		if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
-	//		{
-	//			return;
-	//		}
-	//	}
-
-	//	//cube
-	//	else if (_CutTypes[j] == 2)
-	//	{
-	//		if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
-	//			isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
-	//			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
-	//			isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
-	//			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
-	//			isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
-	//		{
-	//			return;
-	//		}
-	//	}
-	//}
-
-	for(int j = 0; j < numBatches; j++)
+    for (int j = 0; j < numBatches; j++)
 	{
 		batchCount = min(batchStart + sphereCountPerBatch, sphereCount) - batchStart;			
 		_ProteinSphereBatchInfos.Append(int4(id.x, lodLevel, batchCount, sphereStart + batchStart));

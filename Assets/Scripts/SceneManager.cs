@@ -17,16 +17,12 @@ public class SceneManager : MonoBehaviour
     // No need to serialize tjat, the values are stored in scene game objects instead
     [NonSerialized]
     public List<int> CutItems = new List<int>();
-
     [NonSerialized]
     public List<Vector4> CutInfos = new List<Vector4>();
-    
     [NonSerialized]
     public List<Vector4> CutScales = new List<Vector4>();
-
     [NonSerialized]
     public List<Vector4> CutPositions = new List<Vector4>();
-
     [NonSerialized]
     public List<Vector4> CutRotations = new List<Vector4>();
     
@@ -34,6 +30,9 @@ public class SceneManager : MonoBehaviour
     // The cache will be filled automatically via the CutObject script onEnable
     [NonSerialized]
     public List<CutObject> CutObjects = new List<CutObject>();
+
+    [NonSerialized]
+    public List<int> ProteinCutFilters = new List<int>();
 
     //*******
 
@@ -128,15 +127,8 @@ public class SceneManager : MonoBehaviour
 
     public void AddCutObject(CutType type)
     {
-        var gameObject = Instantiate(Resources.Load("CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
-        var cutObject = gameObject.GetComponent<CutObject>();
-        cutObject.CutType = type;
-        cutObject.SetCutItems(ProteinNames);
-        cutObject.SetMesh();
-
-        var collider = gameObject.AddComponent<BoxCollider>();
-        collider.bounds.Encapsulate(cutObject.GetComponent<MeshFilter>().sharedMesh.bounds.size);
-
+        var gameObject = Instantiate(Resources.Load("Cut Objects/CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
+        var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
     }
 
     void Update()
@@ -147,8 +139,18 @@ public class SceneManager : MonoBehaviour
         CutScales.Clear();
         CutPositions.Clear();
         CutRotations.Clear();
+        ProteinCutFilters.Clear();
 
         //Debug.Log(CutObjects.Count);
+
+        // Fill the protein cut filter buffer
+        for (var i = 0; i < ProteinNames.Count; i++)
+        {
+            foreach (var cutObject in CutObjects)
+            {
+                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+            }
+        }
 
         //traverse all cuts (first-level children of a root GameObject Cuts
         foreach (var cut in CutObjects)
@@ -167,6 +169,7 @@ public class SceneManager : MonoBehaviour
         ComputeBufferManager.Instance.CutScales.SetData(CutScales.ToArray());
         ComputeBufferManager.Instance.CutPositions.SetData(CutPositions.ToArray());
         ComputeBufferManager.Instance.CutRotations.SetData(CutRotations.ToArray());
+        ComputeBufferManager.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
 
         //UploadAllData();
     }
@@ -474,6 +477,7 @@ public class SceneManager : MonoBehaviour
     private void CheckBufferSizes()
     {
         if (Instance.NumCutObjects >= ComputeBufferManager.NumCutsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
         if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
         if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
         if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
@@ -484,6 +488,8 @@ public class SceneManager : MonoBehaviour
         if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
         if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
         if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+
+
     }
 
     public void UploadAllData()
@@ -547,7 +553,7 @@ public class SceneManager : MonoBehaviour
 
         foreach (var cutObject in cutObjects)
         {
-            cutObject.CutItems.Clear();
+            cutObject.ProteinCutFilters.Clear();
             cutObject.SetCutItems(ProteinNames);
         }
     }

@@ -143,6 +143,11 @@ float3 CubicInterpolate(float3 y0, float3 y1, float3 y2,float3 y3, float mu)
 
 //-----------------------------------------------------------------------------------
 
+float4 ComputePlane(float3 normal, float3 inPoint)
+{
+	return float4(normalize(normal), -dot(normal, inPoint));
+}
+
 bool SpherePlaneTest(float4 plane, float4 sphere)
 {
 	return dot(plane.xyz, sphere.xyz - plane.xyz * -plane.w) + sphere.w > 0;

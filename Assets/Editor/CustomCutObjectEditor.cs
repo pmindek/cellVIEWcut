@@ -11,7 +11,7 @@ public class CutObjectEditor : Editor
         DrawDefaultInspector();
 
         CutObject cutObject = (CutObject)target;
-        if (GUILayout.Button("Show List"))
+        if (GUILayout.Button("Show Protein Filters"))
         {
             var cutObjectEditorWindows = Resources.FindObjectsOfTypeAll<CutObjectWindow>();
 
