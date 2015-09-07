@@ -72,6 +72,7 @@ float CutAwayTest(float4 sphere, int proteinType)
             float4 info = _CutInfos[i];
             float3 position = _CutPositions[i].xyz;
             float4 rotation = _CutRotations[i];
+			float3 scale = _CutScales[i].xyz;
 
             if (info.x == 0)
             {
@@ -80,6 +81,16 @@ float CutAwayTest(float4 sphere, int proteinType)
                 bool test = SpherePlaneTest(plane, float4(sphere.xyz, 0));
                 if (test) return true;
             }
+			else if (info.x == 1)
+			{
+				bool test = SphereSphereTest(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+				if (test) return true;
+			}
+			else if (info.x == 2)
+			{
+				bool test = SphereCubeTest(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+				if (test) return true;
+			}
         }    
 
         //	//sphere
