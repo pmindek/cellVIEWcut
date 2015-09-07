@@ -175,6 +175,6 @@ bool SphereSphereTest(float4 sphere, float4 atom)
 bool SphereCubeTest(float3 position, float4 rotation, float3 size, float4 sphere)
 {
 	
-	float3 d = abs(QuaternionTransform(rotation, sphere.xyz - position.xyz)) - size.xyz;
+	float3 d = abs(QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz)) - size.xyz;
 	return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0)) <= 0;
 }
