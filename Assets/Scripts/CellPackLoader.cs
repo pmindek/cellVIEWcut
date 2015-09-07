@@ -44,13 +44,11 @@ public static class CellPackLoader
             // Upload scene data to the GPU
             SceneManager.Instance.UploadAllData();
 
-            //
+            // Send new protein cut filters to cut object
             SceneManager.Instance.SetCutObjects();
 
         #endif
     }
-
-    
 
     public static void LoadIngredients(string recipePath)
     {

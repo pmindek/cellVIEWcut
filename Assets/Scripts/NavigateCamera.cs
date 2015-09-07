@@ -97,7 +97,7 @@ public class NavigateCamera : MonoBehaviour
         }
     }
 
-    private void OnGUI()
+    void OnGUI()
     {
         
 #if UNITY_EDITOR
@@ -211,26 +211,27 @@ public class NavigateCamera : MonoBehaviour
             // If we hit an object
             if (Physics.Raycast(CameraRay, out hit, 1000))
             {
-                var transformGizmo = hit.collider.gameObject.GetComponent<TransformHandle>();
+                var transformHandle = hit.collider.gameObject.GetComponent<TransformHandle>();
 
                 // If we hit a new selectable object
-                if (transformGizmo != null && transformGizmo != _selectedTransformHandle)
+                if (transformHandle != null && transformHandle != _selectedTransformHandle)
                 {
                     if (_selectedTransformHandle != null)
                     {
-                        Debug.Log("Reset");
+                        //Debug.Log("Reset");
                         _selectedTransformHandle.Disable();
                     }
 
-                    Debug.Log("Set");
-                    transformGizmo.Enable();
-                    transformGizmo.SetSelectionState(_currentState);
-                    _selectedTransformHandle = transformGizmo;
+                    //Debug.Log("Selected transform: " + transformHandle.gameObject.name);
+
+                    transformHandle.Enable();
+                    transformHandle.SetSelectionState(_currentState);
+                    _selectedTransformHandle = transformHandle;
                 }
                 // If we hit a non-selectable object
-                else if (transformGizmo == null && _selectedTransformHandle != null)
+                else if (transformHandle == null && _selectedTransformHandle != null)
                 {
-                    Debug.Log("Reset");
+                    //Debug.Log("Reset");
                     _selectedTransformHandle.Disable();
                     _selectedTransformHandle = null;
                 }
@@ -238,7 +239,7 @@ public class NavigateCamera : MonoBehaviour
             // If we miss a hit
             else if (_selectedTransformHandle != null)
             {
-                Debug.Log("Reset");
+                //Debug.Log("Reset");
                 _selectedTransformHandle.Disable();
                 _selectedTransformHandle = null;
             }

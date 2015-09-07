@@ -154,6 +154,27 @@
             
             ENDCG
         }
+
+		// Blit with depth
+		Pass
+		{
+			ZWrite Off
+			ZTest Always
+
+			CGPROGRAM
+			#pragma vertex vert_img
+			#pragma fragment frag
+
+			#include "UnityCG.cginc"
+
+			sampler2D _MainTex;
+
+			void frag(v2f_img i,  out float4 color : COLOR0)
+			{
+				color = tex2D(_MainTex, i.uv);
+			}
+			ENDCG
+		}
 	}	
 
 	FallBack "Diffuse"

@@ -45,7 +45,7 @@
 
 			float4 frag(v2f input) : SV_Target
 			{
-				return float4(tex2D(_MainTex, input.uv * 10).xyz, 0.15);
+				return float4(tex2D(_MainTex, input.uv * 10).xyz, 0.25);
 			}
 
 		ENDCG

@@ -14,22 +14,31 @@
 			#pragma target 3.0
 
 			#include "UnityCG.cginc"
-
-			
-
-			uniform float _HandleSize;
+		
 			uniform float4 _HandleColor;
-			uniform float4x4 _ModelMatrix;
+			uniform int _EnableShading;
 
-			float4 vert(appdata_base v) : POSITION
+			struct v2f
 			{
-				//float4 temp = mul(_ModelMatrix, v.vertex);
-				return mul(UNITY_MATRIX_MVP, v.vertex);
+				float4 pos : SV_POSITION;
+				float3 viewNormal : FLOAT30;
+				int doShading : INT;
+			};
+
+			v2f vert(appdata_base v) 
+			{
+				v2f output;
+
+				output.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+				output.viewNormal = normalize(mul(UNITY_MATRIX_MV, float4(v.normal, 0.0)).xyz);
+				output.doShading = v.normal != float3(0, 0, 0);
+				return output;
 			}
 
-				float4 frag(float4 sp:VPOS) : COLOR
+			float4 frag(v2f input) : COLOR
 			{
-				return _HandleColor;
+				float ndotl = (_EnableShading == 1) ? max(dot(input.viewNormal, float3(0,0,1)), 0.1) : 1;
+				return _HandleColor * ndotl;
 			}
 
 			ENDCG

@@ -94,7 +94,7 @@ public class MyHandleUtility
     public static void DrawConeCap(Vector3 position, Quaternion rotation, float size, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-
+        Shader.SetGlobalInt("_EnableShading", 1);
         ApplyHandleMaterial();
         Graphics.DrawMeshNow(ConeMesh, Matrix4x4.TRS(position, rotation, new Vector3(size, size, size)));
     }
@@ -102,7 +102,7 @@ public class MyHandleUtility
     public static void DrawCubeCap(Vector3 position, Quaternion rotation, float size, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-
+        Shader.SetGlobalInt("_EnableShading", 1);
         ApplyHandleMaterial();
         Graphics.DrawMeshNow(CubeMesh, Matrix4x4.TRS(position, rotation, new Vector3(size, size, size)));
     }
@@ -110,6 +110,7 @@ public class MyHandleUtility
     public static void DrawLine(Vector3 p1, Vector3 p2, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
+        Shader.SetGlobalInt("_EnableShading", 0);
 
         ApplyHandleWireMaterial();
 
@@ -124,7 +125,7 @@ public class MyHandleUtility
     public static void DrawPolyLine(Color color, params Vector3[] points)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-
+        Shader.SetGlobalInt("_EnableShading", 0);
         ApplyHandleWireMaterial();
 
         GL.PushMatrix();
@@ -192,13 +193,17 @@ public class MyHandleUtility
 
     public static Vector2 WorldToGUIPoint(Vector3 world)
     {
-        Camera current = Camera.current;
-        if (!(bool)((Object)current))
-            return new Vector2(world.x, world.y);
-        Vector2 absolutePos = (Vector2)current.WorldToScreenPoint(world);
+        var absolutePos = (Vector2)Camera.main.WorldToScreenPoint(world);
         absolutePos.y = (float)Screen.height - absolutePos.y;
         return (absolutePos);
         //return GUIClip.Clip(absolutePos);
+    }
+
+    public static void DebugD(Vector3 p1)
+    {
+        Debug.Log(MyHandleUtility.WorldToGUIPoint(p1));
+        Debug.Log((Vector3)Event.current.mousePosition);
+        Debug.Log("***");
     }
 
     public static float DistancePointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
@@ -257,5 +262,17 @@ public class MyHandleUtility
         if ((double)from.sqrMagnitude < 1.0 / 1000.0)
             from = Vector3.Cross(normal, Vector3.right);
         return DistanceToArc(center, normal, from, 360f, radius);
+    }
+
+    public static void DrawWireMesh(Mesh mesh, Transform transform, Color color)
+    {
+        Shader.SetGlobalColor("_HandleColor", color);
+        Shader.SetGlobalInt("_EnableShading", 0);
+
+        ApplyHandleWireMaterial();
+
+        GL.wireframe = true;
+        Graphics.DrawMeshNow(mesh, transform.localToWorldMatrix);
+        GL.wireframe = false;
     }
 }

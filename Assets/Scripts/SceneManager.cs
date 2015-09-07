@@ -427,7 +427,7 @@ public class SceneManager : MonoBehaviour
 
         //_instance.ClearScene();
         UploadAllData();
-        ResetCutObjects();
+        //ResetCutObjects();
     }
 
     // Scene data gets serialized on each reload, to clear the scene call this function
@@ -536,17 +536,6 @@ public class SceneManager : MonoBehaviour
         ComputeBufferManager.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
     }
 
-    public void ResetCutObjects()
-    {
-        var cutObjects = FindObjectsOfType<CutObject>();
-
-        foreach (var cutObject in cutObjects)
-        {
-            cutObject.ResetCutItems(ProteinNames);
-        }
-    }
-
-
     public void SetCutObjects()
     {
         var cutObjects = FindObjectsOfType<CutObject>();
@@ -557,6 +546,16 @@ public class SceneManager : MonoBehaviour
             cutObject.SetCutItems(ProteinNames);
         }
     }
+
+    //public void ResetCutObjects()
+    //{
+    //    var cutObjects = FindObjectsOfType<CutObject>();
+
+    //    foreach (var cutObject in cutObjects)
+    //    {
+    //        cutObject.ResetCutItems(ProteinNames);
+    //    }
+    //}
 
     #endregion
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public enum SelectionState
@@ -93,12 +94,31 @@ public class TransformHandle : MonoBehaviour
 
     //*****//
 
+//    void OnEnable()
+//    {
+//#if UNITY_EDITOR
+//        if (!EditorApplication.isPlaying) EditorApplication.update += Update;
+//#endif
+//    }
+
+//    void Update()
+//    {
+        
+//    }
+
     void OnGUI()
     {
-        if (!_enabled || Camera.current == null) return;
+//#if UNITY_EDITOR
+//        if (Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint)
+//        {
+//            EditorUtility.SetDirty(this); // this is important, if omitted, "Mouse down" will not be display
+//        }
+//#endif
+
+        if (!_enabled) return;
 
         _handleSize = MyHandleUtility.GetHandleSize(transform.position);
-
+        
         BeginHandle();
 
         switch (_state)
@@ -114,60 +134,52 @@ public class TransformHandle : MonoBehaviour
             case SelectionState.Translate:
                 DoTranslateHandle();
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 
-    void DoTranslateHandle()
+    private void DoTranslateHandle()
     {
-        if (Event.current.type == EventType.Layout)
+        if (Event.current.type == EventType.mouseDown)
         {
-            AddControl(ControlType.TranslateX, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.right * _handleSize));
-            AddControl(ControlType.TranslateX, MyHandleUtility.DistanceToCircle(transform.position + transform.right * _handleSize, _handleSize * 0.2f));
-            AddControl(ControlType.TranslateY, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.up * _handleSize));
-            AddControl(ControlType.TranslateY, MyHandleUtility.DistanceToCircle(transform.position + transform.up * _handleSize, _handleSize * 0.2f));
-            AddControl(ControlType.TranslateZ, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.forward * _handleSize));
-            AddControl(ControlType.TranslateZ, MyHandleUtility.DistanceToCircle(transform.position + transform.forward * _handleSize, _handleSize * 0.2f));
-        }
-        else if (Event.current.type == EventType.MouseDown)
-        {
+            AddControl(ControlType.TranslateX, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.right*_handleSize));
+            AddControl(ControlType.TranslateX, MyHandleUtility.DistanceToCircle(transform.position + transform.right*_handleSize, _handleSize*0.2f));
+            AddControl(ControlType.TranslateY, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.up*_handleSize));
+            AddControl(ControlType.TranslateY, MyHandleUtility.DistanceToCircle(transform.position + transform.up*_handleSize, _handleSize*0.2f));
+            AddControl(ControlType.TranslateZ, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.forward*_handleSize));
+            AddControl(ControlType.TranslateZ, MyHandleUtility.DistanceToCircle(transform.position + transform.forward*_handleSize, _handleSize*0.2f));
+
             _currentControl = NearestControl;
         }
     }
 
-    void DoRotateHandle()
+    private void DoRotateHandle()
     {
-        if (Event.current.type == EventType.Layout)
+        if (Event.current.type == EventType.MouseDown)
         {
-            AddControl(ControlType.RotateInner, MyHandleUtility.DistanceToDisc(transform.position, Camera.current.transform.forward, _handleSize) / 2f);
-            AddControl(ControlType.RotateOuter, MyHandleUtility.DistanceToDisc(transform.position, Camera.current.transform.forward, _handleSize * 1.1f) / 2f);
-            AddControl(ControlType.RotateX, MyHandleUtility.DistanceToArc(transform.position, transform.right, Vector3.Cross(transform.right, Camera.current.transform.forward).normalized, 180f, _handleSize) / 2f);
-            AddControl(ControlType.RotateY, MyHandleUtility.DistanceToArc(transform.position, transform.up, Vector3.Cross(transform.up, Camera.current.transform.forward).normalized, 180f, _handleSize) / 2f);
-            AddControl(ControlType.RotateZ, MyHandleUtility.DistanceToArc(transform.position, transform.forward, Vector3.Cross(transform.forward, Camera.current.transform.forward).normalized, 180f, _handleSize) / 2f);
-        }
-        else if (Event.current.type == EventType.MouseDown)
-        {
+            AddControl(ControlType.RotateInner, MyHandleUtility.DistanceToDisc(transform.position, Camera.current.transform.forward, _handleSize)/2f);
+            AddControl(ControlType.RotateOuter, MyHandleUtility.DistanceToDisc(transform.position, Camera.current.transform.forward, _handleSize*1.1f)/2f);
+            AddControl(ControlType.RotateX, MyHandleUtility.DistanceToArc(transform.position, transform.right, Vector3.Cross(transform.right, Camera.current.transform.forward).normalized, 180f, _handleSize)/2f);
+            AddControl(ControlType.RotateY, MyHandleUtility.DistanceToArc(transform.position, transform.up, Vector3.Cross(transform.up, Camera.current.transform.forward).normalized, 180f, _handleSize)/2f);
+            AddControl(ControlType.RotateZ, MyHandleUtility.DistanceToArc(transform.position, transform.forward, Vector3.Cross(transform.forward, Camera.current.transform.forward).normalized, 180f, _handleSize)/2f);
+
             _currentControl = NearestControl;
         }
     }
 
-    void DoScaleHandle()
+    private void DoScaleHandle()
     {
-        if (Event.current.type == EventType.Layout)
+        if (Event.current.type == EventType.MouseDown)
         {
-            var up = transform.rotation * Vector3.up;
-            var right = transform.rotation * Vector3.right;
-            var forward = transform.rotation * Vector3.forward;
+            AddControl(ControlType.ScaleCenter, MyHandleUtility.DistanceToCircle(transform.position, _handleSize*0.15f));
+            AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.right*_handleSize));
+            AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToCircle(transform.position + transform.right*_handleSize, _handleSize*0.2f));
+            AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.up*_handleSize));
+            AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToCircle(transform.position + transform.up*_handleSize, _handleSize*0.2f));
+            AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.forward*_handleSize));
+            AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToCircle(transform.position + transform.forward*_handleSize, _handleSize*0.2f));
 
-            AddControl(ControlType.ScaleCenter, MyHandleUtility.DistanceToCircle(transform.position, _handleSize * 0.15f));
-            AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToLine(transform.position, transform.position + right * _handleSize));
-            AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToCircle(transform.position + right * _handleSize, _handleSize * 0.2f));
-            AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToLine(transform.position, transform.position + up * _handleSize));
-            AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToCircle(transform.position + up * _handleSize, _handleSize * 0.2f));
-            AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToLine(transform.position, transform.position + forward * _handleSize));
-            AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToCircle(transform.position + forward * _handleSize, _handleSize * 0.2f));
-        }
-        else if (Event.current.type == EventType.MouseDown)
-        {
             _currentControl = NearestControl;
         }
     }
@@ -179,18 +191,30 @@ public class TransformHandle : MonoBehaviour
         {
             switch (control)
             {
-                case ControlType.TranslateX: return MyHandleUtility.xAxisColor;
-                case ControlType.TranslateY: return MyHandleUtility.yAxisColor;
-                case ControlType.TranslateZ: return MyHandleUtility.zAxisColor;
-                case ControlType.RotateX: return MyHandleUtility.xAxisColor;
-                case ControlType.RotateY: return MyHandleUtility.yAxisColor;
-                case ControlType.RotateZ: return MyHandleUtility.zAxisColor;
-                case ControlType.RotateInner: return MyHandleUtility.centerColor;
-                case ControlType.RotateOuter: return MyHandleUtility.centerColor;
-                case ControlType.ScaleX: return MyHandleUtility.xAxisColor;
-                case ControlType.ScaleY: return MyHandleUtility.yAxisColor;
-                case ControlType.ScaleZ: return MyHandleUtility.zAxisColor;
-                case ControlType.ScaleCenter: return MyHandleUtility.centerColor;
+                case ControlType.TranslateX:
+                    return MyHandleUtility.xAxisColor;
+                case ControlType.TranslateY:
+                    return MyHandleUtility.yAxisColor;
+                case ControlType.TranslateZ:
+                    return MyHandleUtility.zAxisColor;
+                case ControlType.RotateX:
+                    return MyHandleUtility.xAxisColor;
+                case ControlType.RotateY:
+                    return MyHandleUtility.yAxisColor;
+                case ControlType.RotateZ:
+                    return MyHandleUtility.zAxisColor;
+                case ControlType.RotateInner:
+                    return MyHandleUtility.centerColor;
+                case ControlType.RotateOuter:
+                    return MyHandleUtility.centerColor;
+                case ControlType.ScaleX:
+                    return MyHandleUtility.xAxisColor;
+                case ControlType.ScaleY:
+                    return MyHandleUtility.yAxisColor;
+                case ControlType.ScaleZ:
+                    return MyHandleUtility.zAxisColor;
+                case ControlType.ScaleCenter:
+                    return MyHandleUtility.centerColor;
                 case ControlType.None:
                     break;
                 default:
@@ -203,9 +227,11 @@ public class TransformHandle : MonoBehaviour
 
     private void OnRenderObject()
     {
-        if (!_enabled) return;
+        if (!_enabled || Camera.current != Camera.main) return;
 
         _handleSize = MyHandleUtility.GetHandleSize(transform.position);
+
+        MyHandleUtility.DrawWireMesh(GetComponent<MeshFilter>().sharedMesh, transform, new Color(0.5f, 0.8f, 0.5f));
 
         switch (_state)
         {
@@ -221,20 +247,18 @@ public class TransformHandle : MonoBehaviour
                 DrawTranslateHandle();
                 break;
         }
-
-        DrawOutline();
     }
 
     private void DrawTranslateHandle()
     {
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.right * _handleSize * 0.9f, GetColor(ControlType.TranslateX));
-        MyHandleUtility.DrawConeCap(transform.position + transform.right * _handleSize, Quaternion.LookRotation(transform.right), _handleSize*0.2f, GetColor(ControlType.TranslateX));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.right*_handleSize*0.9f, GetColor(ControlType.TranslateX));
+        MyHandleUtility.DrawConeCap(transform.position + transform.right*_handleSize, Quaternion.LookRotation(transform.right), _handleSize*0.2f, GetColor(ControlType.TranslateX));
 
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up * _handleSize*0.9f, GetColor(ControlType.TranslateY));
-        MyHandleUtility.DrawConeCap(transform.position + transform.up * _handleSize, Quaternion.LookRotation(transform.up), _handleSize*0.2f, GetColor(ControlType.TranslateY));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up*_handleSize*0.9f, GetColor(ControlType.TranslateY));
+        MyHandleUtility.DrawConeCap(transform.position + transform.up*_handleSize, Quaternion.LookRotation(transform.up), _handleSize*0.2f, GetColor(ControlType.TranslateY));
 
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward * _handleSize*0.9f, GetColor(ControlType.TranslateZ));
-        MyHandleUtility.DrawConeCap(transform.position + transform.forward * _handleSize, Quaternion.LookRotation(transform.forward), _handleSize * 0.2f, GetColor(ControlType.TranslateZ));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward*_handleSize*0.9f, GetColor(ControlType.TranslateZ));
+        MyHandleUtility.DrawConeCap(transform.position + transform.forward*_handleSize, Quaternion.LookRotation(transform.forward), _handleSize*0.2f, GetColor(ControlType.TranslateZ));
     }
 
     private void DrawRotationHandle()
@@ -250,18 +274,13 @@ public class TransformHandle : MonoBehaviour
     {
         MyHandleUtility.DrawCubeCap(transform.position, transform.rotation, _handleSize*0.15f, GetColor(ControlType.ScaleCenter));
 
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.right *_handleSize, GetColor(ControlType.ScaleX));
-        MyHandleUtility.DrawCubeCap(transform.position + transform.right *_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleX));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.right*_handleSize, GetColor(ControlType.ScaleX));
+        MyHandleUtility.DrawCubeCap(transform.position + transform.right*_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleX));
 
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up *_handleSize, GetColor(ControlType.ScaleY));
-        MyHandleUtility.DrawCubeCap(transform.position + transform.up *_handleSize, transform.rotation, _handleSize * 0.1f, GetColor(ControlType.ScaleY));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up*_handleSize, GetColor(ControlType.ScaleY));
+        MyHandleUtility.DrawCubeCap(transform.position + transform.up*_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleY));
 
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward *_handleSize, GetColor(ControlType.ScaleZ));
-        MyHandleUtility.DrawCubeCap(transform.position + transform.forward *_handleSize, transform.rotation, _handleSize * 0.1f, GetColor(ControlType.ScaleZ));
-    }
-
-    private void DrawOutline()
-    {
-        //MyHandleUtility.DrawWireCube(transform, GetComponent<Collider>().bounds, Color.green);
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward*_handleSize, GetColor(ControlType.ScaleZ));
+        MyHandleUtility.DrawCubeCap(transform.position + transform.forward*_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleZ));
     }
 }

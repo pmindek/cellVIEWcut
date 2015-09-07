@@ -40,20 +40,15 @@ public class CutObject : MonoBehaviour
 
     [HideInInspector]
     public List<CutItem> ProteinCutFilters = new List<CutItem>();
-
-    public void SetCutItems(List<string> names)
-    {
-        foreach(var name in names)
-        {
-            ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
-        }
-    }
-
+    
     void Awake()
     {
-        Debug.Log("Init cut object");
-        ProteinCutFilters.Clear();
-        SetCutItems(SceneManager.Instance.ProteinNames);
+        //Debug.Log("Init cut object");
+
+        if (ProteinCutFilters.Count == 0)
+        {
+            SetCutItems(SceneManager.Instance.ProteinNames);
+        }
     }
 
     void OnEnable()
@@ -74,66 +69,74 @@ public class CutObject : MonoBehaviour
         }
     }
 
-    // This function is meant to keep exisiting cut item and to preserve their original state
-    // While removing items which are not present in the source list and that are present in the destination list
-    // While also adding elements from the input list and which are not present in the destination list
-    public void ResetCutItems(List<string> names)
+    public void SetCutItems(List<string> names)
     {
-        // find elements present in source but not in destination
-        // these elements will be added to the desitnation afterwards
-        var AB = new List<string>();
-        foreach (var a in names)
+        foreach (var name in names)
         {
-            var contains = false;
-            foreach (var b in ProteinCutFilters.Where(b => b.Name == a))
-            {
-                contains = true;
-            }
-
-            if (!contains) AB.Add(a);
-        }
-
-        // find elements present in the destination but not in the source
-        // these elements will be removed from the input source
-        var BA = new List<string>();
-        foreach (var b in ProteinCutFilters)
-        {
-            var contains = false;
-            foreach (var a in names.Where(a => b.Name == a))
-            {
-                contains = true;
-            }
-
-            if (!contains) BA.Add(b.Name);
-        }
-
-        // add new elements
-        foreach (var a in AB)
-        {
-            ProteinCutFilters.Add(new CutItem() { Name = a, State = true });
-        }
-
-        // remove old elements
-        foreach (var b in BA)
-        {
-            // find index of the element to remove 
-            var index = -1;
-            for (var i = 0; i < ProteinCutFilters.Count; i++)
-            {
-                if (ProteinCutFilters[i].Name != b) continue;
-                index = i;
-                break;
-            }
-
-            if(index == -1) throw new Exception();
-
-            ProteinCutFilters.RemoveAt(index);
+            ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
         }
     }
+
+    //// This function is meant to keep exisiting cut item and to preserve their original state
+    //// While removing items which are not present in the source list and that are present in the destination list
+    //// While also adding elements from the input list and which are not present in the destination list
+    //public void ResetCutItems(List<string> names)
+    //{
+    //    // find elements present in source but not in destination
+    //    // these elements will be added to the desitnation afterwards
+    //    var AB = new List<string>();
+    //    foreach (var a in names)
+    //    {
+    //        var contains = false;
+    //        foreach (var b in ProteinCutFilters.Where(b => b.Name == a))
+    //        {
+    //            contains = true;
+    //        }
+
+    //        if (!contains) AB.Add(a);
+    //    }
+
+    //    // find elements present in the destination but not in the source
+    //    // these elements will be removed from the input source
+    //    var BA = new List<string>();
+    //    foreach (var b in ProteinCutFilters)
+    //    {
+    //        var contains = false;
+    //        foreach (var a in names.Where(a => b.Name == a))
+    //        {
+    //            contains = true;
+    //        }
+
+    //        if (!contains) BA.Add(b.Name);
+    //    }
+
+    //    // add new elements
+    //    foreach (var a in AB)
+    //    {
+    //        ProteinCutFilters.Add(new CutItem() { Name = a, State = true });
+    //    }
+
+    //    // remove old elements
+    //    foreach (var b in BA)
+    //    {
+    //        // find index of the element to remove 
+    //        var index = -1;
+    //        for (var i = 0; i < ProteinCutFilters.Count; i++)
+    //        {
+    //            if (ProteinCutFilters[i].Name != b) continue;
+    //            index = i;
+    //            break;
+    //        }
+
+    //        if(index == -1) throw new Exception();
+
+    //        ProteinCutFilters.RemoveAt(index);
+    //    }
+    //}
     
     void OnRenderObject()
     {
-        if (!Display) return;
+        if (!Display || Camera.current == null) return;
 
         if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
         {
@@ -141,8 +144,9 @@ public class CutObject : MonoBehaviour
             PreviousCutType = CutType;
         }
 
-        var depthBuffer = RenderTexture.GetTemporary(Screen.width, Screen.height, 32, RenderTextureFormat.Depth);
-        Graphics.SetRenderTarget(Graphics.activeColorBuffer, depthBuffer.depthBuffer);
+        var depthBuffer = RenderTexture.GetTemporary(Camera.current.pixelWidth, Camera.current.pixelHeight, 32, RenderTextureFormat.Depth);
+
+        if(Camera.current == Camera.main)Graphics.SetRenderTarget(Graphics.activeColorBuffer, depthBuffer.depthBuffer);
 
         CutObjectMaterial.SetPass(0);
         Graphics.DrawMeshNow(gameObject.GetComponent<MeshFilter>().sharedMesh, transform.localToWorldMatrix);
@@ -183,6 +187,8 @@ public class CutObject : MonoBehaviour
                 DestroyImmediate(gameObject.GetComponent<Collider>());
                 gameObject.AddComponent<MeshCollider>();
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
     }
 }
