@@ -146,30 +146,35 @@ public class SelectionManager : MonoBehaviour
         if (_selectedObjectID != instanceID)
         {
             // if new selected element is greater than one update set and set position to game object
-            if (instanceID > -1 && _ctrlKeyFlag)
-            {float radius = SceneManager.Instance.ProteinRadii[(int)SceneManager.Instance.ProteinInstanceInfos[instanceID].x] * PersistantSettings.Instance.Scale;
-                
-                SelectionGameObject.GetComponent<SphereCollider>().radius = radius;
-
-                SelectionGameObject.transform.position = SceneManager.Instance.ProteinInstancePositions[instanceID] * PersistantSettings.Instance.Scale;
-                SelectionGameObject.transform.rotation = MyUtility.Vector4ToQuaternion(SceneManager.Instance.ProteinInstanceRotations[instanceID]);
-
-                // Enable handle
-                SelectionGameObject.GetComponent<TransformHandle>().Enable();
-                Camera.main.GetComponent<NavigateCamera>().TargetGameObject = SelectionGameObject;
-                
-                if (_selectedTransformHandle)
+            if (instanceID > -1 )
+            {
+                if (_ctrlKeyFlag)
                 {
-                    _selectedTransformHandle.Disable();
-                    _selectedTransformHandle = null;
-                }
+                    float radius = SceneManager.Instance.ProteinRadii[(int)SceneManager.Instance.ProteinInstanceInfos[instanceID].x] * PersistantSettings.Instance.Scale;
 
-                _ctrlKeyFlag = false;
-                _selectedObjectID = instanceID;
+                    SelectionGameObject.GetComponent<SphereCollider>().radius = radius;
+
+                    SelectionGameObject.transform.position = SceneManager.Instance.ProteinInstancePositions[instanceID] * PersistantSettings.Instance.Scale;
+                    SelectionGameObject.transform.rotation = MyUtility.Vector4ToQuaternion(SceneManager.Instance.ProteinInstanceRotations[instanceID]);
+
+                    // Enable handle
+                    SelectionGameObject.GetComponent<TransformHandle>().Enable();
+                    Camera.main.GetComponent<NavigateCamera>().TargetGameObject = SelectionGameObject;
+
+                    if (_selectedTransformHandle)
+                    {
+                        _selectedTransformHandle.Disable();
+                        _selectedTransformHandle = null;
+                    }
+
+                    _ctrlKeyFlag = false;
+                    _selectedObjectID = instanceID;
 
 #if UNITY_EDITOR
-                Selection.activeGameObject = SelectionGameObject;
+                    Selection.activeGameObject = SelectionGameObject;
 #endif
+                }
+
             }
             else
             {
