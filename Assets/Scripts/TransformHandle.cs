@@ -52,7 +52,9 @@ public class TransformHandle : MonoBehaviour
 
     // Scale handle
     private float _scaleValueDrag;
-    private float _scaleStartScale;
+    private float _startScaleValue;
+    private Vector3 _startScaleVector;
+    private Vector3 _drawScaleValue;
 
     //*****//
 
@@ -89,7 +91,6 @@ public class TransformHandle : MonoBehaviour
     public void Enable()
     {
         _enabled = true;
-        _state = HandleSelectionState.Translate;
     }
 
     public void Disable()
@@ -137,7 +138,7 @@ public class TransformHandle : MonoBehaviour
             case ControlType.ScaleX:
                 return new Vector3(-1, 0, 0);
             case ControlType.ScaleY:
-                return new Vector3(0, 1, 0);
+                return new Vector3(0, -1, 0);
             case ControlType.ScaleZ:
                 return new Vector3(0, 0, -1);
             case ControlType.ScaleCenter:
@@ -201,7 +202,7 @@ public class TransformHandle : MonoBehaviour
             DoControls(); 
 
         // Do the handles
-        if (_currentControl != ControlType.None && Event.current.type == EventType.MouseDrag && !Event.current.alt)
+        if (_currentControl != ControlType.None && Event.current.type == EventType.MouseDrag && !Event.current.alt && Event.current.button == 0)
             DoHandles();
 
         EndHandle();
@@ -222,10 +223,10 @@ public class TransformHandle : MonoBehaviour
 
     public void EndHandle()
     {
-        //if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
-        //{
-        //    if(!_freezeObjectPicking) _currentControl = ControlType.None;
-        //}
+        if (Event.current.type == EventType.mouseUp)
+        {
+            _drawScaleValue = new Vector3(1, 1, 1);
+        }
     }
 
     //*****//
@@ -337,13 +338,13 @@ public class TransformHandle : MonoBehaviour
     private void DoScaleControls()
     {
         AddControl(ControlType.ScaleCenter, MyHandleUtility.DistanceToCircle(transform.position, _handleSize * 0.15f));
-        //AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.right * _handleSize));
-        //AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToCircle(transform.position + transform.right * _handleSize, _handleSize * 0.2f));
-        //AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.up * _handleSize));
-        //AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToCircle(transform.position + transform.up * _handleSize, _handleSize * 0.2f));
-        //AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.forward * _handleSize));
-        //AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToCircle(transform.position + transform.forward * _handleSize, _handleSize * 0.2f));
-        
+        AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.right * _handleSize));
+        AddControl(ControlType.ScaleX, MyHandleUtility.DistanceToCircle(transform.position + transform.right * _handleSize, _handleSize * 0.2f));
+        AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.up * _handleSize));
+        AddControl(ControlType.ScaleY, MyHandleUtility.DistanceToCircle(transform.position + transform.up * _handleSize, _handleSize * 0.2f));
+        AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToLine(transform.position, transform.position + transform.forward * _handleSize));
+        AddControl(ControlType.ScaleZ, MyHandleUtility.DistanceToCircle(transform.position + transform.forward * _handleSize, _handleSize * 0.2f));
+
         _currentControl = NearestControl;
         if (_currentControl != ControlType.None)
         {
@@ -353,7 +354,19 @@ public class TransformHandle : MonoBehaviour
             if (CurrentControl == ControlType.ScaleCenter)
             {
                 _scaleValueDrag = 0.0f;
-                _scaleStartScale = transform.localScale.x;
+                _startScaleValue = transform.localScale.x;
+            }
+            else if(CurrentControl == ControlType.ScaleX)
+            {
+                _startScaleValue = transform.localScale.x;
+            }
+            else if (CurrentControl == ControlType.ScaleY)
+            {
+                _startScaleValue = transform.localScale.y;
+            }
+            else if (CurrentControl == ControlType.ScaleZ)
+            {
+                _startScaleValue = transform.localScale.z;
             }
         }
     }
@@ -366,7 +379,7 @@ public class TransformHandle : MonoBehaviour
         if (CurrentControl == ControlType.ScaleCenter)
         {
             _scaleValueDrag += MyHandleUtility.niceMouseDelta * 0.01f;
-            var scaleFactor = (_scaleValueDrag + 1f) * _scaleStartScale;
+            var scaleFactor = (_scaleValueDrag + 1f) * _startScaleValue;
 
             var num2 = scaleFactor / transform.localScale.x;
             var newScale = transform.localScale;
@@ -374,6 +387,34 @@ public class TransformHandle : MonoBehaviour
             newScale.x = scaleFactor;
             newScale.y *= num2;
             newScale.z *= num2;
+
+            transform.localScale = newScale;
+
+            _drawScaleValue.x = newScale.x / _startScaleValue;
+            _drawScaleValue.y = newScale.x / _startScaleValue;
+            _drawScaleValue.z = newScale.x / _startScaleValue;
+        }
+        else
+        {
+            float num = 1.0f + MyHandleUtility.CalcLineTranslation(_startMousePosition, _currentMousePosition, transform.position, -GetAxis(_currentControl)) / _handleSize;
+
+            var newScale = transform.localScale;
+
+            if (CurrentControl == ControlType.ScaleX)
+            {
+                newScale.x = _startScaleValue*num;
+                _drawScaleValue.x = newScale.x / _startScaleValue;
+            }
+            else if (CurrentControl == ControlType.ScaleY)
+            {
+                newScale.y = _startScaleValue * num;
+                _drawScaleValue.y = newScale.y / _startScaleValue;
+            }
+            else if (CurrentControl == ControlType.ScaleZ)
+            {
+                newScale.z = _startScaleValue * num;
+                _drawScaleValue.z = newScale.z / _startScaleValue;
+            }
 
             transform.localScale = newScale;
         }
@@ -386,8 +427,6 @@ public class TransformHandle : MonoBehaviour
         if (!_enabled || Camera.current != Camera.main) return;
 
         _handleSize = MyHandleUtility.GetHandleSize(transform.position);
-
-        MyHandleUtility.DrawWireMesh(GetComponent<MeshFilter>().sharedMesh, transform, new Color(0.5f, 0.8f, 0.5f));
 
         switch (_state)
         {
@@ -402,14 +441,33 @@ public class TransformHandle : MonoBehaviour
             case HandleSelectionState.Translate:
                 DrawTranslateHandle();
                 break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        
+        if (GetComponent<SphereCollider>() && GetComponent<SphereCollider>().enabled)
+        {
+            Color color = new Color(0.5f, 0.8f, 0.5f);
+            var sphereCollider = GetComponent<SphereCollider>();
+
+            Vector3 lossyScale = sphereCollider.transform.lossyScale;
+            float num1 = Mathf.Max(Mathf.Max(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.y)), Mathf.Abs(lossyScale.z));
+            float radius = Mathf.Max(Mathf.Abs(num1 * sphereCollider.radius), 1E-05f);
+            Vector3 position = sphereCollider.transform.TransformPoint(sphereCollider.center);
+            Quaternion rotation = sphereCollider.transform.rotation;
+            MyHandleUtility.DoRadiusHandle(rotation, position, radius, color);
+        }
+        else if(GetComponent<MeshFilter>())
+        {
+            MyHandleUtility.DrawWireMesh(GetComponent<MeshFilter>().sharedMesh, transform, new Color(0.5f, 0.8f, 0.5f));
         }
     }
 
     private void DrawTranslateHandle()
     {
         MyHandleUtility.DrawLine(transform.position, transform.position + transform.right*_handleSize*0.9f, GetColor(ControlType.TranslateX));
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up * _handleSize * 0.9f, GetColor(ControlType.TranslateY));
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward * _handleSize * 0.9f, GetColor(ControlType.TranslateZ));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up*_handleSize*0.9f, GetColor(ControlType.TranslateY));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward*_handleSize*0.9f, GetColor(ControlType.TranslateZ));
 
         MyHandleUtility.DrawConeCap(transform.position + transform.right*_handleSize, Quaternion.LookRotation(transform.right), _handleSize*0.2f, GetColor(ControlType.TranslateX));
         MyHandleUtility.DrawConeCap(transform.position + transform.up*_handleSize, Quaternion.LookRotation(transform.up), _handleSize*0.2f, GetColor(ControlType.TranslateY));
@@ -427,13 +485,17 @@ public class TransformHandle : MonoBehaviour
 
     private void DrawScaleHandle()
     {
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.right*_handleSize, GetColor(ControlType.ScaleX));
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up * _handleSize, GetColor(ControlType.ScaleY));
-        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward * _handleSize, GetColor(ControlType.ScaleZ));
-        
-        MyHandleUtility.DrawCubeCap(transform.position, transform.rotation, _handleSize * 0.15f, GetColor(ControlType.ScaleCenter));
-        MyHandleUtility.DrawCubeCap(transform.position + transform.right*_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleX));
-        MyHandleUtility.DrawCubeCap(transform.position + transform.up*_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleY));
-        MyHandleUtility.DrawCubeCap(transform.position + transform.forward*_handleSize, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleZ));
+        //if (CurrentControl != ControlType.ScaleX) _drawScaleValue.x = _handleSize;
+        //if (CurrentControl != ControlType.ScaleY) _drawScaleValue.y = _handleSize;
+        //if (CurrentControl != ControlType.ScaleZ) _drawScaleValue.z = _handleSize;
+
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.right * (_handleSize * _drawScaleValue.x - _handleSize * 0.0500000007450581f), GetColor(ControlType.ScaleX));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.up * (_handleSize * _drawScaleValue.y - _handleSize * 0.0500000007450581f), GetColor(ControlType.ScaleY));
+        MyHandleUtility.DrawLine(transform.position, transform.position + transform.forward * (_handleSize * _drawScaleValue.z - _handleSize * 0.0500000007450581f), GetColor(ControlType.ScaleZ));
+
+        MyHandleUtility.DrawCubeCap(transform.position, transform.rotation, _handleSize*0.15f, GetColor(ControlType.ScaleCenter));
+        MyHandleUtility.DrawCubeCap(transform.position + transform.right * _handleSize * _drawScaleValue.x, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleX));
+        MyHandleUtility.DrawCubeCap(transform.position + transform.up * _handleSize * _drawScaleValue.y, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleY));
+        MyHandleUtility.DrawCubeCap(transform.position + transform.forward * _handleSize * _drawScaleValue.z, transform.rotation, _handleSize*0.1f, GetColor(ControlType.ScaleZ));
     }
 }

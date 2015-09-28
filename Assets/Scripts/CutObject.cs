@@ -85,11 +85,13 @@ public class CutObject : MonoBehaviour
         {
             GetComponent<Collider>().enabled = false;
             GetComponent<MeshRenderer>().enabled = false;
+            GetComponent<TransformHandle>().enabled = false;
         }
         else
         {
             GetComponent<Collider>().enabled = true;
             GetComponent<MeshRenderer>().enabled = true;
+            GetComponent<TransformHandle>().enabled = true;
         }
     }
 

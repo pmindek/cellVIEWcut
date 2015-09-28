@@ -105,7 +105,6 @@ public class MyHandleUtility
     public static void DrawConeCap(Vector3 position, Quaternion rotation, float size, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-        Shader.SetGlobalInt("_EnableShading", 1);
         ApplyShadedMaterial();
         Graphics.DrawMeshNow(ConeMesh, Matrix4x4.TRS(position, rotation, new Vector3(size, size, size)));
     }
@@ -113,7 +112,6 @@ public class MyHandleUtility
     public static void DrawCubeCap(Vector3 position, Quaternion rotation, float size, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-        Shader.SetGlobalInt("_EnableShading", 1);
         ApplyShadedMaterial();
         Graphics.DrawMeshNow(CubeMesh, Matrix4x4.TRS(position, rotation, new Vector3(size, size, size)));
     }
@@ -121,7 +119,6 @@ public class MyHandleUtility
     public static void DrawLine(Vector3 p1, Vector3 p2, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-        Shader.SetGlobalInt("_EnableShading", 0);
 
         ApplyLineMaterial();
 
@@ -136,7 +133,6 @@ public class MyHandleUtility
     public static void DrawPolyLine(Color color, params Vector3[] points)
     {
         Shader.SetGlobalColor("_HandleColor", color);
-        Shader.SetGlobalInt("_EnableShading", 0);
         ApplyLineMaterial();
 
         GL.PushMatrix();
@@ -164,6 +160,97 @@ public class MyHandleUtility
         if ((double)from.sqrMagnitude < 1.0 / 1000.0)
             from = Vector3.Cross(normal, Vector3.right);
         DrawWireArc(center, normal, from, 360f, radius, color);
+    }
+
+    //public static void DrawBoundingSphere(Vector3 position, Vector3 normal, float radius, Color color)
+    //{
+    //    Shader.SetGlobalColor("_HandleColor", Color.cyan);
+    //    ApplyLineMaterial();
+
+    //    DrawWireDisc(position, normal, radius, color);
+    //    DrawWireDisc(position, normal, radius, color);
+    //}
+
+    public static void DrawBounds(Vector3 position, Quaternion rotation, Bounds bounds, Color color)
+    {
+        Shader.SetGlobalColor("_HandleColor", Color.cyan);
+        ApplyLineMaterial();
+
+        GL.Begin(GL.LINES);
+
+        /* This section of the code makes sure that the box ajusts to the rotation of the object*/
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2 - bounds.size.x , position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2 - bounds.size.y , position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2 - bounds.size.z );
+        
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2 + bounds.size.x , position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2 - bounds.size.y , position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z + bounds.size.z / 2 - bounds.size.z );
+        
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2 - bounds.size.x , position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2 + bounds.size.y , position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2 - bounds.size.z );
+        
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2 + bounds.size.x , position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2 + bounds.size.y , position.z + bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z + bounds.size.z / 2 - bounds.size.z );
+        
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2 + bounds.size.x , position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2 + bounds.size.y , position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2 + bounds.size.z );
+        
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2 + bounds.size.x , position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2 - bounds.size.y , position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x - bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2 + bounds.size.z );
+        
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2 - bounds.size.x , position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2 - bounds.size.y , position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y + bounds.size.y / 2, position.z - bounds.size.z / 2 + bounds.size.z );
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2 - bounds.size.x , position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2 + bounds.size.y , position.z - bounds.size.z / 2);
+
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2);
+        GL.Vertex3(position.x + bounds.size.x / 2, position.y - bounds.size.y / 2, position.z - bounds.size.z / 2 + bounds.size.z );
+        GL.End();
     }
 
     //*******//
@@ -401,5 +488,112 @@ public class MyHandleUtility
             }
         }
         return Mathf.Sign(delta.x) * delta.magnitude * 1;
+    }
+
+    public static void DrawTwoShadedWireDisc(Vector3 position, Vector3 axis, Vector3 from, float degrees, float radius, Color color)
+    {
+        DrawWireArc(position, axis, from, degrees, radius, color);
+        //DrawWireArc(position, axis, from, degrees - 360f, radius, color);
+    }
+
+    internal static void DrawTwoShadedWireDisc(Vector3 position, Vector3 axis, float radius, Color color)
+    {
+        DrawWireDisc(position, axis, radius, color);
+    }
+
+    public static void DoRadiusHandle(Quaternion rotation, Vector3 position, float radius, Color color)
+    {
+        float num = 90f;
+        Vector3[] array = new Vector3[]
+        {
+                rotation * Vector3.right,
+                rotation * Vector3.up,
+                rotation * Vector3.forward,
+                rotation * -Vector3.right,
+                rotation * -Vector3.up,
+                rotation * -Vector3.forward
+        };
+        Vector3 vector;
+        if (Camera.current.orthographic)
+        {
+            
+        }
+        else
+        {
+            vector = position - Camera.current.transform.position;
+            float sqrMagnitude = vector.sqrMagnitude;
+            float num2 = radius * radius;
+            float num3 = num2 * num2 / sqrMagnitude;
+            float num4 = num3 / num2;
+            if (num4 < 1f)
+            {
+                float num5 = Mathf.Sqrt(num2 - num3);
+                num = Mathf.Atan2(num5, Mathf.Sqrt(num3)) * 57.29578f;
+                DrawWireDisc(position - num2 * vector / sqrMagnitude, vector, num5, color);
+            }
+            else
+            {
+                num = -1000f;
+            }
+
+            if (true)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if (num4 < 1f)
+                    {
+                        float num6 = Vector3.Angle(vector, array[j]);
+                        num6 = 90f - Mathf.Min(num6, 180f - num6);
+                        float num7 = Mathf.Tan(num6 * 0.0174532924f);
+                        float num8 = Mathf.Sqrt(num3 + num7 * num7 * num3) / radius;
+                        if (num8 < 1f)
+                        {
+                            float num9 = Mathf.Asin(num8) * 57.29578f;
+                            Vector3 vector2 = Vector3.Cross(array[j], vector).normalized;
+                            vector2 = Quaternion.AngleAxis(num9, array[j]) * vector2;
+                            DrawTwoShadedWireDisc(position, array[j], vector2, (90f - num9) * 2f, radius, color);
+                        }
+                        else
+                        {
+                            DrawTwoShadedWireDisc(position, array[j], radius, color);
+                        }
+                    }
+                    else
+                    {
+                        DrawTwoShadedWireDisc(position, array[j], radius, color);
+                    }
+                }
+            }
+        }
+        //Color color = Handles.color;
+        //for (int k = 0; k < 6; k++)
+        //{
+        //    int controlID = GUIUtility.GetControlID(Handles.s_RadiusHandleHash, FocusType.Keyboard);
+        //    float num10 = Vector3.Angle(array[k], -vector);
+        //    if ((num10 > 5f && num10 < 175f) || GUIUtility.hotControl == controlID)
+        //    {
+        //        Color color2 = color;
+        //        if (num10 > num + 5f)
+        //        {
+        //            color2.a = Mathf.Clamp01(Handles.backfaceAlphaMultiplier * color.a * 2f);
+        //        }
+        //        else
+        //        {
+        //            color2.a = Mathf.Clamp01(color.a * 2f);
+        //        }
+        //        Handles.color = color2;
+        //        Vector3 vector3 = position + radius * array[k];
+        //        bool changed = GUI.changed;
+        //        GUI.changed = false;
+        //        vector3 = Slider1D.Do(controlID, vector3, array[k], HandleUtility.GetHandleSize(vector3) * 0.03f, new Handles.DrawCapFunction(Handles.DotCap), 0f);
+        //        if (GUI.changed)
+        //        {
+        //            radius = Vector3.Distance(vector3, position);
+        //        }
+        //        GUI.changed |= changed;
+        //    }
+        //}
+        //Handles.color = color;
+        //return radius;
     }
 }

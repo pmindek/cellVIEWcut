@@ -225,8 +225,8 @@ public class SSAOPro : MonoBehaviour
 	[ImageEffectOpaque]
 	void OnRenderImage(RenderTexture source, RenderTexture destination)
 	{
-		// Fail checks
-		if (ShaderSSAO == null)
+       // Fail checks
+        if (ShaderSSAO == null)
 		{
 			Graphics.Blit(source, destination);
 			return;

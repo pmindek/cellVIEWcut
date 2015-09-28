@@ -7,9 +7,6 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class NavigateCamera : MonoBehaviour
 {
-    private HandleSelectionState _currentState = HandleSelectionState.Translate;
-    private TransformHandle _selectedTransformHandle;
-
     public float DefaultDistance = 5.0f;
 
     public float AcrBallRotationSpeed = 0.25f;
@@ -19,7 +16,9 @@ public class NavigateCamera : MonoBehaviour
     public float PannigSpeed = 0.25f;
 
     public Vector3 TargetPosition;
-    private GameObject TargetGameObject;
+
+    [HideInInspector]
+    public GameObject TargetGameObject;
 
     /*****/
 
@@ -39,7 +38,6 @@ public class NavigateCamera : MonoBehaviour
 
     private float deltaTime = 0;
     private float lastUpdateTime = 0;
-    private float leftClickTimeStart = 0;
 
     /*****/
 
@@ -127,52 +125,25 @@ public class NavigateCamera : MonoBehaviour
             Distance = Vector3.Distance(TargetPosition, transform.position);
         }
     }
-
-
-    //bool TestLeftMouseClick()
-    //{
-    //    var leftClick = false;
-
-    //    if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
-    //    {
-    //        leftClickTimeStart = Time.realtimeSinceStartup;
-    //    }
-
-    //    if (Event.current.type == EventType.MouseDrag && Event.current.button == 0)
-    //    {
-    //        leftClickTimeStart = 0;
-    //    }
-
-    //    if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
-    //    {
-    //        var delta = Time.realtimeSinceStartup - leftClickTimeStart;
-    //        if (delta < 0.5f)
-    //        {
-    //            leftClick = true;
-    //        }
-    //    }
-
-    //    return leftClick;
-    //}
-
-    void OnGUI()
+    
+    private void OnGUI()
     {
-        
+
 #if UNITY_EDITOR
         if (Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint)
         {
             EditorUtility.SetDirty(this); // this is important, if omitted, "Mouse down" will not be display
         }
 #endif
-        
+
         if (Event.current.alt && Event.current.type == EventType.mouseDrag && Event.current.button == 0)
         {
             DoArcBallRotation();
         }
-       
+
         if (Event.current.type == EventType.mouseDrag && Event.current.button == 1)
         {
-            DoFpsRotation();   
+            DoFpsRotation();
         }
 
         if (Event.current.type == EventType.mouseDrag && Event.current.button == 2)
@@ -193,14 +164,14 @@ public class NavigateCamera : MonoBehaviour
             }
 
             Distance = DefaultDistance;
-            transform.position = TargetPosition - transform.forward * Distance;
+            transform.position = TargetPosition - transform.forward*Distance;
         }
 
         if (Event.current.keyCode == KeyCode.R)
         {
             Distance = DefaultDistance;
             TargetPosition = Vector3.zero;
-            transform.position = TargetPosition - transform.forward * Distance;
+            transform.position = TargetPosition - transform.forward*Distance;
         }
 
         if (Event.current.keyCode == KeyCode.W)
@@ -221,80 +192,6 @@ public class NavigateCamera : MonoBehaviour
         if (Event.current.keyCode == KeyCode.D)
         {
             right = Event.current.type == EventType.KeyDown;
-        }
-
-        if (Event.current.keyCode == KeyCode.Alpha1)
-        {
-            _currentState = HandleSelectionState.Translate;
-            if (_selectedTransformHandle) { _selectedTransformHandle.SetSelectionState(_currentState); }
-        }
-
-        if (Event.current.keyCode == KeyCode.Alpha2)
-        {
-            _currentState = HandleSelectionState.Rotate;
-            if (_selectedTransformHandle) { _selectedTransformHandle.SetSelectionState(_currentState); }
-        }
-
-        if (Event.current.keyCode == KeyCode.Alpha3)
-        {
-            _currentState = HandleSelectionState.Scale;
-            if (_selectedTransformHandle) { _selectedTransformHandle.SetSelectionState(_currentState); }
-        }
-        
-        if (Event.current.type == EventType.MouseUp && Event.current.button == 0 && !Event.current.alt)
-        {
-            if (_selectedTransformHandle && _selectedTransformHandle.FreezeObjectPicking)
-            {
-                _selectedTransformHandle.FreezeObjectPicking = false;
-            }
-            else
-            {
-                DoObjectPicking();
-            }
-        }
-    }
-
-    void DoObjectPicking()
-    {
-        var mousePos = Event.current.mousePosition;
-        Ray CameraRay = Camera.main.ScreenPointToRay(new Vector3(mousePos.x, Screen.height - mousePos.y, 0));
-        RaycastHit hit;
-
-        // If we hit an object
-        if (Physics.Raycast(CameraRay, out hit, 1000))
-        {
-            var transformHandle = hit.collider.gameObject.GetComponent<TransformHandle>();
-
-            // If we hit a new selectable object
-            if (transformHandle != null && transformHandle != _selectedTransformHandle)
-            {
-                if (_selectedTransformHandle != null)
-                {
-                    Debug.Log("Reset");
-                    _selectedTransformHandle.Disable();
-                }
-
-                Debug.Log("Selected transform: " + transformHandle.gameObject.name);
-
-                transformHandle.Enable();
-                transformHandle.SetSelectionState(_currentState);
-                _selectedTransformHandle = transformHandle;
-                TargetGameObject = hit.collider.gameObject;
-            }
-            // If we hit a non-selectable object
-            else if (transformHandle == null && _selectedTransformHandle != null)
-            {
-                Debug.Log("Reset");
-                _selectedTransformHandle.Disable();
-                _selectedTransformHandle = null;
-            }
-        }
-        // If we miss a hit
-        else if (_selectedTransformHandle != null)
-        {
-            Debug.Log("Reset2");
-            _selectedTransformHandle.Disable();
-            _selectedTransformHandle = null;
         }
     }
 }

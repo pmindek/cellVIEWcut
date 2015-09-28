@@ -33,6 +33,12 @@ public class CopyCameraEffects : MonoBehaviour
         }
     }
 
+    void OnDisable()
+    {
+        if(SceneCamera)
+        ClearSceneCameraEffects();
+    }
+
     public void Update()
     {
         ForceCopyAtLaunch();
@@ -68,7 +74,8 @@ public class CopyCameraEffects : MonoBehaviour
 
         foreach (var component in components)
         {
-            if (component is SSAOPro || component is SceneRenderer)
+            //if (component is SSAOPro || component is SceneRenderer)
+            if (component is SceneRenderer)
             {
                 results.Add(component);
             }                
@@ -89,7 +96,6 @@ public class CopyCameraEffects : MonoBehaviour
     {
         foreach (var component in GetCameraEffects(GetComponent<Camera>()))
         {
-            
             var copy = SceneCamera.gameObject.AddComponent(component.GetType());
             EditorUtility.CopySerialized(component, copy);
         }

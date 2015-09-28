@@ -89,7 +89,6 @@ public class SceneManager : MonoBehaviour
     //--------------------------------------------------------------
 
     public int NumLodLevels = 0;
-    public int SelectedElementID = -1;
     public int TotalNumProteinAtoms = 0;
 
     public int NumProteinInstances
@@ -335,7 +334,6 @@ public class SceneManager : MonoBehaviour
         Debug.Log("Clear Scene");
 
         NumLodLevels = 0;
-        SelectedElementID = -1;
         TotalNumProteinAtoms = 0;
 
         // Clear scene data

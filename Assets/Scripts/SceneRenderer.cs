@@ -17,16 +17,11 @@ public class SceneRenderer : MonoBehaviour
     public Material _renderCurveIngredientsMaterial;
 
     /*****/
-    
+
+    private int frameCount = 0;
     private RenderTexture _HiZMap;
     private ComputeBuffer _argBuffer;
     private ComputeBuffer _proteinInstanceCullFlags;
-
-    /*****/
-    private int frameCount = 0;
-    private bool _mouseClick = false;
-    private float _mouseClickDownTime;
-    private Vector2 _mousePos = new Vector2();
 
     /*****/
     
@@ -41,14 +36,6 @@ public class SceneRenderer : MonoBehaviour
         }
 
         if (_proteinInstanceCullFlags == null) _proteinInstanceCullFlags = new ComputeBuffer(ComputeBufferManager.NumProteinInstancesMax, 4);
-
-#if UNITY_EDITOR
-        if (GetComponent<Camera>() == MyUtility.GetWindowDontShow<SceneView>().camera)
-        {
-            SceneView.onSceneGUIDelegate = null;
-            SceneView.onSceneGUIDelegate += OnSceneGUI;
-        }
-#endif
     }
 
     void OnDisable()
@@ -71,54 +58,6 @@ public class SceneRenderer : MonoBehaviour
         {
             _proteinInstanceCullFlags.Release();
             _proteinInstanceCullFlags = null;
-        }
-    }
-
-#if UNITY_EDITOR
-    void OnSceneGUI(SceneView sceneView)
-    {
-        if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
-        {
-            _mouseClickDownTime = Time.realtimeSinceStartup;
-        }
-
-        if (Event.current.type == EventType.MouseDrag && Event.current.button == 1)
-        {
-            _mouseClickDownTime = 0;
-        }
-
-        if (Event.current.type == EventType.MouseUp && Event.current.button == 1)
-        {
-            var delta = Time.realtimeSinceStartup - _mouseClickDownTime;
-            if (delta < 0.5f)
-            {
-                _mouseClick = true;
-                _mousePos = Event.current.mousePosition;
-            }
-        }
-    }
-#endif    
-
-    void OnGUI()
-    {
-        if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
-        {
-            _mouseClickDownTime = Time.realtimeSinceStartup;
-        }
-
-        if (Event.current.type == EventType.MouseDrag && Event.current.button == 1)
-        {
-            _mouseClickDownTime = 0;
-        }
-
-        if (Event.current.type == EventType.MouseUp && Event.current.button == 1)
-        {
-            var delta = Time.realtimeSinceStartup - _mouseClickDownTime;
-            if (delta < 0.5f)
-            {
-                _mouseClick = true;
-                _mousePos = Event.current.mousePosition;
-            }
         }
     }
 
@@ -220,9 +159,12 @@ public class SceneRenderer : MonoBehaviour
 
     void ComputeHiZMap(RenderTexture depthBuffer)
     {
+        if (GetComponent<Camera>().pixelWidth == 0 || GetComponent<Camera>().pixelHeight == 0) return;
+
         // Hierachical depth buffer
-        if (_HiZMap == null || _HiZMap.width != GetComponent<Camera>().pixelWidth || _HiZMap.height != GetComponent<Camera>().pixelHeight)
+        if (_HiZMap == null || _HiZMap.width != GetComponent<Camera>().pixelWidth || _HiZMap.height != GetComponent<Camera>().pixelHeight )
         {
+            
             if (_HiZMap != null)
             {
                 _HiZMap.Release();
@@ -340,6 +282,8 @@ public class SceneRenderer : MonoBehaviour
     [ImageEffectOpaque]
     void OnRenderImage(RenderTexture src, RenderTexture dst)
     {
+        if (GetComponent<Camera>().pixelWidth == 0 || GetComponent<Camera>().pixelHeight == 0) return;
+
         if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumDnaSegments == 0) 
         {
             Graphics.Blit(src, dst);
@@ -352,7 +296,7 @@ public class SceneRenderer : MonoBehaviour
         var idBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
         var colorBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGB32);
         var depthBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.Depth);
-        var depthNormalsBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGBFloat);
+        //var depthNormalsBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGBFloat);
         var compositeColorBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGB32);        
         var compositeDepthBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.Depth);
         
@@ -393,14 +337,14 @@ public class SceneRenderer : MonoBehaviour
             Graphics.DrawProcedural(MeshTopology.Points, Mathf.Max(SceneManager.Instance.NumDnaSegments - 2, 0)); // Do not draw first and last segments
         }
 
-        ///*** Post processing ***/
+        /////*** Post processing ***/
 
         // Get color from id buffer
         _compositeMaterial.SetTexture("_IdTexture", idBuffer);
         _compositeMaterial.SetBuffer("_ProteinColors", ComputeBufferManager.Instance.ProteinColors);
         _compositeMaterial.SetBuffer("_ProteinInstanceInfo", ComputeBufferManager.Instance.ProteinInstanceInfos);
         Graphics.Blit(null, colorBuffer, _compositeMaterial, 3);
-        
+
         // Compute contours detection
         SetContourShaderParams();
         _contourMaterial.SetTexture("_IdTexture", idBuffer);
@@ -411,35 +355,37 @@ public class SceneRenderer : MonoBehaviour
         _compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
         Graphics.Blit(null, src, _compositeMaterial, 0);
         Graphics.Blit(src, dst);
-        
+
         //Composite with scene depth
         _compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
         Graphics.Blit(null, compositeDepthBuffer, _compositeMaterial, 1);
 
-        //Composite with scene depth normals
-        _compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
-        Graphics.Blit(null, depthNormalsBuffer, _compositeMaterial, 2);
+        ////Composite with scene depth normals
+        ////_compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
+        ////Graphics.Blit(null, depthNormalsBuffer, _compositeMaterial, 2);
 
-        // Set global shader properties
+        //// Set global shader properties
         Shader.SetGlobalTexture("_CameraDepthTexture", compositeDepthBuffer);
-        Shader.SetGlobalTexture("_CameraDepthNormalsTexture", depthNormalsBuffer);
+        ////Shader.SetGlobalTexture("_CameraDepthNormalsTexture", depthNormalsBuffer);
 
         /*** Object Picking ***/
 
-        if (_mouseClick)
+        if (SelectionManager.Instance.MouseRightClickFlag)
         {
-            SelectionManager.Instance.SetSelectedElement(MyUtility.ReadPixelId(idBuffer, _mousePos));
-            _mouseClick = false;
+            SelectionManager.Instance.SetSelectedObject(MyUtility.ReadPixelId(idBuffer, SelectionManager.Instance.MousePosition));
+            SelectionManager.Instance.MouseRightClickFlag = false;
         }
 
         // Release temp buffers
         RenderTexture.ReleaseTemporary(idBuffer);
         RenderTexture.ReleaseTemporary(colorBuffer);
         RenderTexture.ReleaseTemporary(depthBuffer);
-        RenderTexture.ReleaseTemporary(depthNormalsBuffer);
+        //RenderTexture.ReleaseTemporary(depthNormalsBuffer);
         RenderTexture.ReleaseTemporary(compositeColorBuffer);
         RenderTexture.ReleaseTemporary(compositeDepthBuffer);
 
         frameCount++;
+
+        Graphics.Blit(src, dst); return;
     }
 }

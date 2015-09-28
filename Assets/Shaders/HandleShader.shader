@@ -72,7 +72,7 @@
 
 			float4 frag(v2f input) : COLOR
 			{
-				float ndotl = max(dot(input.viewNormal, float3(0,0,1)), 0.1) * 1.25;
+				float ndotl = 1.25 * pow(max(dot(input.viewNormal, float3(0,0,1)), 0.1), 0.5);
 				return _HandleColor * ndotl;
 			}
 
