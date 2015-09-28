@@ -280,7 +280,7 @@ public class SceneManager : MonoBehaviour
 
     public void AddCutObject(CutType type)
     {
-        var gameObject = Instantiate(Resources.Load("CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
+        var gameObject = Instantiate(Resources.Load("Prefabs/CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
         var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
     }
 
