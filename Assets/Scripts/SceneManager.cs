@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 enum InstanceState
 {
     Null = -1,           // Instance will not be displayed
@@ -13,93 +17,6 @@ enum InstanceState
 [ExecuteInEditMode]
 public class SceneManager : MonoBehaviour
 {
-    // Cutaways
-    // No need to serialize tjat, the values are stored in scene game objects instead
-    [NonSerialized]
-    public List<int> CutItems = new List<int>();
-    [NonSerialized]
-    public List<Vector4> CutInfos = new List<Vector4>();
-    [NonSerialized]
-    public List<Vector4> CutScales = new List<Vector4>();
-    [NonSerialized]
-    public List<Vector4> CutPositions = new List<Vector4>();
-    [NonSerialized]
-    public List<Vector4> CutRotations = new List<Vector4>();
-    
-    // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
-    // The cache will be filled automatically via the CutObject script onEnable
-    [NonSerialized]
-    public List<CutObject> CutObjects = new List<CutObject>();
-
-    [NonSerialized]
-    public List<int> ProteinCutFilters = new List<int>();
-
-    //*******
-
-    // Scene data
-    public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
-    public List<Vector4> ProteinInstancePositions = new List<Vector4>();
-    public List<Vector4> ProteinInstanceRotations = new List<Vector4>();
-
-    public List<Vector4> CurveControlPointsInfos = new List<Vector4>();
-    public List<Vector4> CurveControlPointsNormals = new List<Vector4>();
-    public List<Vector4> CurveControlPointsPositions = new List<Vector4>();
-
-    // Protein ingredients data
-
-    public List<int> ProteinAtomCount = new List<int>();
-    public List<int> ProteinAtomStart = new List<int>();
-    public List<int> ProteinToggleFlags = new List<int>();
-    public List<string> ProteinNames = new List<string>();
-    public List<Vector4> ProteinAtoms = new List<Vector4>();
-    public List<Vector4> ProteinColors = new List<Vector4>();
-    public List<float> ProteinBoundingSpheres = new List<float>();
-    public List<Vector4> ProteinAtomClusters = new List<Vector4>();
-    public List<int> ProteinAtomClusterCount = new List<int>();
-    public List<int> ProteinAtomClusterStart = new List<int>();
-
-    // Curve ingredients data
-    
-    public List<int> CurveIngredientsAtomStart = new List<int>();
-    public List<int> CurveIngredientsAtomCount = new List<int>();
-    public List<int> CurveIngredientToggleFlags = new List<int>();
-    public List<string> CurveIngredientsNames = new List<string>(); 
-    public List<Vector4> CurveIngredientsAtoms = new List<Vector4>();
-    public List<Vector4> CurveIngredientsInfos = new List<Vector4>();
-    public List<Vector4> CurveIngredientsColors = new List<Vector4>();
-
-    //--------------------------------------------------------------
-
-    public int NumLodLevels = 0;
-    public int SelectedElement = -1;
-    public int TotalNumProteinAtoms = 0;
-
-    public int NumProteinInstances
-    {
-        get { return ProteinInstancePositions.Count; }
-    }
-
-    public int NumCutObjects
-    {
-        get { return CutObjects.Count; }
-    }
-
-    public int NumDnaControlPoints
-    {
-        get { return CurveControlPointsPositions.Count; }
-    }
-
-    public int NumDnaSegments
-    {
-        get { return Math.Max(CurveControlPointsPositions.Count - 1, 0); }
-    }
-
-    public static bool CheckInstance()
-    {
-        return _instance != null;
-    }
-
-    //--------------------------------------------------------------
     // Declare the scene manager as a singleton
     private static SceneManager _instance = null;
     public static SceneManager Instance
@@ -123,60 +40,94 @@ public class SceneManager : MonoBehaviour
         }
     }
 
+    public static bool CheckInstance()
+    {
+        return _instance != null;
+    }
+
+    //--------------------------------------------------------------
+    
+    // Scene data
+    public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
+    public List<Vector4> ProteinInstancePositions = new List<Vector4>();
+    public List<Vector4> ProteinInstanceRotations = new List<Vector4>();
+
+    public List<Vector4> CurveControlPointsInfos = new List<Vector4>();
+    public List<Vector4> CurveControlPointsNormals = new List<Vector4>();
+    public List<Vector4> CurveControlPointsPositions = new List<Vector4>();
+
+    // Protein ingredients data
+
+    public List<int> ProteinAtomCount = new List<int>();
+    public List<int> ProteinAtomStart = new List<int>();
+    public List<int> ProteinToggleFlags = new List<int>();
+    public List<string> ProteinNames = new List<string>();
+    public List<Vector4> ProteinAtoms = new List<Vector4>();
+    public List<Vector4> ProteinColors = new List<Vector4>();
+    public List<float> ProteinRadii = new List<float>();
+    public List<Vector4> ProteinAtomClusters = new List<Vector4>();
+    public List<int> ProteinAtomClusterCount = new List<int>();
+    public List<int> ProteinAtomClusterStart = new List<int>();
+
+    // Curve ingredients data
+    
+    public List<int> CurveIngredientsAtomStart = new List<int>();
+    public List<int> CurveIngredientsAtomCount = new List<int>();
+    public List<int> CurveIngredientToggleFlags = new List<int>();
+    public List<string> CurveIngredientsNames = new List<string>(); 
+    public List<Vector4> CurveIngredientsAtoms = new List<Vector4>();
+    public List<Vector4> CurveIngredientsInfos = new List<Vector4>();
+    public List<Vector4> CurveIngredientsColors = new List<Vector4>();
+
+    //*****
+
+    // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
+    // The cache will be filled automatically via the CutObject script onEnable
+    [NonSerialized]
+    public List<CutObject> CutObjects = new List<CutObject>();
+
     //--------------------------------------------------------------
 
-    public void AddCutObject(CutType type)
+    public int NumLodLevels = 0;
+    public int SelectedElementID = -1;
+    public int TotalNumProteinAtoms = 0;
+
+    public int NumProteinInstances
     {
-        var gameObject = Instantiate(Resources.Load("Cut Objects/CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
-        var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
+        get { return ProteinInstancePositions.Count; }
     }
+
+    public int NumCutObjects
+    {
+        get { return CutObjects.Count; }
+    }
+
+    public int NumDnaControlPoints
+    {
+        get { return CurveControlPointsPositions.Count; }
+    }
+
+    public int NumDnaSegments
+    {
+        get { return Math.Max(CurveControlPointsPositions.Count - 1, 0); }
+    }
+    
+    //--------------------------------------------------------------
 
     void Update()
     {
-        // Todo: proceed only if changes are made 
+        UpdateCutObjects();
+    }
 
-        CutInfos.Clear();
-        CutScales.Clear();
-        CutPositions.Clear();
-        CutRotations.Clear();
-        ProteinCutFilters.Clear();
-
-        //Debug.Log(CutObjects.Count);
-
-        // Fill the protein cut filter buffer
-        for (var i = 0; i < ProteinNames.Count; i++)
-        {
-            foreach (var cutObject in CutObjects)
-            {
-                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
-            }
-        }
-
-        //traverse all cuts (first-level children of a root GameObject Cuts
-        foreach (var cut in CutObjects)
-        {
-            if(cut == null) throw new Exception("Cut object not found");
-
-            CutScales.Add(cut.transform.localScale);
-            CutPositions.Add(cut.transform.position);
-            CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, 0));
-            CutRotations.Add(Helper.QuanternionToVector4(cut.transform.rotation));
-            
-            // todo: add cutitems
-        }
-
-        ComputeBufferManager.Instance.CutInfos.SetData(CutInfos.ToArray());
-        ComputeBufferManager.Instance.CutScales.SetData(CutScales.ToArray());
-        ComputeBufferManager.Instance.CutPositions.SetData(CutPositions.ToArray());
-        ComputeBufferManager.Instance.CutRotations.SetData(CutRotations.ToArray());
-        ComputeBufferManager.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
-
-        //UploadAllData();
+    void OnUnityReload()
+    {
+        Debug.Log("Reload Scene");
+        UploadAllData();
     }
 
     //--------------------------------------------------------------
 
-    #region Protein_functions
+    #region Ingredients
 
     public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null)
     {
@@ -184,13 +135,11 @@ public class SceneManager : MonoBehaviour
 
         if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
             throw new Exception("Uneven cluster levels number: " + ingredientName);
-
-        if (color == null) { color = Helper.GetRandomColor(); }
         
         ProteinNames.Add(ingredientName);
         ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
-        ProteinBoundingSpheres.Add(Vector3.Magnitude(bounds.extents));
+        ProteinRadii.Add(Vector3.Magnitude(bounds.extents));
 
         ProteinAtomCount.Add(atomSpheres.Count);
         ProteinAtomStart.Add(ProteinAtoms.Count);
@@ -222,18 +171,14 @@ public class SceneManager : MonoBehaviour
         var ingredientId = ProteinNames.IndexOf(ingredientName);
 
         Vector4 instancePosition = position;
-        instancePosition.w = ProteinBoundingSpheres[ingredientId];
+        instancePosition.w = ProteinRadii[ingredientId];
 
         ProteinInstanceInfos.Add(new Vector4(ingredientId, (int)InstanceState.Normal, unitId));
         ProteinInstancePositions.Add(instancePosition);
-        ProteinInstanceRotations.Add(Helper.QuanternionToVector4(rotation));
+        ProteinInstanceRotations.Add(MyUtility.QuanternionToVector4(rotation));
 
         TotalNumProteinAtoms += ProteinAtomCount[ingredientId];
     }
-
-    #endregion
-    
-    #region Curve_functions
 
     public void AddCurveIngredient(string name, string pdbName)
     {
@@ -242,7 +187,7 @@ public class SceneManager : MonoBehaviour
         int numSteps = 1;
         float twistAngle = 0;
         float segmentLength = 34.0f;
-        var color = Helper.GetRandomColor();
+        var color = MyUtility.GetRandomColor();
 
         if (name.Contains("DNA"))
         {
@@ -311,8 +256,8 @@ public class SceneManager : MonoBehaviour
         }
 
         var curveIngredientId = CurveIngredientsNames.IndexOf(name);
-        var positions = ResampleControlPoints(path, CurveIngredientsInfos[curveIngredientId].z);
-        var normals = GetSmoothNormals(positions);
+        var positions = MyUtility.ResampleControlPoints(path, CurveIngredientsInfos[curveIngredientId].z);
+        var normals = MyUtility.GetSmoothNormals(positions);
 
         var curveId = CurveControlPointsPositions.Count;
         var curveType = CurveIngredientsNames.IndexOf(name);
@@ -327,108 +272,62 @@ public class SceneManager : MonoBehaviour
 
         //Debug.Log(positions.Count);
     }
-    
-    private List<Vector4> ResampleControlPoints(List<Vector4> controlPoints, float segmentLength)
-    {
-        int nP = controlPoints.Count;
-        //insert a point at the end and at the begining
-        controlPoints.Insert(0, controlPoints[0] + (controlPoints[0] - controlPoints[1]) / 2.0f);
-        controlPoints.Add(controlPoints[nP - 1] + (controlPoints[nP - 1] - controlPoints[nP - 2]) / 2.0f);
-
-        var resampledControlPoints = new List<Vector4>();
-        resampledControlPoints.Add(controlPoints[0]);
-        resampledControlPoints.Add(controlPoints[1]);
-
-        var currentPointId = 1;
-        var currentPosition = controlPoints[currentPointId];
-
-        //distance = DisplaySettings.Instance.DistanceContraint;
-        float lerpValue = 0.0f;
-
-        // Normalize the distance between control points
-        while (true)
-        {
-            if (currentPointId + 2 >= controlPoints.Count) break;
-            //if (currentPointId + 2 >= 100) break;
-
-            var cp0 = controlPoints[currentPointId - 1];
-            var cp1 = controlPoints[currentPointId];
-            var cp2 = controlPoints[currentPointId + 1];
-            var cp3 = controlPoints[currentPointId + 2];
-
-            var found = false;
-
-            for (; lerpValue <= 1; lerpValue += 0.01f)
-            {
-                var candidate = Helper.CubicInterpolate(cp0, cp1, cp2, cp3, lerpValue);
-                var d = Vector3.Distance(currentPosition, candidate);
-
-                if (d > segmentLength)
-                {
-                    resampledControlPoints.Add(candidate);
-                    currentPosition = candidate;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                lerpValue = 0;
-                currentPointId++;
-            }
-        }
-
-        return resampledControlPoints;
-    }
-
-    public List<Vector4> GetSmoothNormals(List<Vector4> controlPoints)
-    {
-        var smoothNormals = new List<Vector4>();
-        var crossDirection = Vector3.up;
-
-        var p0 = controlPoints[0];
-        var p1 = controlPoints[1];
-        var p2 = controlPoints[2];
-
-        smoothNormals.Add(Vector3.Normalize(Vector3.Cross(p0 - p1, p2 - p1)));
-
-        for (int i = 1; i < controlPoints.Count - 1; i++)
-        {
-            p0 = controlPoints[i - 1];
-            p1 = controlPoints[i];
-            p2 = controlPoints[i + 1];
-
-            var t = Vector3.Normalize(p2 - p0);
-            var b = Vector3.Normalize(Vector3.Cross(t, smoothNormals.Last()));
-            var n = -Vector3.Normalize(Vector3.Cross(t, b));
-
-            smoothNormals.Add(n);
-        }
-
-        smoothNormals.Add(controlPoints.Last());
-
-        return smoothNormals;
-    }
 
     #endregion
     
-    #region Misc_functions
+    //--------------------------------------------------------------
 
-    public void SetSelectedElement(int elementId)
+    #region Cut Objects
+
+    public void AddCutObject(CutType type)
     {
-        Debug.Log("Selected element id: " + elementId);
-        SelectedElement = elementId;
+        var gameObject = Instantiate(Resources.Load("CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
+        var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
     }
 
-    private void OnUnityReload()
+    // Todo: proceed only if changes are made 
+    public void UpdateCutObjects()
     {
-        Debug.Log("Reload Scene");
+        var CutInfos = new List<Vector4>();
+        var CutScales = new List<Vector4>();
+        var CutPositions = new List<Vector4>();
+        var CutRotations = new List<Vector4>();
+        var ProteinCutFilters = new List<int>();
 
-        //_instance.ClearScene();
-        UploadAllData();
-        //ResetCutObjects();
+        //Debug.Log(CutObjects.Count);
+
+        // Fill the protein cut filter buffer
+        for (var i = 0; i < ProteinNames.Count; i++)
+        {
+            foreach (var cutObject in CutObjects)
+            {
+                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+            }
+        }
+
+        // For each cut object
+        foreach (var cut in CutObjects)
+        {
+            if (cut == null) throw new Exception("Cut object not found");
+
+            CutScales.Add(cut.transform.localScale);
+            CutPositions.Add(cut.transform.position);
+            CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, 0));
+            CutRotations.Add(MyUtility.QuanternionToVector4(cut.transform.rotation));
+        }
+
+        ComputeBufferManager.Instance.CutInfos.SetData(CutInfos.ToArray());
+        ComputeBufferManager.Instance.CutScales.SetData(CutScales.ToArray());
+        ComputeBufferManager.Instance.CutPositions.SetData(CutPositions.ToArray());
+        ComputeBufferManager.Instance.CutRotations.SetData(CutRotations.ToArray());
+        ComputeBufferManager.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
     }
+
+    #endregion
+
+    //--------------------------------------------------------------
+
+    #region Misc
 
     // Scene data gets serialized on each reload, to clear the scene call this function
     public void ClearScene()
@@ -436,7 +335,7 @@ public class SceneManager : MonoBehaviour
         Debug.Log("Clear Scene");
 
         NumLodLevels = 0;
-        SelectedElement = -1;
+        SelectedElementID = -1;
         TotalNumProteinAtoms = 0;
 
         // Clear scene data
@@ -448,7 +347,7 @@ public class SceneManager : MonoBehaviour
         ProteinNames.Clear();
         ProteinColors.Clear();
         ProteinToggleFlags.Clear();
-        ProteinBoundingSpheres.Clear();
+        ProteinRadii.Clear();
 
         // Clear atom data
         ProteinAtoms.Clear();
@@ -477,7 +376,7 @@ public class SceneManager : MonoBehaviour
     private void CheckBufferSizes()
     {
         if (Instance.NumCutObjects >= ComputeBufferManager.NumCutsMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
+        //if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
         if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
         if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
         if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
@@ -488,8 +387,6 @@ public class SceneManager : MonoBehaviour
         if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
         if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
         if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
-
-
     }
 
     public void UploadAllData()
@@ -501,6 +398,7 @@ public class SceneManager : MonoBehaviour
         ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data
+        ComputeBufferManager.Instance.ProteinRadii.SetData(ProteinRadii.ToArray());
         ComputeBufferManager.Instance.ProteinColors.SetData(ProteinColors.ToArray());
         ComputeBufferManager.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
 
@@ -543,19 +441,9 @@ public class SceneManager : MonoBehaviour
         foreach (var cutObject in cutObjects)
         {
             cutObject.ProteinCutFilters.Clear();
-            cutObject.SetCutItems(ProteinNames);
+            cutObject.SetProteinCutFilters(ProteinNames);
         }
     }
-
-    //public void ResetCutObjects()
-    //{
-    //    var cutObjects = FindObjectsOfType<CutObject>();
-
-    //    foreach (var cutObject in cutObjects)
-    //    {
-    //        cutObject.ResetCutItems(ProteinNames);
-    //    }
-    //}
-
+    
     #endregion
 }

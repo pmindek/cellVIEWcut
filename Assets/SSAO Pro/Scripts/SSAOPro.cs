@@ -1,11 +1,17 @@
-﻿#if (UNITY_4_0 || UNITY_4_0_1 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_5 || UNITY_4_6)
+﻿// SSAO Pro - Unity Asset
+// Copyright (c) 2015 - Thomas Hourdel
+// http://www.thomashourdel.com
+
+#if (UNITY_4_5 || UNITY_4_6)
 #define UNITY_4_X
 #else
 #define UNITY_5_X
 #endif
 
 using UnityEngine;
+using SSAOProUtils;
 
+[HelpURL("http://www.thomashourdel.com/ssaopro/doc/")]
 [ExecuteInEditMode, AddComponentMenu("Image Effects/SSAO Pro")]
 [RequireComponent(typeof(Camera))]
 public class SSAOPro : MonoBehaviour
@@ -27,27 +33,16 @@ public class SSAOPro : MonoBehaviour
 		Ultra
 	}
 
-	public enum AOMode
-	{
-		V11,
-		V12
-	}
-
-	public AOMode Mode = AOMode.V12;
 	public Texture2D NoiseTexture;
 
-#if UNITY_4_X
-	public bool UseHighPrecisionDepthMap = true;
-#else
-	public readonly bool UseHighPrecisionDepthMap = false;
-#endif
+	public bool UseHighPrecisionDepthMap = false;
 
 	public SampleCount Samples = SampleCount.Medium;
 
 	[Range(1, 4)]
 	public int Downsampling = 1;
 
-	[Range(0.01f, 1.25f)]
+	[Range(0.01f, 2.25f)]
 	public float Radius = 0.125f;
 
 	[Range(0f, 16f)]
@@ -62,6 +57,7 @@ public class SSAOPro : MonoBehaviour
 	[Range(0f, 1f)]
 	public float LumContribution = 0.5f;
 
+	[ColorUsage(false)]
 	public Color OcclusionColor = Color.black;
 
 	public float CutoffDistance = 150f;
@@ -78,10 +74,8 @@ public class SSAOPro : MonoBehaviour
 
 	public bool DebugAO = false;
 
-	protected Shader m_ShaderSSAO_v1;
 	protected Shader m_ShaderSSAO_v2;
 	protected Shader m_ShaderHighPrecisionDepth;
-	protected Material m_Material_v1;
 	protected Material m_Material_v2;
 	protected Camera m_Camera;
 	protected Camera m_RWSCamera;
@@ -91,26 +85,13 @@ public class SSAOPro : MonoBehaviour
 	{
 		get
 		{
-			if (Mode == AOMode.V11)
+			if (m_Material_v2 == null)
 			{
-				if (m_Material_v1 == null)
-				{
-					m_Material_v1 = new Material(ShaderSSAO);
-					m_Material_v1.hideFlags = HideFlags.HideAndDontSave;
-				}
-
-				return m_Material_v1;
+				m_Material_v2 = new Material(ShaderSSAO);
+				m_Material_v2.hideFlags = HideFlags.HideAndDontSave;
 			}
-			else
-			{
-				if (m_Material_v2 == null)
-				{
-					m_Material_v2 = new Material(ShaderSSAO);
-					m_Material_v2.hideFlags = HideFlags.HideAndDontSave;
-				}
 
-				return m_Material_v2;
-			}
+			return m_Material_v2;
 		}
 	}
 
@@ -118,20 +99,10 @@ public class SSAOPro : MonoBehaviour
 	{
 		get
 		{
-			if (Mode == AOMode.V11)
-			{
-				if (m_ShaderSSAO_v1 == null)
-					m_ShaderSSAO_v1 = Shader.Find("Hidden/SSAO Pro V1");
+			if (m_ShaderSSAO_v2 == null)
+				m_ShaderSSAO_v2 = Shader.Find("Hidden/SSAO Pro V2");
 
-				return m_ShaderSSAO_v1;
-			}
-			else
-			{
-				if (m_ShaderSSAO_v2 == null)
-					m_ShaderSSAO_v2 = Shader.Find("Hidden/SSAO Pro V2");
-
-				return m_ShaderSSAO_v2;
-			}
+			return m_ShaderSSAO_v2;
 		}
 	}
 
@@ -207,9 +178,6 @@ public class SSAOPro : MonoBehaviour
 
 	void OnDestroy()
 	{
-		if (m_Material_v1 != null)
-			DestroyImmediate(m_Material_v1);
-
 		if (m_Material_v2 != null)
 			DestroyImmediate(m_Material_v2);
 
@@ -276,16 +244,8 @@ public class SSAOPro : MonoBehaviour
 		int ssaoPass = SetShaderStates();
 
 		// Uniforms
-		if (Mode == AOMode.V11)
-		{
-			Material.SetMatrix("_InverseViewProject", m_Camera.projectionMatrix.inverse);
-		}
-		else
-		{
-			Material.SetMatrix("_InverseViewProject", (m_Camera.projectionMatrix * m_Camera.worldToCameraMatrix).inverse);
-			Material.SetMatrix("_CameraModelView", m_Camera.cameraToWorldMatrix);
-		}
-
+		Material.SetMatrix("_InverseViewProject", (m_Camera.projectionMatrix * m_Camera.worldToCameraMatrix).inverse);
+		Material.SetMatrix("_CameraModelView", m_Camera.cameraToWorldMatrix);
 		Material.SetTexture("_NoiseTex", NoiseTexture);
 		Material.SetVector("_Params1", new Vector4(NoiseTexture == null ? 0f : NoiseTexture.width, Radius, Intensity, Distance));
 		Material.SetVector("_Params2", new Vector4(Bias, LumContribution, CutoffDistance, CutoffFalloff));

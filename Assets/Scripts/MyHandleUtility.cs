@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class MyHandleUtility
 {
+
     public static Color xAxisColor = new Color(0.8588235f, 0.2431373f, 0.1137255f, 0.93f);
     public static Color yAxisColor = new Color(0.6039216f, 0.9529412f, 0.282353f, 0.93f);
     public static Color zAxisColor = new Color(0.227451f, 0.4784314f, 0.972549f, 0.93f);
@@ -11,11 +11,22 @@ public class MyHandleUtility
 
     //********//
 
+    private static bool s_UseYSign = false;
+    private static bool s_UseYSignZoom = false;
+
     private static Mesh _coneMesh;
     private static Mesh _cubeMesh;
     private static Mesh _sphereMesh;
     private static Mesh _cylinderMesh;
     private static Mesh _quadMesh;
+
+    public static float acceleration
+    {
+        get
+        {
+            return (float)((!Event.current.shift ? 1.0 : 4.0) * (!Event.current.alt ? 1.0 : 0.25));
+        }
+    }
 
     public static Mesh CubeMesh
     {
@@ -63,7 +74,7 @@ public class MyHandleUtility
         get
         {
             if (!(bool)((Object)MyHandleUtility._handleMaterial))
-                MyHandleUtility._handleMaterial = Resources.Load("Handles/HandleMat") as Material;
+                MyHandleUtility._handleMaterial = Resources.Load("Materials/HandleMaterial") as Material;
             return MyHandleUtility._handleMaterial;
         }
     }
@@ -73,19 +84,19 @@ public class MyHandleUtility
         get
         {
             if (!(bool)((Object)MyHandleUtility._handleMaterial))
-                MyHandleUtility._handleMaterial = Resources.Load("Handles/HandleMat") as Material;
+                MyHandleUtility._handleMaterial = Resources.Load("Materials/HandleMaterial") as Material;
             return MyHandleUtility._handleMaterial;
         }
     }
 
-    internal static void ApplyHandleMaterial()
+    internal static void ApplyLineMaterial()
     {
         handleMaterial.SetPass(0);
     }
 
-    internal static void ApplyHandleWireMaterial()
+    internal static void ApplyShadedMaterial()
     {
-        handleWireMaterial.SetPass(0);
+        handleWireMaterial.SetPass(1);
     }
 
     //*******//
@@ -95,7 +106,7 @@ public class MyHandleUtility
     {
         Shader.SetGlobalColor("_HandleColor", color);
         Shader.SetGlobalInt("_EnableShading", 1);
-        ApplyHandleMaterial();
+        ApplyShadedMaterial();
         Graphics.DrawMeshNow(ConeMesh, Matrix4x4.TRS(position, rotation, new Vector3(size, size, size)));
     }
 
@@ -103,7 +114,7 @@ public class MyHandleUtility
     {
         Shader.SetGlobalColor("_HandleColor", color);
         Shader.SetGlobalInt("_EnableShading", 1);
-        ApplyHandleMaterial();
+        ApplyShadedMaterial();
         Graphics.DrawMeshNow(CubeMesh, Matrix4x4.TRS(position, rotation, new Vector3(size, size, size)));
     }
 
@@ -112,7 +123,7 @@ public class MyHandleUtility
         Shader.SetGlobalColor("_HandleColor", color);
         Shader.SetGlobalInt("_EnableShading", 0);
 
-        ApplyHandleWireMaterial();
+        ApplyLineMaterial();
 
         GL.PushMatrix();
         GL.Begin(1);
@@ -126,7 +137,7 @@ public class MyHandleUtility
     {
         Shader.SetGlobalColor("_HandleColor", color);
         Shader.SetGlobalInt("_EnableShading", 0);
-        ApplyHandleWireMaterial();
+        ApplyLineMaterial();
 
         GL.PushMatrix();
         GL.Begin(1);
@@ -139,17 +150,6 @@ public class MyHandleUtility
         GL.PopMatrix();
     }
 
-    internal static void SetDiscSectionPoints(Vector3[] dest, int count, Vector3 center, Vector3 normal, Vector3 from, float angle, float radius)
-    {
-        from.Normalize();
-        Quaternion quaternion = Quaternion.AngleAxis(angle / (float)(count - 1), normal);
-        Vector3 vector3 = from * radius;
-        for (int index = 0; index < count; ++index)
-        {
-            dest[index] = center + vector3;
-            vector3 = quaternion * vector3;
-        }
-    }
 
     public static void DrawWireArc(Vector3 center, Vector3 normal, Vector3 from, float angle, float radius, Color color)
     {
@@ -170,13 +170,12 @@ public class MyHandleUtility
 
     public static float GetHandleSize(Vector3 position)
     {
-        Camera current = Camera.current;
-        if (!(bool)((Object)current))
-            return 20f;
-        Transform transform = current.transform;
+        Camera main = Camera.main;
+       
+        Transform transform = main.transform;
         Vector3 position1 = transform.position;
         float z = Vector3.Dot(position - position1, transform.TransformDirection(new Vector3(0.0f, 0.0f, 1f)));
-        return 80f / Mathf.Max((current.WorldToScreenPoint(position1 + transform.TransformDirection(new Vector3(0.0f, 0.0f, z))) - current.WorldToScreenPoint(position1 + transform.TransformDirection(new Vector3(1f, 0.0f, z)))).magnitude, 0.0001f);
+        return 80f / Mathf.Max((main.WorldToScreenPoint(position1 + transform.TransformDirection(new Vector3(0.0f, 0.0f, z))) - main.WorldToScreenPoint(position1 + transform.TransformDirection(new Vector3(1f, 0.0f, z)))).magnitude, 0.0001f);
     }
 
     public static Vector3 ProjectPointLine(Vector3 point, Vector3 lineStart, Vector3 lineEnd)
@@ -264,15 +263,143 @@ public class MyHandleUtility
         return DistanceToArc(center, normal, from, 360f, radius);
     }
 
+    internal static void SetDiscSectionPoints(Vector3[] dest, int count, Vector3 center, Vector3 normal, Vector3 from, float angle, float radius)
+    {
+        from.Normalize();
+        Quaternion quaternion = Quaternion.AngleAxis(angle / (float)(count - 1), normal);
+        Vector3 vector3 = from * radius;
+        for (int index = 0; index < count; ++index)
+        {
+            dest[index] = center + vector3;
+            vector3 = quaternion * vector3;
+        }
+    }
+
+    public static Vector3 ClosestPointToArc(Vector3 center, Vector3 normal, Vector3 from, float angle, float radius)
+    {
+        Vector3[] dest = new Vector3[60];
+        SetDiscSectionPoints(dest, 60, center, normal, from, angle, radius);
+        return ClosestPointToPolyLine(dest);
+    }
+
+    public static Vector3 ClosestPointToDisc(Vector3 center, Vector3 normal, float radius)
+    {
+        Vector3 from = Vector3.Cross(normal, Vector3.up);
+        if ((double)from.sqrMagnitude < 1.0 / 1000.0)
+            from = Vector3.Cross(normal, Vector3.right);
+        return ClosestPointToArc(center, normal, from, 360f, radius);
+    }
+
+    public static Vector3 ClosestPointToPolyLine(params Vector3[] vertices)
+    {
+        float num1 = DistanceToLine(vertices[0], vertices[1]);
+        int index1 = 0;
+        for (int index2 = 2; index2 < vertices.Length; ++index2)
+        {
+            float num2 = DistanceToLine(vertices[index2 - 1], vertices[index2]);
+            if ((double)num2 < (double)num1)
+            {
+                num1 = num2;
+                index1 = index2 - 1;
+            }
+        }
+        Vector3 vector3_1 = vertices[index1];
+        Vector3 vector3_2 = vertices[index1 + 1];
+        Vector2 vector2_1 = Event.current.mousePosition - MyHandleUtility.WorldToGUIPoint(vector3_1);
+        Vector2 vector2_2 = MyHandleUtility.WorldToGUIPoint(vector3_2) - MyHandleUtility.WorldToGUIPoint(vector3_1);
+        float magnitude = vector2_2.magnitude;
+        float num3 = Vector3.Dot((Vector3)vector2_2, (Vector3)vector2_1);
+        if ((double)magnitude > 9.99999997475243E-07)
+            num3 /= magnitude * magnitude;
+        float t = Mathf.Clamp01(num3);
+        return Vector3.Lerp(vector3_1, vector3_2, t);
+    }
+
+    internal static float GetParametrization(Vector2 x0, Vector2 x1, Vector2 x2)
+    {
+        return (float)-((double)Vector2.Dot(x1 - x0, x2 - x1) / (double)(x2 - x1).sqrMagnitude);
+    }
+
+    public static float CalcLineTranslation(Vector2 src, Vector2 dest, Vector3 srcPosition, Vector3 constraintDir)
+    {
+        float num = 1f;
+        Vector3 forward = Camera.main.transform.forward;
+        if ((double)Vector3.Dot(constraintDir, forward) < 0.0)
+            num = -1f;
+        Vector3 vector3 = constraintDir;
+        vector3.y = -vector3.y;
+        Camera current = Camera.main;
+        Vector2 x1 = (Vector2)current.WorldToScreenPoint(srcPosition);
+        Vector2 x2 = (Vector2)current.WorldToScreenPoint(srcPosition + constraintDir * num);
+        Vector2 x0_1 = dest;
+        Vector2 x0_2 = src;
+        if (x1 == x2)
+            return 0.0f;
+        x0_1.y = -x0_1.y;
+        x0_2.y = -x0_2.y;
+        float parametrization = GetParametrization(x0_2, x1, x2);
+        return (GetParametrization(x0_1, x1, x2) - parametrization) * num;
+    }
+
+    public static float niceMouseDelta
+    {
+        get
+        {
+            Vector2 delta = Event.current.delta;
+            delta.y = -delta.y;
+            if ((double)Mathf.Abs(Mathf.Abs(delta.x) - Mathf.Abs(delta.y)) / (double)Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y)) > 0.100000001490116)
+                s_UseYSign = (double)Mathf.Abs(delta.x) <= (double)Mathf.Abs(delta.y);
+            if (s_UseYSign)
+                return Mathf.Sign(delta.y) * delta.magnitude * acceleration;
+            return Mathf.Sign(delta.x) * delta.magnitude * acceleration;
+        }
+    }
+
+    public static float niceMouseDeltaZoom
+    {
+        get
+        {
+            Vector2 vector2 = -Event.current.delta;
+            if ((double)Mathf.Abs(Mathf.Abs(vector2.x) - Mathf.Abs(vector2.y)) / (double)Mathf.Max(Mathf.Abs(vector2.x), Mathf.Abs(vector2.y)) > 0.100000001490116)
+                s_UseYSignZoom = (double)Mathf.Abs(vector2.x) <= (double)Mathf.Abs(vector2.y);
+            if (s_UseYSignZoom)
+                return Mathf.Sign(vector2.y) * vector2.magnitude * acceleration;
+            return Mathf.Sign(vector2.x) * vector2.magnitude * acceleration;
+        }
+    }
+
+
     public static void DrawWireMesh(Mesh mesh, Transform transform, Color color)
     {
         Shader.SetGlobalColor("_HandleColor", color);
         Shader.SetGlobalInt("_EnableShading", 0);
 
-        ApplyHandleWireMaterial();
+        ApplyLineMaterial();
 
         GL.wireframe = true;
         Graphics.DrawMeshNow(mesh, transform.localToWorldMatrix);
         GL.wireframe = false;
+    }
+
+    public static float SnapValue(float val, float snap)
+    {
+        if ((Event.current.keyCode == KeyCode.LeftControl) && (double)snap > 0.0)
+            return Mathf.Round(val / snap) * snap;
+        return val;
+    }
+
+    public static float GetMouseDelta()
+    {
+        Vector2 delta = Event.current.delta;
+        delta.y = -delta.y;
+        if ((double)Mathf.Abs(Mathf.Abs(delta.x) - Mathf.Abs(delta.y)) /
+            (double)Mathf.Max(Mathf.Abs(delta.x), Mathf.Abs(delta.y)) > 0.100000001490116)
+        {
+            if ((double)Mathf.Abs(delta.x) <= (double)Mathf.Abs(delta.y))
+            {
+                return Mathf.Sign(delta.y) * delta.magnitude * 1;
+            }
+        }
+        return Mathf.Sign(delta.x) * delta.magnitude * 1;
     }
 }

@@ -1,4 +1,8 @@
-﻿#if (UNITY_4_0 || UNITY_4_0_1 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_5 || UNITY_4_6)
+﻿// SSAO Pro - Unity Asset
+// Copyright (c) 2015 - Thomas Hourdel
+// http://www.thomashourdel.com
+
+#if (UNITY_4_5 || UNITY_4_6)
 #define UNITY_4_X
 #else
 #define UNITY_5_X
@@ -10,9 +14,6 @@ using UnityEditor;
 [CustomEditor(typeof(SSAOPro))]
 public class SSAOProEditor : Editor
 {
-	static GUIContent[] c_aoModes = { new GUIContent("1.1 (Legacy)"), new GUIContent("1.2 (Recommended)") };
-
-	SerializedProperty p_aoMode;
 	SerializedProperty p_noiseTexture;
 
 #if UNITY_4_X
@@ -37,7 +38,6 @@ public class SSAOProEditor : Editor
 
 	void OnEnable()
 	{
-		p_aoMode = serializedObject.FindProperty("Mode");
 		p_noiseTexture = serializedObject.FindProperty("NoiseTexture");
 
 #if UNITY_4_X
@@ -59,22 +59,13 @@ public class SSAOProEditor : Editor
 		p_blurPasses = serializedObject.FindProperty("BlurPasses");
 		p_blurBilateralThreshold = serializedObject.FindProperty("BlurBilateralThreshold");
 		p_debugAO = serializedObject.FindProperty("DebugAO");
+
+		UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 	}
 
 	public override void OnInspectorGUI()
 	{
 		serializedObject.Update();
-
-		p_aoMode.enumValueIndex = EditorGUILayout.Popup(new GUIContent("SSAO Mode", "SSAO Algorithm"), p_aoMode.enumValueIndex, c_aoModes);
-
-		// Near/far view plane check if Mode == AOMode.V1
-		if (p_aoMode.enumValueIndex == (int)SSAOPro.AOMode.V11)
-		{
-			Camera camera = ((SSAOPro)target).GetComponent<Camera>();
-
-			if (camera.nearClipPlane < 0.3 || (camera.farClipPlane - camera.nearClipPlane) > 5000)
-				EditorGUILayout.HelpBox("Check your view planes ! You may experience artifacts and heavy self-shadowing with your current camera settings. Make sure you read the \"Random Notes\" section in the doc.", MessageType.Warning);
-		}
 
 		Texture2D noise = (Texture2D)p_noiseTexture.objectReferenceValue;
 
@@ -90,7 +81,15 @@ public class SSAOProEditor : Editor
 		p_noiseTexture.objectReferenceValue = noise;
 
 #if UNITY_4_X
-		EditorGUILayout.PropertyField(p_useHighPrecisionDepthMap, new GUIContent("High Precision Depth Map", "Use a higher precision depth map. Slower but higher quality. You don\'t need this with Unity 5 !"));
+		EditorGUILayout.PropertyField(p_useHighPrecisionDepthMap, new GUIContent("High Precision Depth Map", "Use a higher precision depth map. Slower but higher quality. Only use when working with the Forward rendering path in Unity 4.x"));
+
+		if (p_useHighPrecisionDepthMap.boolValue)
+		{
+			RenderingPath rpath = (target as SSAOPro).GetComponent<Camera>().actualRenderingPath;
+
+			if (rpath != RenderingPath.Forward && rpath != RenderingPath.VertexLit)
+				EditorGUILayout.HelpBox("High Precision Depth Map should only be used when working with the Forward rendering path in Unity 4.x !", MessageType.Warning);
+		}
 #endif
 
 		EditorGUILayout.PropertyField(p_samples, new GUIContent("Sample Count", "Number of ambient occlusion samples (higher is slower)"));
@@ -123,7 +122,10 @@ public class SSAOProEditor : Editor
 		EditorGUI.indentLevel--;
 
 		p_debugAO.boolValue = GUILayout.Toggle(p_debugAO.boolValue, "Show AO", EditorStyles.miniButton);
-        
+
+		if (GUILayout.Button("About", EditorStyles.miniButton))
+			SSAOPro_StartupWindow.Init(true);
+
 		serializedObject.ApplyModifiedProperties();
 	}
 }

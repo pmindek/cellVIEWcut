@@ -1,4 +1,8 @@
-﻿Shader "Hidden/SSAO Pro V2"
+﻿// SSAO Pro - Unity Asset
+// Copyright (c) 2015 - Thomas Hourdel
+// http://www.thomashourdel.com
+
+Shader "Hidden/SSAO Pro V2"
 {
 	Properties
 	{
@@ -12,8 +16,6 @@
 		#pragma target 3.0
 		#pragma glsl
 		#include "UnityCG.cginc"
-
-		#define SSAOPRO_V2
 
 	ENDCG
 
@@ -72,7 +74,7 @@
 				//#define SAMPLE_NOISE
 				//#define LIGHTING_CONTRIBUTION
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -90,7 +92,7 @@
 				#define SAMPLE_NOISE
 				//#define LIGHTING_CONTRIBUTION
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -108,7 +110,7 @@
 				//#define SAMPLE_NOISE
 				#define LIGHTING_CONTRIBUTION
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -126,7 +128,7 @@
 				#define SAMPLE_NOISE
 				#define LIGHTING_CONTRIBUTION
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -142,7 +144,7 @@
 				#pragma vertex vert_gaussian
 				#pragma fragment frag_gaussian
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -160,7 +162,7 @@
 				
 				#pragma multi_compile HIGH_PRECISION_DEPTHMAP_ON  HIGH_PRECISION_DEPTHMAP_OFF
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -178,7 +180,7 @@
 				
 				#pragma multi_compile HIGH_PRECISION_DEPTHMAP_ON  HIGH_PRECISION_DEPTHMAP_OFF
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}
@@ -194,7 +196,7 @@
 				#pragma vertex vert_composite
 				#pragma fragment frag_composite
 
-				#include "./SSAOPro.cginc"
+				#include "SSAOPro.cginc"
 
 			ENDCG
 		}

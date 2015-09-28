@@ -22,7 +22,7 @@ public class ComputeBufferManager : MonoBehaviour
     public ComputeBuffer SphereBatchBuffer;
 
     // Protein buffers
-    public ComputeBuffer ProteinInfos;
+    public ComputeBuffer ProteinRadii;
     public ComputeBuffer ProteinColors;
     public ComputeBuffer ProteinToggleFlags;
 
@@ -35,7 +35,6 @@ public class ComputeBufferManager : MonoBehaviour
     public ComputeBuffer ProteinAtomClusterStart;
 
     public ComputeBuffer ProteinInstanceInfos;
-    public ComputeBuffer ProteinInstanceCullFlags;
     public ComputeBuffer ProteinInstancePositions;
     public ComputeBuffer ProteinInstanceRotations;
 
@@ -120,7 +119,7 @@ public class ComputeBufferManager : MonoBehaviour
         if (SphereBatchBuffer == null) SphereBatchBuffer = new ComputeBuffer(NumProteinSphereBatchesMax, 16, ComputeBufferType.Append);
 
         //*****//
-
+        if (ProteinRadii == null) ProteinRadii = new ComputeBuffer(NumProteinMax, 4);
         if (ProteinColors == null) ProteinColors = new ComputeBuffer(NumProteinMax, 16);
         if (ProteinToggleFlags == null) ProteinToggleFlags = new ComputeBuffer(NumProteinMax, 4);
 
@@ -133,7 +132,6 @@ public class ComputeBufferManager : MonoBehaviour
         if (ProteinAtomClusterStart == null) ProteinAtomClusterStart = new ComputeBuffer(NumProteinMax * NumLodMax, 4);
 
         if (ProteinInstanceInfos == null) ProteinInstanceInfos = new ComputeBuffer(NumProteinInstancesMax, 16);
-        if (ProteinInstanceCullFlags == null) ProteinInstanceCullFlags = new ComputeBuffer(NumProteinInstancesMax, 4);
         if (ProteinInstancePositions == null) ProteinInstancePositions = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstanceRotations == null) ProteinInstanceRotations = new ComputeBuffer(NumProteinInstancesMax, 16);
 
@@ -177,7 +175,7 @@ public class ComputeBufferManager : MonoBehaviour
         if (SphereBatchBuffer != null) { SphereBatchBuffer.Release(); SphereBatchBuffer = null; }
 
         //*****//
-	    
+        if (ProteinRadii != null) { ProteinRadii.Release(); ProteinRadii = null; }
         if (ProteinColors != null) { ProteinColors.Release(); ProteinColors = null; }
 	    if (ProteinToggleFlags != null) { ProteinToggleFlags.Release(); ProteinToggleFlags = null; }
         
@@ -190,7 +188,6 @@ public class ComputeBufferManager : MonoBehaviour
 	    if (ProteinAtomClusterStart != null) { ProteinAtomClusterStart.Release(); ProteinAtomClusterStart = null; }
 
         if (ProteinInstanceInfos != null) { ProteinInstanceInfos.Release(); ProteinInstanceInfos = null; }
-        if (ProteinInstanceCullFlags != null) { ProteinInstanceCullFlags.Release(); ProteinInstanceCullFlags = null; }
         if (ProteinInstancePositions != null) { ProteinInstancePositions.Release(); ProteinInstancePositions = null; }
         if (ProteinInstanceRotations != null) { ProteinInstanceRotations.Release(); ProteinInstanceRotations = null; }
 

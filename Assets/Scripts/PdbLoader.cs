@@ -347,7 +347,7 @@ public static class AtomHelper
         foreach (var transform in transforms)
         {
             var posBiomt = new Vector3(transform.m03, transform.m13, transform.m23);
-            var rotBiomt = Helper.RotationMatrixToQuaternion(transform);
+            var rotBiomt = MyUtility.RotationMatrixToQuaternion(transform);
 
             foreach (var sphere in atomSpheres)
             {

@@ -58,7 +58,7 @@ public static class CellPackLoader
         var cellPackSceneJsonPath = recipePath;//Application.dataPath + "/../Data/HIV/cellPACK/BloodHIV1.0_mixed_fixed_nc1.json";
         if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
 
-        var resultData = Helper.ParseJson(cellPackSceneJsonPath);
+        var resultData = MyUtility.ParseJson(cellPackSceneJsonPath);
 
         //we can traverse the json dictionary and gather ingredient source (PDB,center), sphereTree, instance.geometry if we want.
         //the recipe is optional as it will gave more information than just the result file.
@@ -175,8 +175,8 @@ public static class CellPackLoader
         // Define cluster decimation levels
         var clusterLevels = (containsACarbonOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
-            : new List<float>() {0.20f, 0.10f, 0.05f};
-        
+            : new List<float>() { 0.15f, 0.10f, 0.05f };
+
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);
         SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color, clusterLevels);
@@ -191,14 +191,14 @@ public static class CellPackLoader
             var position = new Vector3(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat);
             var rotation = new Quaternion(r[0].AsFloat, r[1].AsFloat, r[2].AsFloat, r[3].AsFloat);
 
-            var mat = Helper.quaternion_matrix(rotation);
-            var euler = Helper.euler_from_matrix(mat);
-            rotation = Helper.MayaRotationToUnity(euler);
+            var mat = MyUtility.quaternion_matrix(rotation);
+            var euler = MyUtility.euler_from_matrix(mat);
+            rotation = MyUtility.MayaRotationToUnity(euler);
 
             if (!biomt)
             {
                 // Find centered position
-                if (!center) position += Helper.QuaternionTransform(rotation, centerPosition);
+                if (!center) position += MyUtility.QuaternionTransform(rotation, centerPosition);
                 SceneManager.Instance.AddIngredientInstance(name, position, rotation);
                 instanceCount++;
             }
@@ -206,8 +206,8 @@ public static class CellPackLoader
             {
                 foreach (var transform in biomtTransforms)
                 {
-                    var biomtOffset = Helper.RotationMatrixToQuaternion(transform) * centerPosition;
-                    var biomtInstanceRot = rotation * Helper.RotationMatrixToQuaternion(transform);
+                    var biomtOffset = MyUtility.RotationMatrixToQuaternion(transform) * centerPosition;
+                    var biomtInstanceRot = rotation * MyUtility.RotationMatrixToQuaternion(transform);
                     var biomtInstancePos = rotation * (new Vector3(transform.m03, transform.m13, transform.m23) + biomtOffset) + position - biomtCenter;
 
                     SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);

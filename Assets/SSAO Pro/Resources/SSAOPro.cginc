@@ -1,3 +1,7 @@
+// SSAO Pro - Unity Asset
+// Copyright (c) 2015 - Thomas Hourdel
+// http://www.thomashourdel.com
+
 #ifndef SSAO_PRO_INCLUDED
 #define SSAO_PRO_INCLUDED
 
@@ -5,34 +9,34 @@
 	// Uniforms
 
 	sampler2D _MainTex;
-	float4 _MainTex_TexelSize;
+	half4 _MainTex_TexelSize;
 	sampler2D _SSAOTex;
 
 	sampler2D_float _DepthNormalMapF32; // High precision depth map (Unity 4 only)
 	sampler2D_float _CameraDepthTexture;
 	sampler2D_float _CameraDepthNormalsTexture;
 		
-	float4x4 _InverseViewProject;
-	float4x4 _CameraModelView;
+	half4x4 _InverseViewProject;
+	half4x4 _CameraModelView;
 
 	sampler2D _NoiseTex;
-	float4 _Params1; // Noise Size / Sample Radius / Intensity / Distance
-	float4 _Params2; // Bias / Luminosity Contribution / Distance Cutoff / Cutoff Falloff
-	float4 _OcclusionColor;
+	half4 _Params1; // Noise Size / Sample Radius / Intensity / Distance
+	half4 _Params2; // Bias / Luminosity Contribution / Distance Cutoff / Cutoff Falloff
+	half4 _OcclusionColor;
 
-	float2 _Direction;
-	float _BilateralThreshold;
+	half2 _Direction;
+	half _BilateralThreshold;
 
 
 	// --------------------------------------------------------------------------------
 	// Functions
 
-	inline float invlerp(float from, float to, float value)
+	inline half invlerp(half from, half to, half value)
 	{
 		return (value - from) / (to - from);
 	}
 
-	inline float getDepth(float2 uv)
+	inline half getDepth(half2 uv)
 	{
 		#if HIGH_PRECISION_DEPTHMAP_OFF
 		return tex2D(_CameraDepthTexture, uv).x;
@@ -43,86 +47,57 @@
 		return 0;
 	}
 
-	inline float3 getVSPosition(float2 uv, float depth)
-	{
-		// Compute view space position from the view depth
-		float4 pos = float4((uv.x - 0.5) * 2.0, (0.5 - uv.y) * -2.0, 1.0, 1.0);
-		float4 ray = mul(pos, _InverseViewProject);
-		return ray.xyz * depth; // depth should be LinearEye
-	}
-
-	inline float3 getWSPosition(float2 uv, float depth)
+	inline half3 getWSPosition(half2 uv, half depth)
 	{
 		// Compute world space position from the view depth
-		float4 pos = float4(uv.xy * 2.0 - 1.0, depth, 1.0);
-		float4 ray = mul(_InverseViewProject, pos);
+		half4 pos = half4(uv.xy * 2.0 - 1.0, depth, 1.0);
+		half4 ray = mul(_InverseViewProject, pos);
 		return ray.xyz / ray.w;
 	}
 
-	inline float3 getVSNormal(float2 uv)
-	{
-		// Decode the view space normal
-		float3 nn = tex2D(_CameraDepthNormalsTexture, uv).xyz * float3(3.5554, 3.5554, 0) + float3(-1.7777, -1.7777, 1.0);
-		float g = 2.0 / dot(nn.xyz, nn.xyz);
-		return float3(0,0,1); // float3(g * nn.xy, g - 1.0); // View space
-	}
-
-	inline float3 getWSNormal(float2 uv)
+	inline half3 getWSNormal(half2 uv)
 	{
 		// Get the view space normal and convert it to world space
-		float3 vsnormal = getVSNormal(uv); // View space
-		float3 wsnormal = mul((float3x3)_CameraModelView, vsnormal); // World space
+		//half3 nn = tex2D(_CameraDepthNormalsTexture, uv).xyz * half3(3.5554, 3.5554, 0) + half3(-1.7777, -1.7777, 1.0);
+		half3 nn = float3(0.5, 0.5,0) * half3(3.5554, 3.5554, 0) + half3(-1.7777, -1.7777, 1.0);
+		half g = 2.0 / dot(nn.xyz, nn.xyz);
+		half3 vsnormal = half3(g * nn.xy, g - 1.0); // View space
+		half3 wsnormal = mul((half3x3)_CameraModelView, vsnormal); // World space
 		return wsnormal;
 	}
 
-	inline float calcAO(float2 tcoord, float2 uv, float3 p, float3 cnorm)
+	inline half calcAO(half2 tcoord, half2 uv, half3 p, half3 cnorm)
 	{
-		float2 t = tcoord + uv;
-		float depth = getDepth(t);
-
-		#if defined(SSAOPRO_V1)
-		float3 diff = getVSPosition(t, LinearEyeDepth(depth)) - p; // View space
-		#else
-		float3 diff = getWSPosition(t, depth) - p; // World space
-		#endif
-
-		float3 v = normalize(diff);
-		float d = length(diff) * _Params1.w;
+		half2 t = tcoord + uv;
+		half depth = getDepth(t);
+		half3 diff = getWSPosition(t, depth) - p; // World space
+		half3 v = normalize(diff);
+		half d = length(diff) * _Params1.w;
 		return max(0.0, dot(cnorm, v) - _Params2.x) * (1.0 / (1.0 + d)) * _Params1.z;
 	}
 
-	float ssao(float2 uv)
+	half ssao(half2 uv)
 	{
-		const float2 CROSS[4] = { float2(1.0, 0.0), float2(-1.0, 0.0), float2(0.0, 1.0), float2(0.0, -1.0) };
+		const half2 CROSS[4] = { half2(1.0, 0.0), half2(-1.0, 0.0), half2(0.0, 1.0), half2(0.0, -1.0) };
 			
-		float depth = getDepth(uv);
-		float eyeDepth = LinearEyeDepth(depth);
+		half depth = getDepth(uv);
+		half eyeDepth = LinearEyeDepth(depth);
 
-		#if defined(SSAOPRO_V1)
-		float3 position = getVSPosition(uv, eyeDepth); // View space
-		float3 normal = getVSNormal(uv); // View space
-		#else
-		float3 position = getWSPosition(uv, depth); // World space
-		float3 normal = getWSNormal(uv); // World space
-		#endif
+		half3 position = getWSPosition(uv, depth); // World space
+		half3 normal = getWSNormal(uv); // World space
 
 		#if defined(SAMPLE_NOISE)
-		float2 random = normalize(tex2D(_NoiseTex, _ScreenParams.xy * uv / _Params1.x).rg * 2.0 - 1.0);
+		half2 random = normalize(tex2D(_NoiseTex, _ScreenParams.xy * uv / _Params1.x).rg * 2.0 - 1.0);
 		#endif
 
-		float ao = 0.0;
-		
-		#if defined(SSAOPRO_V1)
-		float radius = _Params1.y / position.z;
-		#else
-		float radius = _Params1.y / eyeDepth;
+		half radius = max(_Params1.y / eyeDepth, 0.005);
 		clip(_Params2.z - eyeDepth); // Skip out of range pixels
-		#endif
+		half ao = 0.0;
 
 		// Sampling
 		for (int j = 0; j < 4; j++)
 		{
-			float2 coord1;
+			half2 coord1;
 
 			#if defined(SAMPLE_NOISE)
 			coord1 = reflect(CROSS[j], random) * radius;
@@ -131,8 +106,8 @@
 			#endif
 
 			#if !SAMPLES_VERY_LOW
-			float2 coord2 = coord1 * 0.707;
-			coord2 = float2(coord2.x - coord2.y, coord2.x + coord2.y);
+			half2 coord2 = coord1 * 0.707;
+			coord2 = half2(coord2.x - coord2.y, coord2.x + coord2.y);
 			#endif
   
 			#if SAMPLES_ULTRA			// 20
@@ -171,11 +146,7 @@
 		#endif
 
 		// Distance cutoff
-		#if defined(SSAOPRO_V1)
-		ao = lerp(1.0 - ao, 1.0, saturate(invlerp(_Params2.z - _Params2.w, _Params2.z, -position.z)));
-		#else
 		ao = lerp(1.0 - ao, 1.0, saturate(invlerp(_Params2.z - _Params2.w, _Params2.z, eyeDepth)));
-		#endif
 
 		return ao;
 	}
@@ -209,25 +180,25 @@
 		return o; 
 	}
 
-	float4 getAOColor(float ao, float2 uv)
+	half4 getAOColor(half ao, half2 uv)
 	{
 		#if defined(LIGHTING_CONTRIBUTION)
 
 		// Luminance for the current pixel, used to reduce the AO amount in bright areas
 		// Could potentially be replaced by the lighting pass in Deferred...
-		float3 color = tex2D(_MainTex, uv).rgb;
-		float luminance = dot(color, float3(0.299, 0.587, 0.114));
-		float aofinal = lerp(ao, 1.0, luminance * _Params2.y);
-		return float4(aofinal, aofinal, aofinal, 1.0);
+		half3 color = tex2D(_MainTex, uv).rgb;
+		half luminance = dot(color, half3(0.299, 0.587, 0.114));
+		half aofinal = lerp(ao, 1.0, luminance * _Params2.y);
+		return half4(aofinal, aofinal, aofinal, 1.0);
 
 		#else
 
-		return float4(ao, ao, ao, 1.0);
+		return half4(ao, ao, ao, 1.0);
 
 		#endif
 	}
 
-	float4 frag_ssao(v_data_simple i) : COLOR
+	half4 frag_ssao(v_data_simple i) : SV_Target
 	{
 		#if UNITY_UV_STARTS_AT_TOP
 		return saturate(getAOColor(ssao(i.uv), i.uv2) + _OcclusionColor);
@@ -260,14 +231,14 @@
 		return o;
 	}
 
-	float4 frag_gaussian(v_data_blur i) : COLOR
+	float4 frag_gaussian(v_data_blur i) : SV_Target
 	{
-		float3 c = tex2D(_MainTex, i.uv).rgb * 0.2270270270;
+		half3 c = tex2D(_MainTex, i.uv).rgb * 0.2270270270;
 		c += tex2D(_MainTex, i.uv1.xy).rgb * 0.3162162162;
 		c += tex2D(_MainTex, i.uv1.zw).rgb * 0.3162162162;
 		c += tex2D(_MainTex, i.uv2.xy).rgb * 0.0702702703;
 		c += tex2D(_MainTex, i.uv2.zw).rgb * 0.0702702703;
-		return float4(c, 1.0);
+		return half4(c, 1.0);
 	}
 
 
@@ -285,11 +256,11 @@
 		return o;
 	}
 
-	float4 frag_bilateral(v_data_blur i) : COLOR
+	float4 frag_bilateral(v_data_blur i) : SV_Target
 	{
-		float4 depthTmp, coeff;
-		float depth = Linear01Depth(getDepth(i.uv));
-		float3 c = tex2D(_MainTex, i.uv).rgb;
+		half4 depthTmp, coeff;
+		half depth = Linear01Depth(getDepth(i.uv));
+		half3 c = tex2D(_MainTex, i.uv).rgb;
 		
 		depthTmp.x = Linear01Depth(getDepth(i.uv1.xy));
 		depthTmp.y = Linear01Depth(getDepth(i.uv1.zw));
@@ -302,7 +273,7 @@
 		c += tex2D(_MainTex, i.uv2.zw).rgb * coeff.w;
 
 		c /= (coeff.x + coeff.y + coeff.z + coeff.w);
-		return float4(c, 1.0);
+		return half4(c, 1.0);
 	}
 
 
@@ -321,21 +292,21 @@
 		return o;
 	}
 
-	float4 frag_hqbilateral(v_data_blur i) : COLOR
+	float4 frag_hqbilateral(v_data_blur i) : SV_Target
 	{	
-		const float2 uvs[4] = { i.uv1.xy, i.uv1.zw, i.uv2.xy, i.uv2.zw };
+		const half2 uvs[4] = { i.uv1.xy, i.uv1.zw, i.uv2.xy, i.uv2.zw };
 
-		float depth = Linear01Depth(getDepth(i.uv));
-		float3 accum = tex2D(_MainTex, i.uv).rgb * 0.2270270270;
-		float accumWeight = 0.2270270270;
+		half depth = Linear01Depth(getDepth(i.uv));
+		half3 accum = tex2D(_MainTex, i.uv).rgb * 0.2270270270;
+		half accumWeight = 0.2270270270;
 
-		float4 depthTmp;
+		half4 depthTmp;
 		depthTmp.x = Linear01Depth(getDepth(uvs[0]));
 		depthTmp.y = Linear01Depth(getDepth(uvs[1]));
 		depthTmp.z = Linear01Depth(getDepth(uvs[2]));
 		depthTmp.w = Linear01Depth(getDepth(uvs[3]));
-		float4 diff = abs(depth - depthTmp);
-		float4 weight = (1.0 - step(_BilateralThreshold, diff)) * float4(0.3162162162, 0.3162162162, 0.0702702703, 0.0702702703);
+		half4 diff = abs(depth - depthTmp);
+		half4 weight = (1.0 - step(_BilateralThreshold, diff)) * half4(0.3162162162, 0.3162162162, 0.0702702703, 0.0702702703);
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -343,7 +314,7 @@
 			accumWeight += weight[i];
 		}
 
-		return float4(accum / accumWeight, 1.0);
+		return half4(accum / accumWeight, 1.0);
 	}
 
 
@@ -365,15 +336,15 @@
 		return o; 
 	}
 
-	float4 frag_composite(v_data_simple i) : COLOR
+	half4 frag_composite(v_data_simple i) : SV_Target
 	{
 		#if UNITY_UV_STARTS_AT_TOP
-		float4 color = tex2D(_MainTex, i.uv2).rgba;
+		half4 color = tex2D(_MainTex, i.uv2).rgba;
 		#else
-		float4 color = tex2D(_MainTex, i.uv).rgba;
+		half4 color = tex2D(_MainTex, i.uv).rgba;
 		#endif
 		
-		return float4(color.rgb * tex2D(_SSAOTex, i.uv).rgb, color.a);
+		return half4(color.rgb * tex2D(_SSAOTex, i.uv).rgb, color.a);
 	}
 
 #endif // SSAO_PRO_INCLUDED
