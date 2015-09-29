@@ -82,7 +82,7 @@ void OcclusionCulling (uint3 id : SV_DispatchThreadID)
 
 	float4 infos = _ProteinInstanceInfos[id.x];				
 	float radius = _ProteinRadii[infos.x] * _Scale;
-	float3 pos = _ProteinInstancePositions[id.x] * _Scale;	
+	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
 	float4 sphere = float4(pos, radius);
 			
 	// Compute the depth of the bounding sphere
