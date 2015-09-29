@@ -143,26 +143,18 @@ public static class CellPackLoader
         
         // Disable biomts until loading problem is resolved
         if (biomt) return;
-        
+
+        //var biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
+        //var biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms);
+
         // Load atom set from pdb file
-        var atomSet = PdbLoader.LoadAtomSet(pdbName);
-        
+        var atomSet = PdbLoader.LoadAtomSet(pdbName, false);
         // If the set is empty return
         if (atomSet.Count == 0) return;
-
-        var atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
-        var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;
         
-        var biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
-        var biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms);
-        
-        var containsACarbonOnly = AtomHelper.ContainsACarbonOnly(atomSet);
-
-        // Center atoms
-        AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
-
-        // Compute bounds
-        var bounds = AtomHelper.ComputeBounds(atomSpheres);
+        // Center the atom set
+        var localCenter = AtomHelper.CenterAtoms(ref atomSet);
+        var isCarbonAlphaOnly = AtomHelper.ContainsCarbonAlphaOnly(atomSet);
 
         // Get ingredient color
         // TODO: Move color palette code into dedicated function
@@ -173,13 +165,12 @@ public static class CellPackLoader
         var color = new Color(c[0], c[1], c[2]);
 
         // Define cluster decimation levels
-        var clusterLevels = (containsACarbonOnly)
+        var clusterLevels = (isCarbonAlphaOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
             : new List<float>() { 0.15f, 0.10f, 0.05f };
 
         // Add ingredient type
-        //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);
-        SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color, clusterLevels);
+        SceneManager.Instance.AddIngredient(name, AtomHelper.GetAtomSpheres(atomSet), color, clusterLevels);
         
         int instanceCount = 0;
         
@@ -198,28 +189,28 @@ public static class CellPackLoader
             if (!biomt)
             {
                 // Find centered position
-                if (!center) position += MyUtility.QuaternionTransform(rotation, centerPosition);
+                if (!center) position += MyUtility.QuaternionTransform(rotation, localCenter);
                 SceneManager.Instance.AddIngredientInstance(name, position, rotation);
                 instanceCount++;
             }
-            else
-            {
-                foreach (var transform in biomtTransforms)
-                {
-                    var biomtOffset = MyUtility.RotationMatrixToQuaternion(transform) * centerPosition;
-                    var biomtInstanceRot = rotation * MyUtility.RotationMatrixToQuaternion(transform);
-                    var biomtInstancePos = rotation * (new Vector3(transform.m03, transform.m13, transform.m23) + biomtOffset) + position - biomtCenter;
+            //else
+            //{
+            //    foreach (var transform in biomtTransforms)
+            //    {
+            //        var biomtOffset = MyUtility.RotationMatrixToQuaternion(transform) * centerPosition;
+            //        var biomtInstanceRot = rotation * MyUtility.RotationMatrixToQuaternion(transform);
+            //        var biomtInstancePos = rotation * (new Vector3(transform.m03, transform.m13, transform.m23) + biomtOffset) + position - biomtCenter;
 
-                    SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);
-                    instanceCount++;
-                }
-            }
+            //        SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);
+            //        instanceCount++;
+            //    }
+            //}
         }
 
         Debug.Log("*****");
         Debug.Log("Added ingredient: " + name);
-        if (containsACarbonOnly) Debug.Log("Alpha-carbons only");
-        Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSpheres.Count + " *** " + "Num instances: " + instanceCount + " *** " + "Total atom count: " + atomSpheres.Count * instanceCount);
+        if (isCarbonAlphaOnly) Debug.Log("Alpha-carbons only");
+        Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSet.Count + " *** " + "Num instances: " + instanceCount + " *** " + "Total atom count: " + atomSet.Count * instanceCount);
     }
 
     public static void AddCurveIngredients(JSONNode ingredientDictionary, string prefix)

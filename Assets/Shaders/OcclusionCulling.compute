@@ -10,8 +10,6 @@ uniform uint _ScreenHeight;
 uniform float4x4 _CameraViewMatrix;
 uniform float4x4 _CameraProjMatrix;
 
-
-
 Texture3D<float> _HiZMap;
 RWTexture3D<float> _RWHiZMap;
 
@@ -48,8 +46,8 @@ void CSFillHiZMapSubLevels (uint3 id : SV_DispatchThreadID)
 
 //--------------------------------------------------------------------------------------
 
-uniform int _CullFlag;
-uniform	int _NumInstances;
+uniform int _NumInstances;
+uniform int _CullingFilter;
 uniform	StructuredBuffer<float> _ProteinRadii;
 uniform	StructuredBuffer<float4> _ProteinInstanceInfos;
 uniform	RWStructuredBuffer<int> _ProteinInstanceCullFlags;
@@ -122,6 +120,8 @@ void OcclusionCulling (uint3 id : SV_DispatchThreadID)
 	}
 	else if(cullFlag == 0)
 	{
-		_ProteinInstanceCullFlags[id.x] = _CullFlag;
-	}	
+		_ProteinInstanceCullFlags[id.x] = _CullingFilter;
+	}
+
+    //_ProteinInstanceCullFlags[id.x] = 666;
 }

@@ -13,10 +13,17 @@ public static class PdbLoader
 {
     public static string DefaultPdbDirectory = Application.dataPath + "/../Data/proteins/";
 
-    public static List<Atom> LoadAtomSet(string fileName)
+    public static List<Atom> LoadAtomSet(string fileName, bool center = true)
     {
-        var path = GetPdbFile(fileName, DefaultPdbDirectory);
-        return ReadAtomData(path);
+        var atomSet = ReadAtomData(GetPdbFile(fileName, DefaultPdbDirectory));
+        if (center) AtomHelper.CenterAtoms(ref atomSet);
+
+        return atomSet;
+    }
+
+    public static List<Vector4> LoadAtomSpheres(string fileName, bool center = true)
+    {
+        return AtomHelper.GetAtomSpheres(LoadAtomSet(fileName, center));
     }
 
     public static List<Matrix4x4> LoadBiomtTransforms(string fileName)
@@ -25,18 +32,15 @@ public static class PdbLoader
         return ReadBiomtData(path);
     }
 
-    public static List<Vector4> LoadAtomSpheres(string fileName, bool buildBiomt = false)
+    public static List<Vector4> LoadAtomSpheresBiomt(string fileName)
     {
         var path = GetPdbFile(fileName, DefaultPdbDirectory);
 
         var atomData = ReadAtomData(path);
         var atomSpheres = AtomHelper.GetAtomSpheres(atomData);
 
-        if (buildBiomt)
-        {
-            var biomtTransforms = ReadBiomtData(path);
-            atomSpheres = AtomHelper.BuildBiomt(atomSpheres, biomtTransforms);
-        }
+        var biomtTransforms = ReadBiomtData(path);
+        atomSpheres = AtomHelper.BuildBiomt(atomSpheres, biomtTransforms);
 
         return atomSpheres;
     }
@@ -230,7 +234,7 @@ public static class AtomHelper
         new Color(255,200,50) / 255       // S        yellow      
     };
 
-    public static bool ContainsACarbonOnly(List<Atom> atoms)
+    public static bool ContainsCarbonAlphaOnly(List<Atom> atoms)
     {
         return atoms.All(atom => String.CompareOrdinal(atom.name, "CA") == 0);
     }
@@ -259,7 +263,7 @@ public static class AtomHelper
         return spheres;
     }
 
-    public static void OffsetAtoms(ref List<Atom> atoms, Vector3 offset)
+    private static void OffsetAtoms(ref List<Atom> atoms, Vector3 offset)
     {
         for (var i = 0; i < atoms.Count(); i++)
         {
@@ -267,7 +271,7 @@ public static class AtomHelper
         }
     }
 
-    public static void OffsetSpheres(ref List<Vector4> spheres, Vector3 offset)
+    private static void OffsetSpheres(ref List<Vector4> spheres, Vector3 offset)
     {
         var offsetVector = new Vector4(offset.x, offset.y, offset.z, 0);
 
@@ -277,7 +281,7 @@ public static class AtomHelper
         }
     }
 
-    public static void OffsetPoints(ref List<Vector3> points, Vector3 offset)
+    private static void OffsetPoints(ref List<Vector3> points, Vector3 offset)
     {
         var offsetVector = new Vector4(offset.x, offset.y, offset.z, 0);
 
@@ -285,6 +289,41 @@ public static class AtomHelper
         {
             points[i] -= offset;
         }
+    }
+
+    public static Vector3 CenterAtoms(ref List<Atom> atoms)
+    {
+        var bounds = ComputeBounds(atoms);
+
+        for (var i = 0; i < atoms.Count(); i++)
+        {
+            atoms[i].position = new Vector3(atoms[i].position.x, atoms[i].position.y, atoms[i].position.z) - bounds.center;
+        }
+
+        return bounds.center;
+    }
+
+    public static Vector3 CenterSpheres(ref List<Vector4> spheres)
+    {
+        var bounds = ComputeBounds(spheres);
+        var center = new Vector4(bounds.center.x, bounds.center.y, bounds.center.z, 0);
+
+        for (var i = 0; i < spheres.Count(); i++)
+        {
+            spheres[i] -= center;
+        }
+
+        return bounds.center;
+    }
+
+    public static float ComputeRadius(List<Atom> atoms)
+    {
+        return atoms.Select(atom => Vector3.Magnitude(atom.position)).Concat(new float[] {0}).Max();
+    }
+
+    public static float ComputeRadius(List<Vector4> spheres)
+    {
+        return spheres.Select(sphere => Vector3.Magnitude(sphere)).Concat(new float[] {0}).Max();
     }
 
     public static Bounds ComputeBounds(List<Atom> atoms)

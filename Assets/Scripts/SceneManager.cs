@@ -128,17 +128,17 @@ public class SceneManager : MonoBehaviour
 
     #region Ingredients
 
-    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null)
+    public void AddIngredient(string ingredientName, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null)
     {
         if (ProteinNames.Contains(ingredientName)) return;
 
         if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
             throw new Exception("Uneven cluster levels number: " + ingredientName);
         
-        ProteinNames.Add(ingredientName);
         ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
-        ProteinRadii.Add(Vector3.Magnitude(bounds.extents));
+        ProteinNames.Add(ingredientName);
+        ProteinRadii.Add(AtomHelper.ComputeRadius(atomSpheres));
 
         ProteinAtomCount.Add(atomSpheres.Count);
         ProteinAtomStart.Add(ProteinAtoms.Count);
@@ -169,11 +169,8 @@ public class SceneManager : MonoBehaviour
 
         var ingredientId = ProteinNames.IndexOf(ingredientName);
 
-        Vector4 instancePosition = position;
-        instancePosition.w = ProteinRadii[ingredientId];
-
-        ProteinInstanceInfos.Add(new Vector4(ingredientId, (int)InstanceState.Normal, unitId));
-        ProteinInstancePositions.Add(instancePosition);
+        ProteinInstanceInfos.Add(new Vector4(ingredientId, (int)InstanceState.Normal, 0));
+        ProteinInstancePositions.Add(position);
         ProteinInstanceRotations.Add(MyUtility.QuanternionToVector4(rotation));
 
         TotalNumProteinAtoms += ProteinAtomCount[ingredientId];

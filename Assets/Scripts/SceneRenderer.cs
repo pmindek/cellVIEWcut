@@ -198,11 +198,11 @@ public class SceneRenderer : MonoBehaviour
         }
     }
 
-    void ComputeOcclusionCulling(int cullFlag)
+    void ComputeOcclusionCulling(int cullingFilter)
     {
         if (_HiZMap == null || PersistantSettings.Instance.DebugObjectCulling) return;
 
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CullFlag", cullFlag);
+        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CullingFilter", cullingFilter);
         ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", GetComponent<Camera>().pixelWidth);
         ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", GetComponent<Camera>().pixelHeight);
         ComputeShaderManager.Instance.OcclusionCullingCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
@@ -223,12 +223,12 @@ public class SceneRenderer : MonoBehaviour
         }
     }
 
-    void ProteinFillBatchBuffer(int cullFlagFilter)
+    void ProteinFillBatchBuffer(int cullingFilter)
     {
         if (SceneManager.Instance.NumProteinInstances <= 0) return;
 
         // Do sphere batching
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_CullFlagFilter", cullFlagFilter);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_CullingFilter", cullingFilter);
         ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumLevels", SceneManager.Instance.NumLodLevels);
         ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumInstances", SceneManager.Instance.NumProteinInstances);
         ComputeShaderManager.Instance.SphereBatchCS.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
@@ -311,7 +311,9 @@ public class SceneRenderer : MonoBehaviour
         if (SceneManager.Instance.NumProteinInstances > 0)
         {
             SetProteinShaderParams();
+
             ProteinFillBatchBuffer(-1);
+            //Debug.Log(GetBatchCount());
             Graphics.SetRenderTarget(idBuffer.colorBuffer, depthBuffer.depthBuffer);
             _renderProteinsMaterial.SetPass(0);
             Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
@@ -320,7 +322,7 @@ public class SceneRenderer : MonoBehaviour
             ComputeHiZMap(depthBuffer);
             ComputeOcclusionCulling(frameCount);
 
-            ProteinFillBatchBuffer(Time.frameCount);
+            ProteinFillBatchBuffer(frameCount);
             //Debug.Log(GetBatchCount());
             Graphics.SetRenderTarget(idBuffer.colorBuffer, depthBuffer.depthBuffer);
             _renderProteinsMaterial.SetPass(0);
@@ -385,7 +387,5 @@ public class SceneRenderer : MonoBehaviour
         RenderTexture.ReleaseTemporary(compositeDepthBuffer);
 
         frameCount++;
-
-        Graphics.Blit(src, dst); return;
     }
 }

@@ -65,11 +65,8 @@ public class CustomWindow : EditorWindow
     {
         var atomSet = PdbLoader.LoadAtomSet("MA_matrix_G1");
         var spheres = AtomHelper.GetAtomSpheres(atomSet);
-        var bounds = AtomHelper.ComputeBounds(spheres);
 
-        AtomHelper.OffsetSpheres(ref spheres, bounds.center);
-
-        SceneManager.Instance.AddIngredient("MA_matrix_G1", bounds, spheres, Color.blue, new List<float>() { 0.2f, 0.1f,0.05f, 0.03f});
+        SceneManager.Instance.AddIngredient("MA_matrix_G1", spheres, Color.blue, new List<float>() { 0.2f, 0.1f,0.05f, 0.03f});
         SceneManager.Instance.AddIngredientInstance("MA_matrix_G1", new Vector3(2,2,2), Quaternion.identity);
         SceneManager.Instance.UploadAllData();
     }

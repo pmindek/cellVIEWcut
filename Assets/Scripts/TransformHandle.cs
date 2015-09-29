@@ -54,7 +54,7 @@ public class TransformHandle : MonoBehaviour
     private float _scaleValueDrag;
     private float _startScaleValue;
     private Vector3 _startScaleVector;
-    private Vector3 _drawScaleValue;
+    private Vector3 _drawScaleValue = new Vector3(1, 1, 1);
 
     //*****//
 

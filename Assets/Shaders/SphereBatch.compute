@@ -11,7 +11,7 @@ uniform	int _NumInstances;
 uniform float4 _CameraForward;
 uniform float4 _CameraPosition;
 
-uniform	int _CullFlagFilter;
+uniform	int _CullingFilter;
 uniform float4 _FrustrumPlanes[6]; 
 
 uniform	StructuredBuffer<float> _ProteinRadii;
@@ -35,29 +35,6 @@ uniform	StructuredBuffer<float4> _CutScales;
 uniform	StructuredBuffer<float4> _CutPositions;	
 uniform StructuredBuffer<float4> _CutRotations;
 uniform StructuredBuffer<int> _ProteinCutFilters;
-
-//float pointPlaneSignedDistance(float3 p, float3 v0, float3 v1, float3 v2)
-//{
-//    float3 normal = normalize(cross(v1 - v0, v2 - v0));
-
-//    float3 t = (p - v0);
-//    return dot(normal, t);
-//}
-
-//bool isPointBehindPlane(float3 p, float3 v0, float3 v1, float3 v2)
-//{
-//    float3 normal = normalize(cross(v1 - v0, v2 - v0));
-
-//    float3 t = (p - v0);
-//    return dot(normal, t) < 0.0;
-//}
-
-//float rand(in int id)
-//{
-//	float2 uv = normalize(float2(id, id * 3543543));
-//    float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453);
-//    return abs(noise.x + noise.y) * 0.5;
-//}
 
 float CutAwayTest(float4 sphere, int proteinType)
 {
@@ -109,13 +86,13 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		
 	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);
 	bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x);
-	
-	// if instance is culled return
-	if(_CullFlagFilter == -1 && cullFlag == 0) return;	
-	//if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
-	if(frustrumTest || cutAwayTest || _ProteinVisibilityFlag[infos.x] == 0) return;
 
-	int lodLevel = 0;		
+    // if instance is culled return
+    if(_CullingFilter == -1 && cullFlag == 0) return;
+    if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
+    if (frustrumTest || cutAwayTest || _ProteinVisibilityFlag[infos.x] == 0) return;
+
+    int lodLevel = 0;		
 	float cameraDistance = dot(sphere.xyz - _CameraPosition.xyz, _CameraForward.xyz);
 		
 	// Compute lod level from lod infos

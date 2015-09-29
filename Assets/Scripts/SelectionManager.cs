@@ -49,6 +49,7 @@ public class SelectionManager : MonoBehaviour
                 _selectionGameObject = new GameObject("Selection");
                 _selectionGameObject.tag = "Selection";
                 _selectionGameObject.AddComponent<SphereCollider>();
+                _selectionGameObject.AddComponent<TransformHandle>();
             }
 
             return _selectionGameObject;
@@ -169,7 +170,7 @@ public class SelectionManager : MonoBehaviour
 
                     _ctrlKeyFlag = false;
                     _selectedObjectID = instanceID;
-
+                    _selectedTransformHandle = SelectionGameObject.GetComponent<TransformHandle>();
 #if UNITY_EDITOR
                     Selection.activeGameObject = SelectionGameObject;
 #endif
@@ -202,7 +203,7 @@ public class SelectionManager : MonoBehaviour
             {
                 if (_selectedTransformHandle != null)
                 {
-                    Debug.Log("Reset");
+                    //Debug.Log("Reset");
                     _selectedTransformHandle.Disable();
                 }
 
@@ -221,7 +222,7 @@ public class SelectionManager : MonoBehaviour
             // If we hit a non-selectable object
             else if (transformHandle == null && _selectedTransformHandle != null)
             {
-                Debug.Log("Reset");
+                //Debug.Log("Missed hit");
                 _selectedTransformHandle.Disable();
                 _selectedTransformHandle = null;
             }
@@ -229,7 +230,7 @@ public class SelectionManager : MonoBehaviour
         // If we miss a hit
         else if (_selectedTransformHandle != null)
         {
-            Debug.Log("Reset2");
+            //Debug.Log("Missed hit");
             _selectedTransformHandle.Disable();
             _selectedTransformHandle = null;
         }
