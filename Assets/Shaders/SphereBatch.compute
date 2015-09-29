@@ -36,7 +36,7 @@ uniform	StructuredBuffer<float4> _CutPositions;
 uniform StructuredBuffer<float4> _CutRotations;
 uniform StructuredBuffer<int> _ProteinCutFilters;
 
-float CutAwayTest(float4 sphere, int proteinType)
+/*float CutAwayTest(float4 sphere, int proteinType)
 {
     bool cut = false;
     for (int i = 0; i < _NumCutObjects; i++)
@@ -71,6 +71,86 @@ float CutAwayTest(float4 sphere, int proteinType)
     }
 
     return cut;
+}*/
+
+float rand(in int id)
+{
+	float2 uv = normalize(float2(id, id * 3543543));
+    float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453);
+    return abs(noise.x + noise.y) * 0.5;
+}
+
+float CutAwayTest(float4 sphere, int proteinType, int id)
+{
+    bool cut = false;
+    for (int i = 0; i < _NumCutObjects; i++)
+    {
+        int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+
+        if (proteinCutFilter == 1)
+        {
+            float4 info = _CutInfos[i];
+            float3 position = _CutPositions[i].xyz;
+            float4 rotation = _CutRotations[i];
+			float3 scale = _CutScales[i].xyz;
+
+			float distance = 0.0;
+
+            if (info.x == 0)
+            {
+                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+                float4 plane = ComputePlane(normal, position);
+                distance = SpherePlaneSD(plane, float4(sphere.xyz, 0));
+            }
+			else if (info.x == 1)
+			{
+				distance = SphereSphereSD(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+			}
+			else if (info.x == 2)
+			{
+				distance = SphereCubeSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+			}
+			else if (info.x == 3)
+			{
+				distance = SphereCylinderSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+			}
+			else if (info.x == 4)
+			{
+				distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+			}
+
+			bool test = distance <= 0.0;
+			bool fuzzTest = rand(id) * 3.0 * info.y <= pow(abs(distance), info.z * 1.0);
+
+            if (test && fuzzTest) return true;
+
+        }    
+
+        //	//sphere
+        //	else if (_CutTypes[j] == 1)
+        //	{
+        //		if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
+        //		{
+        //			return;
+        //		}
+        //	}
+
+        //	//cube
+        //	else if (_CutTypes[j] == 2)
+        //	{
+        //		if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
+        //		{
+        //			return;
+        //		}
+        //	}
+    }
+
+    return cut;
 }
 
 [numthreads(1,1,1)]
@@ -85,7 +165,7 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 	float4 sphere = float4(pos, radius);
 		
 	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);
-	bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x);
+	bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x, id.x);
 
     // if instance is culled return
     if(_CullingFilter == -1 && cullFlag == 0) return;

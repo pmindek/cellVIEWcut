@@ -178,3 +178,37 @@ bool SphereCubeTest(float3 position, float4 rotation, float3 size, float4 sphere
 	float3 d = abs(QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz)) - size.xyz;
 	return min(max(d.x, max(d.y, d.z)), 0.0) + length(max(d, 0.0)) <= 0;
 }
+
+//-----------------------------------------------------------------------------------
+
+float SpherePlaneSD(float4 plane, float4 sphere)
+{
+	return -(dot(plane.xyz, sphere.xyz - plane.xyz * -plane.w) + sphere.w);
+}
+
+float SphereSphereSD(float4 sphere, float4 atom)
+{
+	return length(sphere.xyz - atom.xyz) - sphere.w;
+}
+
+float SphereCubeSD(float3 position, float4 rotation, float3 size, float4 sphere)
+{
+	float3 d = abs(QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz)) - size.xyz;
+	return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+float SphereCylinderSD(float3 position, float4 rotation, float3 size, float4 sphere)
+{
+	float3 t = QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz);
+
+	float2 d = abs(float2(length(t.xz),t.y)) - size.xy;
+	return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
+float SphereInfiniteConeSD(float3 position, float4 rotation, float3 size, float4 sphere)
+{
+	float3 t = QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz);
+
+    float q = length(t.xy);
+    return dot(size.xy, float2(q, t.z));
+}
