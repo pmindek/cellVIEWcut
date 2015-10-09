@@ -24,6 +24,8 @@ public class SceneRenderer : MonoBehaviour
     private ComputeBuffer _proteinInstanceCullFlags;
 
     /*****/
+
+    public Texture2D noiseTexture = null;
     
     void OnEnable()
     {
@@ -259,6 +261,16 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutPositions", ComputeBufferManager.Instance.CutPositions);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutRotations", ComputeBufferManager.Instance.CutRotations);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinCutFilters", ComputeBufferManager.Instance.ProteinCutFilters);
+
+        if (noiseTexture == null)
+        {
+            Debug.Log("Load Texture");
+            noiseTexture = (Texture2D)Resources.Load("Textures/noise");
+        }
+
+        ComputeShaderManager.Instance.SphereBatchCS.SetFloat("noiseTextureW", noiseTexture.width);
+        ComputeShaderManager.Instance.SphereBatchCS.SetFloat("noiseTextureH", noiseTexture.height);
+        ComputeShaderManager.Instance.SphereBatchCS.SetTexture(0, "noiseTexture", noiseTexture);
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 

@@ -36,6 +36,10 @@ uniform	StructuredBuffer<float4> _CutPositions;
 uniform StructuredBuffer<float4> _CutRotations;
 uniform StructuredBuffer<int> _ProteinCutFilters;
 
+uniform Texture2D<float4> noiseTexture;
+uniform float noiseTextureW;
+uniform float noiseTextureH;
+
 /*float CutAwayTest(float4 sphere, int proteinType)
 {
     bool cut = false;
@@ -76,7 +80,11 @@ uniform StructuredBuffer<int> _ProteinCutFilters;
 float rand(in int id)
 {
 	float2 uv = normalize(float2(id, id * 3543543));
-    float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453);
+
+	uint2 uvi = uint2(id % noiseTextureW, id / noiseTextureH);
+
+	//float2 noise = noiseTexture[uvi].x;
+    float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453) * noiseTexture[uvi].xy;
     return abs(noise.x + noise.y) * 0.5;
 }
 
@@ -120,9 +128,24 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			}
 
 			bool test = distance <= 0.0;
-			bool fuzzTest = rand(id) * 3.0 * info.y <= pow(abs(distance), info.z * 1.0);
+			//bool fuzzTest = rand(id) * 3.0 * info.y <= pow(abs(distance), info.z * 1.0);
+			//bool fuzzTest = rand(id) < info.y;
+			bool fuzzTest = true;
+			bool adjustTest = true;
+			bool adjustVisibilityTest = true;
 
-            if (test && fuzzTest) return true;
+			float adjust = -1.0 + info.y * 2.0;
+
+			if (adjust > 0 && pow(rand(id), 0.5) < adjust)
+			{
+				adjustTest = false;
+			}
+			if (!test && adjust < 0 && pow(rand(id), 0.5) < -adjust)
+			{
+				test = true;
+			}
+
+            if (test && fuzzTest && adjustTest && adjustVisibilityTest) return true;
 
         }    
 
