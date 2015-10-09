@@ -15,15 +15,8 @@ public static class PdbLoader
 
     public static List<Atom> LoadAtomSet(string fileName, bool center = true)
     {
-        var atomSet = ReadAtomData(GetPdbFile(fileName, DefaultPdbDirectory));
-        if (center) AtomHelper.CenterAtoms(ref atomSet);
-
-        return atomSet;
-    }
-
-    public static List<Vector4> LoadAtomSpheres(string fileName, bool center = true)
-    {
-        return AtomHelper.GetAtomSpheres(LoadAtomSet(fileName, center));
+        var path = GetPdbFile(fileName, DefaultPdbDirectory);
+        return ReadAtomData(path);
     }
 
     public static List<Matrix4x4> LoadBiomtTransforms(string fileName)
@@ -130,7 +123,10 @@ public static class PdbLoader
                 var symbolId = Array.IndexOf(AtomHelper.AtomSymbols, t[0].ToString());
                 if (symbolId < 0)
                 {
-                    throw new Exception("Atom symbol unknown: " + name);
+					symbolId = Array.IndexOf(AtomHelper.AtomSymbols, "A");
+					name = "A";
+					Debug.Log ("Atom symbol unknown: " + name+ " "+t+"\n"+line+"\n"+path);
+					//throw new Exception("Atom symbol unknown: " + name+ " "+t+"\n"+line+"\n"+path);
                 }
 
                 var atom = new Atom
@@ -220,10 +216,11 @@ public class Atom
 
 public static class AtomHelper
 {
-    public static float[] AtomRadii = { 1.548f, 1.100f, 1.400f, 1.348f, 1.880f, 1.808f };
-    public static string[] AtomSymbols = { "C", "H", "N", "O", "P", "S" };
+	public static float[] AtomRadii = { 1.548f, 1.100f, 1.400f, 1.348f, 1.880f, 1.808f,1.100f };
+    public static string[] AtomSymbols = { "C", "H", "N", "O", "P", "S", "A" };
 
     // Color scheme taken from http://life.nthu.edu.tw/~fmhsu/rasframe/COLORS.HTM
+	// not used
     public static Color[] AtomColors = 
     { 
         new Color(100,100,100) / 255,     // C        light grey
@@ -231,7 +228,8 @@ public static class AtomHelper
         new Color(143,143,255) / 255,     // N        light blue
         new Color(220,10,10) / 255,       // O        red         
         new Color(255,165,0) / 255,       // P        orange      
-        new Color(255,200,50) / 255       // S        yellow      
+        new Color(255,200,50) / 255 ,      // S        yellow    
+		new Color(255,255,255) / 255     // D        white   
     };
 
     public static bool ContainsCarbonAlphaOnly(List<Atom> atoms)
@@ -263,7 +261,7 @@ public static class AtomHelper
         return spheres;
     }
 
-    private static void OffsetAtoms(ref List<Atom> atoms, Vector3 offset)
+    public static void OffsetAtoms(ref List<Atom> atoms, Vector3 offset)
     {
         for (var i = 0; i < atoms.Count(); i++)
         {
@@ -271,7 +269,7 @@ public static class AtomHelper
         }
     }
 
-    private static void OffsetSpheres(ref List<Vector4> spheres, Vector3 offset)
+    public static void OffsetSpheres(ref List<Vector4> spheres, Vector3 offset)
     {
         var offsetVector = new Vector4(offset.x, offset.y, offset.z, 0);
 
@@ -281,7 +279,7 @@ public static class AtomHelper
         }
     }
 
-    private static void OffsetPoints(ref List<Vector3> points, Vector3 offset)
+    public static void OffsetPoints(ref List<Vector3> points, Vector3 offset)
     {
         var offsetVector = new Vector4(offset.x, offset.y, offset.z, 0);
 
@@ -356,7 +354,10 @@ public static class AtomHelper
 
         var bbSize = bbMax - bbMin;
         var bbCenter = bbMin + bbSize * 0.5f;
-
+		if (spheres.Count == 1) {
+			bbSize = new Vector3(spheres[0].w-0.5f,spheres[0].w-0.5f,spheres[0].w-0.5f);
+			bbCenter = new Vector3(spheres[0].x,spheres[0].y,spheres[0].z);
+		}
         return new Bounds(bbCenter, bbSize);
     }
 
@@ -399,7 +400,7 @@ public static class AtomHelper
         return biomtSpheres;
     }
 
-    public static Vector3 GetBiomtCenter(List<Matrix4x4> transforms)
+    public static Vector3 GetBiomtCenter(List<Matrix4x4> transforms, Vector3 center)
     {
         if (transforms.Count <= 0) return Vector3.zero;
 
@@ -408,7 +409,10 @@ public static class AtomHelper
 
         foreach (var transform in transforms)
         {
-            var posBiomt = new Vector3(transform.m03, transform.m13, transform.m23);
+			var euler = MyUtility.euler_from_matrix(transform);
+			var rotBiomt = MyUtility.MayaRotationToUnity(euler);
+			var offset = MyUtility.QuaternionTransform(rotBiomt,center);//Helper.RotationMatrixToQuaternion(matBiomt), GetCenter());
+			var posBiomt = new Vector3(-transform.m03, transform.m13, transform.m23);
 
             bbMin = Vector3.Min(bbMin, new Vector3(posBiomt.x, posBiomt.y, posBiomt.z));
             bbMax = Vector3.Max(bbMax, new Vector3(posBiomt.x, posBiomt.y, posBiomt.z));

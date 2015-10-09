@@ -69,7 +69,10 @@ namespace SimpleJSON
         public virtual JSONNode this[string aKey]  { get { return null; } set { } }
         public virtual string Value                { get { return "";   } set { } }
         public virtual int Count                   { get { return 0;    } }
- 
+		public virtual string GetKey(int aIndex){ return ""; }
+		public virtual List<string> GetAllKeys(){ return null; }
+		public virtual void ChangeKey(string old_key,string new_key){ }
+
         public virtual void Add(JSONNode aItem)
         {
             Add("", aItem);
@@ -694,6 +697,7 @@ namespace SimpleJSON
                     m_Dict.Add(aKey,value);
             }
         }
+
         public override JSONNode this[int aIndex]
         {
             get
@@ -710,6 +714,20 @@ namespace SimpleJSON
                 m_Dict[key] = value;
             }
         }
+		
+		public override string GetKey(int aIndex){
+			return m_Dict.Keys.ToList()[aIndex];
+		}
+		public override List<string> GetAllKeys(){
+			return m_Dict.Keys.ToList();
+		}
+
+		public override void ChangeKey(string old_key,string new_key){
+			var value = m_Dict [old_key];
+			m_Dict.Remove (old_key);
+			m_Dict [new_key] = value;
+		}
+
         public override int Count
         {
             get { return m_Dict.Count; }

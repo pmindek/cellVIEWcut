@@ -69,6 +69,8 @@ public class SceneManager : MonoBehaviour
     public List<int> ProteinAtomClusterCount = new List<int>();
     public List<int> ProteinAtomClusterStart = new List<int>();
 
+    public string scene_name;
+    
     // Curve ingredients data
     
     public List<int> CurveIngredientsAtomStart = new List<int>();
@@ -128,12 +130,15 @@ public class SceneManager : MonoBehaviour
 
     #region Ingredients
 
-    public void AddIngredient(string ingredientName, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null)
+    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null,
+	                          bool nolod = false)
     {
         if (ProteinNames.Contains(ingredientName)) return;
-
-        if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
-            throw new Exception("Uneven cluster levels number: " + ingredientName);
+		if (clusterLevels != null) {
+			if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
+				throw new Exception ("Uneven cluster levels number: " + ingredientName);
+		}
+        if (color == null) { color = MyUtility.GetRandomColor(); }
         
         ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
@@ -144,20 +149,20 @@ public class SceneManager : MonoBehaviour
         ProteinAtomStart.Add(ProteinAtoms.Count);
         ProteinAtoms.AddRange(atomSpheres);
 
-        if (clusterLevels != null)
-        {
-            NumLodLevels = clusterLevels.Count;
-
-            foreach (var level in clusterLevels)
-            {
-                var numClusters = Math.Max(atomSpheres.Count * level, 5);
-                var clusterSpheres = KMeansClustering.GetClusters(atomSpheres, (int)numClusters);
-
-                ProteinAtomClusterCount.Add(clusterSpheres.Count);
-                ProteinAtomClusterStart.Add(ProteinAtomClusters.Count);
-                ProteinAtomClusters.AddRange(clusterSpheres);
-            }
-        }
+        if (clusterLevels != null) {
+			NumLodLevels = clusterLevels.Count;
+			foreach (var level in clusterLevels) {
+				var numClusters = Math.Max (atomSpheres.Count * level, 5);
+				List<Vector4> clusterSpheres;
+				if (!nolod)
+					clusterSpheres = KMeansClustering.GetClusters (atomSpheres, (int)numClusters);
+				else
+					clusterSpheres = new List<Vector4>(atomSpheres);
+				ProteinAtomClusterCount.Add (clusterSpheres.Count);
+				ProteinAtomClusterStart.Add (ProteinAtomClusters.Count);
+				ProteinAtomClusters.AddRange (clusterSpheres);
+			}
+		}
     }
 
     public void AddIngredientInstance(string ingredientName, Vector3 position, Quaternion rotation, int unitId = 0)
@@ -192,7 +197,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.yellow;
 
-            var atomSpheres = PdbLoader.LoadAtomSpheres(pdbName);
+            var atomSpheres = PdbLoader.LoadAtomSpheresBiomt(pdbName);
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
@@ -204,7 +209,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.red;
 
-            var atomSpheres = PdbLoader.LoadAtomSpheres(pdbName);
+			var atomSpheres = PdbLoader.LoadAtomSpheresBiomt(pdbName);
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
@@ -436,7 +441,7 @@ public class SceneManager : MonoBehaviour
         foreach (var cutObject in cutObjects)
         {
             cutObject.ProteinCutFilters.Clear();
-            cutObject.SetProteinCutFilters(ProteinNames);
+            cutObject.SetCutItems(ProteinNames);
         }
     }
     

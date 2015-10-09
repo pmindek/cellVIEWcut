@@ -482,6 +482,23 @@ public static class MyUtility
 
         return pixelId[0];
     }
+	//---------------------------helper for autopack file system -----------------------------------
+	public static List<List<Vector4>> gatherSphereTree(JSONNode idic){
+		List<List<Vector4>> spheres = new List<List<Vector4>> ();
+		
+		for (int ilevel = 0; ilevel < idic["positions"].Count; ilevel++)
+		{
+			spheres.Add (new List<Vector4>());
+			for (int isph=0;isph < idic["positions"][ilevel].Count;isph++)
+			{
+				var p = idic["positions"][ilevel][isph];
+				var r = idic["radii"][ilevel][isph].AsFloat;
+				spheres[ilevel].Add (new Vector4(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat,r));
+			}
+		}
+		return spheres;
+	}
+
 }
 
 

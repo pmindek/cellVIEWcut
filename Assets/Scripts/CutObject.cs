@@ -24,6 +24,9 @@ public class CutItem
 public class CutObject : MonoBehaviour
 {
     public bool Hidden;
+    public bool tree_isVisible = true;
+    public int tagid;
+    public string name;
 
     public CutType CutType;
     
@@ -39,21 +42,56 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public List<CutItem> ProteinCutFilters = new List<CutItem>();
 
-    public void SetProteinCutFilters(List<string> names)
+	private TreeViewControl _tree;
+	private RecipeTreeUI _tree_ui;
+
+	public void SetCutItems(List<string> names)
     {
-        foreach (var name in names)
+        foreach(var name in names)
         {
             ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
         }
     }
 
+	public void RemoveCutItem (string name){
+		CutItem toRemove=null;
+		foreach(CutItem cu in ProteinCutFilters){
+			if (string.Equals(cu.Name,name)){
+				toRemove = cu;
+				break;
+			}
+		}
+		if (toRemove != null)ProteinCutFilters.Remove(toRemove);
+	}
+
+	public  void AddCutItem (string name){
+		ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
+	}
+
+	public void toggleCutItme (string name, bool toggle){
+		foreach(CutItem cu in ProteinCutFilters){
+			if (string.Equals(cu.Name,name)){
+				cu.State = toggle;
+				break;
+			}
+		}
+	}
+
+	public void toggleAllCutItme (bool toggle){
+		foreach(CutItem cu in ProteinCutFilters){
+				cu.State = toggle;
+		}
+	}
+	//is it awake or load ?
     void Awake()
     {
-        if (ProteinCutFilters.Count == 0)
-        {
-            SetProteinCutFilters(SceneManager.Instance.ProteinNames);
-        }
-    }
+        Debug.Log("Init cut object");
+		if (ProteinCutFilters.Count == 0)
+        //ProteinCutFilters.Clear();//?maybe shouldnt clear on Awake ?
+        	SetCutItems(SceneManager.Instance.ProteinNames);
+		_tree = GetComponent<TreeViewControl> ();
+		_tree_ui = GetComponent<RecipeTreeUI> ();
+	}
 
     void OnEnable()
     {
@@ -62,6 +100,8 @@ public class CutObject : MonoBehaviour
         {
             SceneManager.Instance.CutObjects.Add(this);
         }
+		//check the tree
+		if (_tree.enabled) setTree ();
     }
 
     void OnDisable()
@@ -73,9 +113,54 @@ public class CutObject : MonoBehaviour
         }
     }
 
-    void Update()
+	public void toggleTree(bool value){
+		_tree.DisplayOnGame = value;
+		tree_isVisible = value;
+	}
+
+
+
+	public void showTree(Vector3 pos,Vector2 size){
+		_tree.DisplayOnGame = true;
+		_tree.Width = (int)size.x-20;
+		_tree.Height = (int)size.y-30;
+		_tree.X = (int)pos.x+10;
+		_tree.Y = (Screen.height - (int)size.y)+10;//invert ?
+		tree_isVisible = true;
+		Debug.Log ("should show tree");
+	}
+
+	public void hideTree(){
+		Debug.Log ("should be hided");
+		_tree.DisplayOnGame = false;
+		tree_isVisible = false;
+	}
+
+	public void setTree(){
+		Debug.Log ("we are setting the tree");
+		_tree_ui.ClearTree ();
+		GameObject root = GameObject.Find (SceneManager.Instance.scene_name);
+		if (root != null) {
+			_tree_ui.populateRecipeGameObject (root);
+		}
+		//if (CellPackLoader.resultData != null)
+			//_tree_ui.populateRecipeJson (CellPackLoader.resultData);
+			//_tree_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
+		else {
+			Debug.Log ("cellPackResult not availble");
+		}
+		hideTree ();
+		tree_isVisible = false;
+	}
+
+	public bool tree_hasFocus(Vector2 mousepos){
+		Rect rect = new Rect(_tree.X-60, _tree.Y-60, _tree.Width+90, _tree.Height+90);
+		return rect.Contains(mousepos);
+	}
+
+	public void Update ()
     {
-        if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
+		if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
         {
             SetMesh();
             PreviousCutType = CutType;
@@ -84,7 +169,7 @@ public class CutObject : MonoBehaviour
         if (Hidden || Application.isPlaying)
         {
             GetComponent<Collider>().enabled = false;
-            GetComponent<MeshRenderer>().enabled = false;
+            GetComponent<MeshRenderer>().enabled = false;//why ?
             GetComponent<TransformHandle>().enabled = false;
         }
         else
