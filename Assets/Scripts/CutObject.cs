@@ -24,10 +24,8 @@ public class CutItem
 public class CutObject : MonoBehaviour
 {
     public bool Hidden;
-    public bool tree_isVisible = true;
-    public int tagid;
-    public string name;
-
+    private bool tree_isVisible = true;
+    
     public CutType CutType;
     
     [Range(0, 1)]
@@ -45,7 +43,21 @@ public class CutObject : MonoBehaviour
 	private TreeViewControl _tree;
 	private RecipeTreeUI _tree_ui;
 
-	public void SetCutItems(List<string> names)
+    [HideInInspector]
+    public float[] RangeValues = new float[2] { 0.2f, 0.3f };
+
+    public float[] GetRangeValues(int ingredientId)
+    {
+        return RangeValues;
+    }
+
+    public void SetRangeValues(int ingredientId, float[] rangeValues)
+    {
+        RangeValues = rangeValues;
+    }
+
+
+    public void SetCutItems(List<string> names)
     {
         foreach(var name in names)
         {
@@ -53,7 +65,8 @@ public class CutObject : MonoBehaviour
         }
     }
 
-	public void RemoveCutItem (string name){
+	public void RemoveCutItem (string name)
+    {
 		CutItem toRemove=null;
 		foreach(CutItem cu in ProteinCutFilters){
 			if (string.Equals(cu.Name,name)){
@@ -64,11 +77,13 @@ public class CutObject : MonoBehaviour
 		if (toRemove != null)ProteinCutFilters.Remove(toRemove);
 	}
 
-	public  void AddCutItem (string name){
+	public  void AddCutItem (string name)
+    {
 		ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
 	}
 
-	public void toggleCutItme (string name, bool toggle){
+	public void ToggleCutItem (string name, bool toggle)
+    {
 		foreach(CutItem cu in ProteinCutFilters){
 			if (string.Equals(cu.Name,name)){
 				cu.State = toggle;
@@ -77,11 +92,14 @@ public class CutObject : MonoBehaviour
 		}
 	}
 
-	public void toggleAllCutItme (bool toggle){
-		foreach(CutItem cu in ProteinCutFilters){
-				cu.State = toggle;
+	public void ToggleAllCutItem (bool toggle)
+    {
+		foreach(CutItem cu in ProteinCutFilters)
+        {
+			cu.State = toggle;
 		}
 	}
+
 	//is it awake or load ?
     void Awake()
     {
@@ -91,7 +109,11 @@ public class CutObject : MonoBehaviour
         	SetCutItems(SceneManager.Instance.ProteinNames);
 		_tree = GetComponent<TreeViewControl> ();
 		_tree_ui = GetComponent<RecipeTreeUI> ();
-	}
+
+        _tree.hideFlags = HideFlags.HideInInspector;
+        _tree_ui.hideFlags = HideFlags.HideInInspector;
+
+    }
 
     void OnEnable()
     {
@@ -101,7 +123,7 @@ public class CutObject : MonoBehaviour
             SceneManager.Instance.CutObjects.Add(this);
         }
 		//check the tree
-		if (_tree.enabled) setTree ();
+		if (_tree.enabled) SetTree ();
     }
 
     void OnDisable()
@@ -113,14 +135,13 @@ public class CutObject : MonoBehaviour
         }
     }
 
-	public void toggleTree(bool value){
+	public void ToggleTree(bool value)
+    {
 		_tree.DisplayOnGame = value;
 		tree_isVisible = value;
 	}
 
-
-
-	public void showTree(Vector3 pos,Vector2 size){
+	public void ShowTree(Vector3 pos,Vector2 size){
 		_tree.DisplayOnGame = true;
 		_tree.Width = (int)size.x-20;
 		_tree.Height = (int)size.y-30;
@@ -130,13 +151,15 @@ public class CutObject : MonoBehaviour
 		Debug.Log ("should show tree");
 	}
 
-	public void hideTree(){
+	public void HideTree()
+    {
 		Debug.Log ("should be hided");
 		_tree.DisplayOnGame = false;
 		tree_isVisible = false;
 	}
 
-	public void setTree(){
+	public void SetTree()
+    {
 		Debug.Log ("we are setting the tree");
 		_tree_ui.ClearTree ();
 		GameObject root = GameObject.Find (SceneManager.Instance.scene_name);
@@ -149,11 +172,12 @@ public class CutObject : MonoBehaviour
 		else {
 			Debug.Log ("cellPackResult not availble");
 		}
-		hideTree ();
+		HideTree ();
 		tree_isVisible = false;
 	}
 
-	public bool tree_hasFocus(Vector2 mousepos){
+	public bool TreeHasFocus(Vector2 mousepos)
+    {
 		Rect rect = new Rect(_tree.X-60, _tree.Y-60, _tree.Width+90, _tree.Height+90);
 		return rect.Contains(mousepos);
 	}
@@ -166,18 +190,18 @@ public class CutObject : MonoBehaviour
             PreviousCutType = CutType;
         }
 
-        if (Hidden || Application.isPlaying)
-        {
-            GetComponent<Collider>().enabled = false;
-            GetComponent<MeshRenderer>().enabled = false;//why ?
-            GetComponent<TransformHandle>().enabled = false;
-        }
-        else
-        {
-            GetComponent<Collider>().enabled = true;
-            GetComponent<MeshRenderer>().enabled = true;
-            GetComponent<TransformHandle>().enabled = true;
-        }
+        //if (Hidden || Application.isPlaying)
+        //{
+        //    GetComponent<Collider>().enabled = false;
+        //    GetComponent<MeshRenderer>().enabled = false;//why ?
+        //    GetComponent<TransformHandle>().enabled = false;
+        //}
+        //else
+        //{
+        //    GetComponent<Collider>().enabled = true;
+        //    GetComponent<MeshRenderer>().enabled = true;
+        //    GetComponent<TransformHandle>().enabled = true;
+        //}
     }
 
     public void SetMesh()

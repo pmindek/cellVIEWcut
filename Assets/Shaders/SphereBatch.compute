@@ -1,10 +1,11 @@
 ﻿#include "Helper.cginc"
 
 #pragma kernel ProteinFillBatchBuffer
+#pragma kernel ProteinFillBatchBuffer2
 
 #define MAX_SPHERE_COUNT_PER_BATCH 4096
 
-uniform	float _Scale;
+uniform float _Scale;
 uniform int _EnableLod;
 uniform	int _NumLevels;
 uniform	int _NumInstances;
@@ -27,6 +28,8 @@ uniform	StructuredBuffer<float4> _ProteinInstanceInfo;
 uniform StructuredBuffer<int> _ProteinInstanceCullFlags;
 uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
 uniform AppendStructuredBuffer<int4> _ProteinSphereBatchInfos;
+
+uniform StructuredBuffer<int> _ProteinInstanceOcclusionFlags;
 
 // Cutaways
 uniform int _NumCutObjects;
@@ -176,12 +179,16 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
     return cut;
 }
 
+
+
 [numthreads(1,1,1)]
 void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 {
 	if(id.x >= (uint)_NumInstances) return;
 
-	float4 infos = _ProteinInstanceInfo[id.x];	
+    if(_ProteinInstanceOcclusionFlags[id.x] == 0) return;
+
+    float4 infos = _ProteinInstanceInfo[id.x];	
 	int cullFlag = _ProteinInstanceCullFlags[id.x];
 	float radius = _ProteinRadii[infos.x] * _Scale;
 	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
@@ -221,4 +228,35 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		_ProteinSphereBatchInfos.Append(int4(id.x, lodLevel, batchCount, sphereStart + batchStart));
 		batchStart += batchCount;
 	}		
+}
+
+//*****//
+
+uniform int _ProteinType;
+uniform AppendStructuredBuffer<int4> _OcclusionQueriesBatchSpheres;
+
+[numthreads(64, 1, 1)]
+void ProteinFillBatchBuffer2(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)_NumInstances) return;
+
+    float4 infos = _ProteinInstanceInfo[id.x];
+    if (_ProteinType > 0 && infos.x != _ProteinType -1) return;
+    if (_ProteinType < 0 && infos.x == _ProteinType + 1) return;
+
+    //int cullFlag = _ProteinInstanceCullFlags[id.x];
+    //if (_CullingFilter == -1 && cullFlag == 0) return;
+    //if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
+
+    //float radius = _ProteinRadii[infos.x] * _Scale;
+    //float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;
+    //float4 sphere = float4(pos, radius);
+
+    //bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);
+    //if (frustrumTest) return;
+
+    //bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x, id.x);
+    //if (cutAwayTest) return;
+
+    _OcclusionQueriesBatchSpheres.Append(int4(id.x, 0, 0, 0));
 }

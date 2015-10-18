@@ -4,59 +4,6 @@ using UnityEngine;
 [CustomEditor(typeof(TreeViewControl))]
 public class TreeViewInspector : Editor
 {
-    [MenuItem("TreeView/Add Tree View to Selected")]
-    public static void AddTreeView()
-    {
-        GameObject go = Selection.activeGameObject;
-        if (null == go ||
-            !(go is GameObject))
-        {
-            return;
-        }
-
-        AddTreeView(go);
-    }
-
-    [MenuItem("TreeView/Add Tree View to Selected", validate=true)]
-    public static bool CheckAddTreeView()
-    {
-        if (null == Selection.activeGameObject ||
-            !(Selection.activeGameObject is GameObject))
-        {
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    [MenuItem("TreeView/Assign Defaults")]
-    public static void AssignDefaults()
-    {
-        GameObject go = Selection.activeGameObject;
-        if (null == go ||
-            !(go is GameObject))
-        {
-            return;
-        }
-
-        AssignDefaults(go);
-    }
-
-    [MenuItem("TreeView/Apply Skin")]
-    public static void ApplySkin()
-    {
-        GameObject go = Selection.activeGameObject;
-        if (null == go ||
-            !(go is GameObject))
-        {
-            return;
-        }
-
-        ApplySkin(go);
-    }
-
     /// <summary>
     /// Add a tree view control to the game object
     /// </summary>

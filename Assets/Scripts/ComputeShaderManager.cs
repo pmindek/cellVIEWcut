@@ -8,6 +8,7 @@ public class ComputeShaderManager : MonoBehaviour
     public ComputeShader ReadPixelCS;
     public ComputeShader SphereBatchCS;
     public ComputeShader OcclusionCullingCS;
+    public ComputeShader ComputeVisibilityCS;
 
     // Declare the shader manager as a singleton
     private static ComputeShaderManager _instance = null;

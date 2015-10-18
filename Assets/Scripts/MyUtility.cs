@@ -11,6 +11,19 @@ using UnityEditor;
 
 public static class MyUtility
 {
+    public static void DummyBlit()
+    {
+        var dummy1 = RenderTexture.GetTemporary(8, 8, 24, RenderTextureFormat.ARGB32);
+        var dummy2 = RenderTexture.GetTemporary(8, 8, 24, RenderTextureFormat.ARGB32);
+        var active = RenderTexture.active;
+
+        Graphics.Blit(dummy1, dummy2);
+        RenderTexture.active = active;
+
+        dummy1.Release();
+        dummy2.Release();
+    }
+
     public static List<Vector4> ResampleControlPoints(List<Vector4> controlPoints, float segmentLength)
     {
         int nP = controlPoints.Count;
@@ -668,4 +681,145 @@ public static class HalfHelper
         ushort half = SingleToHalf(single);
         return HalfToSingle(half);
     }
+}
+
+public static class MyExtensions
+{
+    public static void ClearAppendBuffer(this ComputeBuffer appendBuffer)
+    {
+        // This resets the append buffer buffer to 0
+        var dummy1 = RenderTexture.GetTemporary(8, 8, 24, RenderTextureFormat.ARGB32);
+        var dummy2 = RenderTexture.GetTemporary(8, 8, 24, RenderTextureFormat.ARGB32);
+        var active = RenderTexture.active;
+
+        Graphics.SetRandomWriteTarget(1, appendBuffer);
+        Graphics.Blit(dummy1, dummy2);
+        Graphics.ClearRandomWriteTargets();
+
+        RenderTexture.active = active;
+
+        dummy1.Release();
+        dummy2.Release();
+    }
+
+    public static void SetUniform(this Material mat, string name, object param)
+    {
+        var typeName = param.GetType().Name;
+        if (typeName == typeof(Int32).Name)
+        {
+            mat.SetInt(name, (Int32)param);
+        }
+        else if (typeName == typeof(Single).Name)
+        {
+            mat.SetFloat(name, (Single)param);
+        }
+        else if (typeName == typeof(Vector3).Name)
+        {
+            mat.SetVector(name, (Vector4)param);
+        }
+        else if (typeName == typeof(Vector4).Name)
+        {
+            mat.SetVector(name, (Vector4)param);
+        }
+        else if(typeName == typeof(Matrix4x4).Name)
+        {
+            mat.SetMatrix(name, (Matrix4x4)param);
+        }
+        else 
+        {
+            throw new Exception("Unsupported uniform type");
+        }
+    }
+
+    public static void SetUniform(this ComputeShader cs, string name, object param)
+    {
+        var typeName = param.GetType().Name;
+        if (typeName == typeof (Int32).Name)
+        {
+            cs.SetInt(name, (Int32)param);
+        }
+        else if (typeName == typeof(Single).Name)
+        {
+            cs.SetFloat(name, (Single)param);
+        }
+        else if (typeName == typeof(Int32[]).Name)
+        {
+            cs.SetInts(name, (Int32[])param);
+        }
+        else if (typeName == typeof(Single[]).Name)
+        {
+            cs.SetFloats(name, (Single[])param);
+        }
+        else if (typeName == typeof(Vector3).Name)
+        {
+            cs.SetVector(name, (Vector4)param);
+        }
+        else if (typeName == typeof(Vector4).Name)
+        {
+            cs.SetVector(name, (Vector4)param);
+        }
+        else
+        {
+            throw new Exception("Unsupported uniform type");
+        }
+    }
+
+    public static void SetResource(this ComputeShader cs, string name, object param, int kernel)
+    {
+        var typeName = param.GetType().Name;
+        if (typeName == typeof(Texture2D).Name)
+        {
+            cs.SetTexture(kernel, name, (Texture2D)param);
+        }
+        if (typeName == typeof(Texture3D).Name)
+        {
+            cs.SetTexture(kernel, name, (Texture3D)param);
+        }
+        if (typeName == typeof(RenderTexture).Name)
+        {
+            cs.SetTexture(kernel, name, (RenderTexture)param);
+        }
+        if (typeName == typeof(ComputeBuffer).Name)
+        {
+            cs.SetBuffer(kernel, name, (ComputeBuffer)param);
+        }
+        else
+        {
+            throw new Exception("Unsupported resource type");
+        }
+    }
+
+    public static void SetResource(this Material mat, string name, object param)
+    {
+        var typeName = param.GetType().Name;
+        if (typeName == typeof(Texture2D).Name)
+        {
+            mat.SetTexture(name, (Texture2D)param);
+        }
+        if (typeName == typeof(Texture3D).Name)
+        {
+            mat.SetTexture(name, (Texture3D)param);
+        }
+        if (typeName == typeof(RenderTexture).Name)
+        {
+            mat.SetTexture(name, (RenderTexture)param);
+        }
+        if (typeName == typeof(ComputeBuffer).Name)
+        {
+            mat.SetBuffer(name, (ComputeBuffer)param);
+        }
+        else
+        {
+            throw new Exception("Unsupported resource type");
+        }
+    }
+
+    public static void LogDebug(this ComputeBuffer b)
+    {
+        int[] t = new int[1];
+        b.GetData(t);
+        Debug.Log(t[0]);
+    }
+
+    
 }

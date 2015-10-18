@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
+//[Serializable]
 public class TreeViewItem
 {
     public string Header = string.Empty;

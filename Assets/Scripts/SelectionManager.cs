@@ -258,8 +258,8 @@ public class SelectionManager : MonoBehaviour
             SceneManager.Instance.ProteinInstancePositions[_selectedObjectID] = _selectionGameObject.transform.position / PersistantSettings.Instance.Scale;
             SceneManager.Instance.ProteinInstanceRotations[_selectedObjectID] = MyUtility.QuanternionToVector4(_selectionGameObject.transform.rotation);
 
-            ComputeBufferManager.Instance.ProteinInstancePositions.SetData(SceneManager.Instance.ProteinInstancePositions.ToArray());
-            ComputeBufferManager.Instance.ProteinInstanceRotations.SetData(SceneManager.Instance.ProteinInstanceRotations.ToArray());
+            GPUBuffer.Instance.ProteinInstancePositions.SetData(SceneManager.Instance.ProteinInstancePositions.ToArray());
+            GPUBuffer.Instance.ProteinInstanceRotations.SetData(SceneManager.Instance.ProteinInstanceRotations.ToArray());
 
             _selectionGameObject.transform.hasChanged = false;
         }

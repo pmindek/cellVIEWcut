@@ -302,7 +302,7 @@ public class TreeViewControl : MonoBehaviour
 
         GUI.skin = null;
     }
-
+    
     public bool HasFocus(Vector2 mousePos)
     {
         Rect rect = new Rect(m_scrollView.x-30, m_scrollView.y-30, Width+60, Height+60);

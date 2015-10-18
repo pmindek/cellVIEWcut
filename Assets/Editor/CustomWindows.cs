@@ -175,7 +175,7 @@ public class CustomWindow : EditorWindow
                             if (PersistantSettings.Instance.LodLevels[i] != lodInfo)
                             {
                                 PersistantSettings.Instance.LodLevels[i] = lodInfo;
-                                ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
+                                GPUBuffer.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
                             }
 
                             EditorGUI.indentLevel--;

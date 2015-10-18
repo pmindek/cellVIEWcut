@@ -6,7 +6,7 @@ using SimpleJSON;
 [ExecuteInEditMode]
 public class RecipeTreeUI : MonoBehaviour {
 
-	public bool filter_cut = false;
+	private bool filter_cut = true;
 	public TreeViewControl m_myTreeView;
 	private int anid = 0;//counter of item
 	private SelectionManager _sel;
@@ -25,10 +25,12 @@ public class RecipeTreeUI : MonoBehaviour {
 	// Use this for initialization
 
 
-	public void Awake(){
+	public void Awake()
+    {
 		//_sel = GameObject.Find ("Selection").GetComponent<HandleSelection>();
 		nvcamera = Camera.main.GetComponent<NavigateCamera> ();
 		populateRecipeGameObject (GameObject.Find(SceneManager.Instance.scene_name));
+        
 	}
 
 
@@ -94,7 +96,7 @@ public class RecipeTreeUI : MonoBehaviour {
 			if (!filter_cut)SceneManager.Instance.ProteinToggleFlags [itemid] = Convert.ToInt32 (value);
 		}
 		if (filter_cut) {
-			cutobject.toggleCutItme(ingname,value);
+			cutobject.ToggleCutItem(ingname,value);
 		}
 	}
 
@@ -183,6 +185,9 @@ public class RecipeTreeUI : MonoBehaviour {
 		}
 	}
 
+    [HideInInspector]
+    public int currentSelectedIngredient = -1;
+
 	public void Handler(object sender, System.EventArgs args)
     {
         //Debug.Log(string.Format("{0} detected: {1}", args.GetType().Name, (sender as TreeViewItem).Header));
@@ -198,46 +203,63 @@ public class RecipeTreeUI : MonoBehaviour {
 			ApplyFunctionRecValue(toggleChecked,item,false);
 			update=true;
 		}
-		if ((args.GetType ().Name == "ClickEventArgs")) {//(args.GetType ().Name == "SelectedEventArgs")||
+		if ((args.GetType ().Name == "ClickEventArgs"))
+        {//(args.GetType ().Name == "SelectedEventArgs")||
+
 			Debug.Log ("ok selected "+item.Header+" "+doubleclick.ToString()+" "+toggle_display_on_double_click.ToString());
 			Debug.Log ("mouseClick "+clikCount+" " +Input.GetMouseButtonDown (1).ToString());
-			if (!item.HasChildItems()){//could do it for the parent as well ?
-				//SceneManager.Instance.SetSelectedElement(itemid);
-				//Debug.Log ("update label with "+item.Header);
-				//SceneManager.Instance.SelectedElement=-2;
+            
+            if (!item.HasChildItems())
+            {
+                
 
-				//_sel.UpdateDescription(item.Header);
+                //could do it for the parent as well ?
+                //SceneManager.Instance.SetSelectedElement(itemid);
+                //Debug.Log ("update label with "+item.Header);
+                //SceneManager.Instance.SelectedElement=-2;
 
-				for (int i=0;i <SceneManager.Instance.ProteinInstanceInfos.Count;i++){
+                //_sel.UpdateDescription(item.Header);
+
+                for (int i=0;i <SceneManager.Instance.ProteinInstanceInfos.Count;i++)
+                {
 					SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 3, SceneManager.Instance.ProteinInstanceInfos[i].z); 
 				}
-				//for (int i=0;i <SceneManager.Instance.CurveControlPointsInfos.Count;i++){
-				//	SceneManager.Instance.CurveControlPointsInfos[i] = new Vector4(SceneManager.Instance.CurveControlPointsInfos[i].x, SceneManager.Instance.CurveControlPointsInfos[i].y,3, 0); 
-				//}
-				var ingredientId = SceneManager.Instance.ProteinNames.IndexOf(item.Parent.Header + "_" + item.Header);
-				if (item.Parent.Header.Contains ("membrane")) {
-					ingredientId = SceneManager.Instance.ProteinNames.IndexOf (item.Header);
+
+                //for (int i=0;i <SceneManager.Instance.CurveControlPointsInfos.Count;i++){
+                //	SceneManager.Instance.CurveControlPointsInfos[i] = new Vector4(SceneManager.Instance.CurveControlPointsInfos[i].x, SceneManager.Instance.CurveControlPointsInfos[i].y,3, 0); 
+                //}
+                currentSelectedIngredient = SceneManager.Instance.ProteinNames.IndexOf(item.Parent.Header + "_" + item.Header);
+				if (item.Parent.Header.Contains ("membrane"))
+                {
+                    currentSelectedIngredient = SceneManager.Instance.ProteinNames.IndexOf (item.Header);
 				}
-				if (ingredientId == -1){
-					ingredientId = SceneManager.Instance.CurveIngredientsNames.IndexOf (item.Parent.Header + "_" + item.Header);
-					if (ingredientId == -1)
+
+				if (currentSelectedIngredient == -1)
+                {
+                    currentSelectedIngredient = SceneManager.Instance.CurveIngredientsNames.IndexOf (item.Parent.Header + "_" + item.Header);
+					if (currentSelectedIngredient == -1)
 						return;
 					else {
-						highlightCurveID(ingredientId);
+						highlightCurveID(currentSelectedIngredient);
 					}
-				}else {
-					highlightProteinID (ingredientId);
+				}else
+                {
+					highlightProteinID (currentSelectedIngredient);
 				}
-				//all ingredient instance should have state put highlighted 
-				//for (int i=0;i <SceneManager.Instance.ProteinInstanceInfos.Count;i++){
-				//	if (SceneManager.Instance.ProteinInstanceInfos[i].x == ingredientId){
-				//		SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 1, SceneManager.Instance.ProteinInstanceInfos[i].z); 
-				//	}else {
-				//		SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 3, SceneManager.Instance.ProteinInstanceInfos[i].z); 
-				//	}
-				//}/
 
-				if ((doubleclick)) {
+                
+
+                //all ingredient instance should have state put highlighted 
+                //for (int i=0;i <SceneManager.Instance.ProteinInstanceInfos.Count;i++){
+                //	if (SceneManager.Instance.ProteinInstanceInfos[i].x == ingredientId){
+                //		SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 1, SceneManager.Instance.ProteinInstanceInfos[i].z); 
+                //	}else {
+                //		SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 3, SceneManager.Instance.ProteinInstanceInfos[i].z); 
+                //	}
+                //}/
+
+                if ((doubleclick))
+                {
 					Debug.Log ("double click");
 					bool filter_cut_old = filter_cut;
 					filter_cut=false;
@@ -249,8 +271,8 @@ public class RecipeTreeUI : MonoBehaviour {
 					doubleclick=false;
 				}
 
-				ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(SceneManager.Instance.ProteinInstanceInfos.ToArray());
-				ComputeBufferManager.Instance.CurveControlPointsInfos.SetData(SceneManager.Instance.CurveControlPointsInfos.ToArray());
+				GPUBuffer.Instance.ProteinInstanceInfos.SetData(SceneManager.Instance.ProteinInstanceInfos.ToArray());
+				GPUBuffer.Instance.CurveControlPointsInfos.SetData(SceneManager.Instance.CurveControlPointsInfos.ToArray());
 				
 				//update camera position to center
 				//Helper.FocusCameraOnGameObject(Camera.main,Vector4.zero,5.0f/PersistantSettings.Instance.Scale);
@@ -283,8 +305,8 @@ public class RecipeTreeUI : MonoBehaviour {
 						filter_cut = filter_cut_old;
 						doubleclick=false;
 					}
-					ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(SceneManager.Instance.ProteinInstanceInfos.ToArray());
-					ComputeBufferManager.Instance.CurveControlPointsInfos.SetData(SceneManager.Instance.CurveControlPointsInfos.ToArray());
+					GPUBuffer.Instance.ProteinInstanceInfos.SetData(SceneManager.Instance.ProteinInstanceInfos.ToArray());
+					GPUBuffer.Instance.CurveControlPointsInfos.SetData(SceneManager.Instance.CurveControlPointsInfos.ToArray());
 				}
 
 				//SceneManager.Instance.SelectedElement=-1;

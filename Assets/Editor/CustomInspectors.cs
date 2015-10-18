@@ -7,45 +7,134 @@ using System.Collections.Generic;
 public class CutObjectCustomEditor : Editor
 {
     public Vector2 _scrollPos;
+
+    [SerializeField]
     public bool showFilters = false;
+
+    //private bool[] proteinFoldout = new bool[100];
+    
+    
+    TreeViewItem m_lastSelectedItem = null;
+
+    Vector2 m_mousePos = Vector2.zero;
 
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
 
         CutObject cutObject = (CutObject)target;
-        if (GUILayout.Button("Show/Hide Protein Filters"))
+
+
+        TreeViewControl item = cutObject.GetComponent<TreeViewControl>();
+        if (null == item)
         {
-            showFilters = !showFilters;
-            
+            Debug.LogError("TreeViewControl is null");
+            return;
         }
 
+        bool needsRepainted = false;
+
+        if (null != Event.current &&
+            m_mousePos != Event.current.mousePosition)
+        {
+            needsRepainted = true;
+        }
+
+        if (item.SelectedItem != m_lastSelectedItem)
+        {
+            m_lastSelectedItem = item.SelectedItem;
+            needsRepainted = true;
+        }
+
+        if (null != item.SelectedItem &&
+            string.IsNullOrEmpty(item.SelectedItem.Header))
+        {
+            item.SelectedItem.Header = "Root item";
+            needsRepainted = true;
+        }
+        
+        showFilters = EditorGUILayout.Foldout(showFilters, "Protein Filters");
         if (showFilters)
         {
             EditorUtility.SetDirty(cutObject);
 
-            GUIStyle style_1 = new GUIStyle();
-            style_1.margin = new RectOffset(10, 10, 10, 10);
+            EditorGUILayout.Separator();
+            RecipeTreeUI ui = cutObject.GetComponent<RecipeTreeUI>();
+
+            if (ui.currentSelectedIngredient != -1)
+            {
+                var name = SceneManager.Instance.ProteinNames[ui.currentSelectedIngredient];
+
+                var rangeValues = cutObject.GetRangeValues(ui.currentSelectedIngredient);
+
+                GUILayout.Label("Visibility Settings: " + name);
+                MultiRangeSlider.HandleCascadeSliderGUI(ref rangeValues);
+                EditorGUILayout.Separator();
+
+                cutObject.SetRangeValues(ui.currentSelectedIngredient, rangeValues);
+
+            }
 
             // Begin scroll view
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, style_1, GUILayout.ExpandWidth(true));
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
             {
-                GUILayout.Label("Protein Filters: "); // + cutObject.gameObject.name);
-
-                EditorGUILayout.Space();
-
-                EditorGUILayout.BeginVertical();
+                if (needsRepainted)
                 {
-                    for (int i = 0; i < cutObject.ProteinCutFilters.Count; i++)
-                    {
-                        cutObject.ProteinCutFilters[i].State = EditorGUILayout.ToggleLeft(cutObject.ProteinCutFilters[i].Name, cutObject.ProteinCutFilters[i].State);
-                        GUILayout.Space(3);
-                    }
+                    Repaint();
+                    SceneView.RepaintAll();
                 }
-                EditorGUILayout.EndVertical();
+                
+                item.DisplayTreeView(TreeViewControl.DisplayTypes.NONE);
             }
             EditorGUILayout.EndScrollView();
+
+            
         }
+
+        //showFilters = EditorGUILayout.Foldout(showFilters, "Protein Filters");
+        //if(showFilters)
+        //{
+        //    EditorUtility.SetDirty(cutObject);
+
+        //    GUIStyle style_1 = new GUIStyle();
+        //    style_1.margin = new RectOffset(10, 0, 0, 0);
+        //    ////style_1.padding = new RectOffset(50, 0, 0, 0);
+
+        //    //GUIStyle style_2 = EditorStyles.foldout;
+        //    //style_1.margin = new RectOffset(50, 0, 0, 0);
+        //    //style_2.padding = new RectOffset(50, 0, 0, 0);
+
+        //    // Begin scroll view
+        //    _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
+        //    {
+        //        //GUILayout.Label(""); // + cutObject.gameObject.name);
+
+        //        //EditorGUILayout.Space();
+
+        //        EditorGUILayout.BeginVertical();
+        //        {
+        //            for (int i = 0; i < cutObject.ProteinCutFilters.Count; i++)
+        //            {
+        //                cutObject.ProteinCutFilters[i].State = EditorGUILayout.ToggleLeft(cutObject.ProteinCutFilters[i].Name, cutObject.ProteinCutFilters[i].State);
+
+        //                EditorGUILayout.BeginVertical(style_1);
+        //                {
+        //                    proteinFoldout[i] = EditorGUILayout.Foldout(proteinFoldout[i], "Protein filter params");
+        //                    if (proteinFoldout[i])
+        //                    {
+        //                        MultiRangeSlider.HandleCascadeSliderGUI(ref rangeValues);
+        //                    }
+        //                }
+        //                EditorGUILayout.EndVertical();
+
+
+        //                GUILayout.Space(3);
+        //            }
+        //        }
+        //        EditorGUILayout.EndVertical();
+        //    }
+        //    EditorGUILayout.EndScrollView();
+        //}
     }
 }
 

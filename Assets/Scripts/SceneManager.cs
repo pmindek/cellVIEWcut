@@ -317,11 +317,11 @@ public class SceneManager : MonoBehaviour
             CutRotations.Add(MyUtility.QuanternionToVector4(cut.transform.rotation));
         }
 
-        ComputeBufferManager.Instance.CutInfos.SetData(CutInfos.ToArray());
-        ComputeBufferManager.Instance.CutScales.SetData(CutScales.ToArray());
-        ComputeBufferManager.Instance.CutPositions.SetData(CutPositions.ToArray());
-        ComputeBufferManager.Instance.CutRotations.SetData(CutRotations.ToArray());
-        ComputeBufferManager.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
+        GPUBuffer.Instance.CutInfos.SetData(CutInfos.ToArray());
+        GPUBuffer.Instance.CutScales.SetData(CutScales.ToArray());
+        GPUBuffer.Instance.CutPositions.SetData(CutPositions.ToArray());
+        GPUBuffer.Instance.CutRotations.SetData(CutRotations.ToArray());
+        GPUBuffer.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
     }
 
     #endregion
@@ -375,63 +375,63 @@ public class SceneManager : MonoBehaviour
 
     private void CheckBufferSizes()
     {
-        if (Instance.NumCutObjects >= ComputeBufferManager.NumCutsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.NumCutObjects >= GPUBuffer.NumCutsMax) throw new Exception("GPU buffer overflow");
         //if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusters.Count >= ComputeBufferManager.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusterCount.Count >= ComputeBufferManager.NumProteinMax * ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinInstancePositions.Count >= ComputeBufferManager.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
+        if (Instance.NumLodLevels >= GPUBuffer.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinNames.Count >= GPUBuffer.NumProteinMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtoms.Count >= GPUBuffer.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusters.Count >= GPUBuffer.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusterCount.Count >= GPUBuffer.NumProteinMax * GPUBuffer.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinInstancePositions.Count >= GPUBuffer.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
 
-        if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveIngredientsNames.Count >= GPUBuffer.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveControlPointsPositions.Count >= GPUBuffer.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveIngredientsAtoms.Count >= GPUBuffer.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
     }
 
     public void UploadAllData()
     {
         CheckBufferSizes();
 
-        ComputeBufferManager.Instance.InitBuffers();
+        GPUBuffer.Instance.InitBuffers();
 
-        ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
+        GPUBuffer.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data
-        ComputeBufferManager.Instance.ProteinRadii.SetData(ProteinRadii.ToArray());
-        ComputeBufferManager.Instance.ProteinColors.SetData(ProteinColors.ToArray());
-        ComputeBufferManager.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
+        GPUBuffer.Instance.ProteinRadii.SetData(ProteinRadii.ToArray());
+        GPUBuffer.Instance.ProteinColors.SetData(ProteinColors.ToArray());
+        GPUBuffer.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
 
-        ComputeBufferManager.Instance.ProteinAtoms.SetData(ProteinAtoms.ToArray());
-        ComputeBufferManager.Instance.ProteinAtomCount.SetData(ProteinAtomCount.ToArray());
-        ComputeBufferManager.Instance.ProteinAtomStart.SetData(ProteinAtomStart.ToArray());
+        GPUBuffer.Instance.ProteinAtoms.SetData(ProteinAtoms.ToArray());
+        GPUBuffer.Instance.ProteinAtomCount.SetData(ProteinAtomCount.ToArray());
+        GPUBuffer.Instance.ProteinAtomStart.SetData(ProteinAtomStart.ToArray());
 
-        ComputeBufferManager.Instance.ProteinAtomClusters.SetData(ProteinAtomClusters.ToArray());
-        ComputeBufferManager.Instance.ProteinAtomClusterCount.SetData(ProteinAtomClusterCount.ToArray());
-        ComputeBufferManager.Instance.ProteinAtomClusterStart.SetData(ProteinAtomClusterStart.ToArray());
+        GPUBuffer.Instance.ProteinAtomClusters.SetData(ProteinAtomClusters.ToArray());
+        GPUBuffer.Instance.ProteinAtomClusterCount.SetData(ProteinAtomClusterCount.ToArray());
+        GPUBuffer.Instance.ProteinAtomClusterStart.SetData(ProteinAtomClusterStart.ToArray());
 
-        ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(ProteinInstanceInfos.ToArray());
-        ComputeBufferManager.Instance.ProteinInstancePositions.SetData(ProteinInstancePositions.ToArray());
-        ComputeBufferManager.Instance.ProteinInstanceRotations.SetData(ProteinInstanceRotations.ToArray());
+        GPUBuffer.Instance.ProteinInstanceInfos.SetData(ProteinInstanceInfos.ToArray());
+        GPUBuffer.Instance.ProteinInstancePositions.SetData(ProteinInstancePositions.ToArray());
+        GPUBuffer.Instance.ProteinInstanceRotations.SetData(ProteinInstanceRotations.ToArray());
 
         // Upload curve ingredient data
-        ComputeBufferManager.Instance.CurveIngredientsAtoms.SetData(CurveIngredientsAtoms.ToArray());
-        ComputeBufferManager.Instance.CurveIngredientsAtomCount.SetData(CurveIngredientsAtomCount.ToArray());
-        ComputeBufferManager.Instance.CurveIngredientsAtomStart.SetData(CurveIngredientsAtomStart.ToArray());
+        GPUBuffer.Instance.CurveIngredientsAtoms.SetData(CurveIngredientsAtoms.ToArray());
+        GPUBuffer.Instance.CurveIngredientsAtomCount.SetData(CurveIngredientsAtomCount.ToArray());
+        GPUBuffer.Instance.CurveIngredientsAtomStart.SetData(CurveIngredientsAtomStart.ToArray());
         
-        ComputeBufferManager.Instance.CurveIngredientsInfos.SetData(CurveIngredientsInfos.ToArray());
-        ComputeBufferManager.Instance.CurveIngredientsColors.SetData(CurveIngredientsColors.ToArray());
-        ComputeBufferManager.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
+        GPUBuffer.Instance.CurveIngredientsInfos.SetData(CurveIngredientsInfos.ToArray());
+        GPUBuffer.Instance.CurveIngredientsColors.SetData(CurveIngredientsColors.ToArray());
+        GPUBuffer.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
 
-        ComputeBufferManager.Instance.CurveControlPointsInfos.SetData(CurveControlPointsInfos.ToArray());
-        ComputeBufferManager.Instance.CurveControlPointsNormals.SetData(CurveControlPointsNormals.ToArray());
-        ComputeBufferManager.Instance.CurveControlPointsPositions.SetData(CurveControlPointsPositions.ToArray());
+        GPUBuffer.Instance.CurveControlPointsInfos.SetData(CurveControlPointsInfos.ToArray());
+        GPUBuffer.Instance.CurveControlPointsNormals.SetData(CurveControlPointsNormals.ToArray());
+        GPUBuffer.Instance.CurveControlPointsPositions.SetData(CurveControlPointsPositions.ToArray());
     }
 
     public void UploadIngredientToggleData()
     {
-        ComputeBufferManager.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
-        ComputeBufferManager.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
+        GPUBuffer.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
+        GPUBuffer.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
     }
 
     public void SetCutObjects()
