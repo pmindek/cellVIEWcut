@@ -1,0 +1,19 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ClearVisibilityFlags
+#pragma kernel ComputeVisibility
+
+Texture2D<int> _ItemBuffer;
+RWStructuredBuffer<int> _FlagBuffer;
+
+[numthreads(64, 1, 1)]
+void ClearVisibilityFlags(uint3 id : SV_DispatchThreadID)
+{
+    _FlagBuffer[id.x] = 0;
+}
+
+[numthreads(8, 8, 1)]
+void ComputeVisibility(uint3 id : SV_DispatchThreadID)
+{
+    int idx = _ItemBuffer[id.xy];
+    if (idx >= 0) _FlagBuffer[idx] = 1;
+}
