@@ -30,6 +30,7 @@ uniform	StructuredBuffer<float4> _ProteinInstancePositions;
 uniform AppendStructuredBuffer<int4> _ProteinSphereBatchInfos;
 
 uniform StructuredBuffer<int> _ProteinInstanceOcclusionFlags;
+uniform StructuredBuffer<int> _ProteinInstanceVisibilityFlags;
 
 // Cutaways
 uniform int _NumCutObjects;
@@ -38,6 +39,8 @@ uniform	StructuredBuffer<float4> _CutScales;
 uniform	StructuredBuffer<float4> _CutPositions;	
 uniform StructuredBuffer<float4> _CutRotations;
 uniform StructuredBuffer<int> _ProteinCutFilters;
+uniform StructuredBuffer<int> _HistogramProteinTypes;
+RWStructuredBuffer<int> _HistogramStatistics;
 
 uniform Texture2D<float4> noiseTexture;
 uniform float noiseTextureW;
@@ -97,6 +100,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
     for (int i = 0; i < _NumCutObjects; i++)
     {
         int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+		//int proteinCutFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 
         if (proteinCutFilter == 1)
         {
@@ -186,21 +190,50 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 {
 	if(id.x >= (uint)_NumInstances) return;
 
-    if(_ProteinInstanceOcclusionFlags[id.x] == 0) return;
-
     float4 infos = _ProteinInstanceInfo[id.x];	
 	int cullFlag = _ProteinInstanceCullFlags[id.x];
 	float radius = _ProteinRadii[infos.x] * _Scale;
 	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
 	float4 sphere = float4(pos, radius);
+
+
+	//if(infos.x != 4) return;
+    //if(_ProteinInstanceOcclusionFlags[id.x] != 0) return;
+	//if(_ProteinVisibilityFlag[id.x] == 0) return;
+
+	//if (infos.x != 4)
+	/*if (_ProteinInstanceVisibilityFlags[id.x] != 0)
+	return;*/
 		
 	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);
 	bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x, id.x);
 
+
+	for (int i = 0; i < _NumCutObjects; i++)
+    {
+		int h = _HistogramProteinTypes[infos.x * _NumCutObjects + i];
+		int v = _ProteinInstanceOcclusionFlags[id.x];
+
+		if (h != 0)
+		{
+			InterlockedAdd(_HistogramStatistics[1], 1); //count all
+			if (cutAwayTest)
+			{
+				InterlockedAdd(_HistogramStatistics[0], 1); //count cut aways
+			}
+
+			else if (v != 0)
+			{
+				InterlockedAdd(_HistogramStatistics[2], 1);
+			}
+		}
+	}
+
+
     // if instance is culled return
     if(_CullingFilter == -1 && cullFlag == 0) return;
     if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
-    if (frustrumTest || cutAwayTest || _ProteinVisibilityFlag[infos.x] == 0) return;
+    if (frustrumTest || cutAwayTest /*|| _ProteinVisibilityFlag[infos.x] == 0*/) return;
 
     int lodLevel = 0;		
 	float cameraDistance = dot(sphere.xyz - _CameraPosition.xyz, _CameraForward.xyz);
@@ -241,8 +274,24 @@ void ProteinFillBatchBuffer2(uint3 id : SV_DispatchThreadID)
     if (id.x >= (uint)_NumInstances) return;
 
     float4 infos = _ProteinInstanceInfo[id.x];
-    if (_ProteinType > 0 && infos.x != _ProteinType -1) return;
-    if (_ProteinType < 0 && infos.x == _ProteinType + 1) return;
+    /*if (_ProteinType > 0 && infos.x != _ProteinType -1) return;
+    if (_ProteinType < 0 && infos.x == _ProteinType + 1) return;*/
+
+	bool doReturn = false;
+	for (int i = 0; i < _NumCutObjects; i++)
+    {
+		 if (_ProteinType > 0 && _ProteinCutFilters[infos.x * _NumCutObjects + i] == 1)
+			return;
+		 if (_ProteinType < 0 && _ProteinCutFilters[infos.x * _NumCutObjects + i] == 0)
+		 {
+			doReturn = true;
+		 }
+	}
+
+	if (doReturn)
+		return;
+
+	//return;
 
     //int cullFlag = _ProteinInstanceCullFlags[id.x];
     //if (_CullingFilter == -1 && cullFlag == 0) return;
@@ -259,4 +308,9 @@ void ProteinFillBatchBuffer2(uint3 id : SV_DispatchThreadID)
     //if (cutAwayTest) return;
 
     _OcclusionQueriesBatchSpheres.Append(int4(id.x, 0, 0, 0));
+
+	_HistogramStatistics[0] = 0;
+	_HistogramStatistics[1] = 0;
+	_HistogramStatistics[2] = 0;
+	_HistogramStatistics[3] = 0;
 }

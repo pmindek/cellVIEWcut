@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using SimpleJSON;
 
 [ExecuteInEditMode]
@@ -188,6 +189,9 @@ public class RecipeTreeUI : MonoBehaviour {
     [HideInInspector]
     public int currentSelectedIngredient = -1;
 
+    [HideInInspector]
+    public List<int> selectedIngredients = new List<int>();
+
 	public void Handler(object sender, System.EventArgs args)
     {
         //Debug.Log(string.Format("{0} detected: {1}", args.GetType().Name, (sender as TreeViewItem).Header));
@@ -205,6 +209,8 @@ public class RecipeTreeUI : MonoBehaviour {
 		}
 		if ((args.GetType ().Name == "ClickEventArgs"))
         {//(args.GetType ().Name == "SelectedEventArgs")||
+
+            selectedIngredients.Clear();
 
 			Debug.Log ("ok selected "+item.Header+" "+doubleclick.ToString()+" "+toggle_display_on_double_click.ToString());
 			Debug.Log ("mouseClick "+clikCount+" " +Input.GetMouseButtonDown (1).ToString());
@@ -247,7 +253,20 @@ public class RecipeTreeUI : MonoBehaviour {
 					highlightProteinID (currentSelectedIngredient);
 				}
 
-                
+
+                selectedIngredients.Add(currentSelectedIngredient);
+
+                cutobject.ToggleAllHistogramCutItems(false);
+                string ingname = item.Parent.Header + "_" + item.Header;
+                if (item.Parent.Header.Contains("membrane"))
+                {
+                    ingname = item.Header;
+                }
+                cutobject.ToggleHistogramCutItem(ingname, true);
+
+
+
+                //Debug.Log("single ingredient selected");
 
                 //all ingredient instance should have state put highlighted 
                 //for (int i=0;i <SceneManager.Instance.ProteinInstanceInfos.Count;i++){
@@ -262,7 +281,7 @@ public class RecipeTreeUI : MonoBehaviour {
                 {
 					Debug.Log ("double click");
 					bool filter_cut_old = filter_cut;
-					filter_cut=false;
+					filter_cut=false; 
 					ApplyFunctionRecValue (toggleChecked, m_myTreeView.RootItem, toggle_display_on_double_click);
 					ApplyFunctionRecValue (toggleChecked, item, true);
 					toggle_display_on_double_click = !toggle_display_on_double_click;
@@ -278,6 +297,72 @@ public class RecipeTreeUI : MonoBehaviour {
 				//Helper.FocusCameraOnGameObject(Camera.main,Vector4.zero,5.0f/PersistantSettings.Instance.Scale);
 			}
 			else {
+                Debug.Log("multiple ingredients selected?---");
+
+                List<TreeViewItem> allItems = new List<TreeViewItem>();
+                List<TreeViewItem> allIngredients = new List<TreeViewItem>();
+
+                allItems.AddRange(item.Items);
+
+                while (allItems.Count > 0)
+                {
+                    TreeViewItem childItem = allItems[0];
+                    allItems.RemoveAt(0);
+
+                    if (childItem.HasChildItems())
+                    {
+                        allItems.AddRange(childItem.Items);
+                    }
+                    else
+                    {
+                        allIngredients.Add(childItem);
+                    }
+                }
+                Debug.Log(allIngredients.Count);
+
+                Debug.Log("|||||||||||||||||||||||||||||" + cutobject);
+                cutobject.ToggleAllHistogramCutItems(false);
+
+                for (int i = 0; i < allIngredients.Count; i++)
+                {
+                    int tempSelectedIngredient = -1;
+                    tempSelectedIngredient  = SceneManager.Instance.ProteinNames.IndexOf(allIngredients[i].Parent.Header + "_" + allIngredients[i].Header);
+				    if (allIngredients[i].Parent.Header.Contains ("membrane"))
+                    {
+                        tempSelectedIngredient = SceneManager.Instance.ProteinNames.IndexOf (allIngredients[i].Header);
+				    }
+
+                    if (tempSelectedIngredient == -1)
+                    {
+                        tempSelectedIngredient = SceneManager.Instance.CurveIngredientsNames.IndexOf(allIngredients[i].Parent.Header + "_" + allIngredients[i].Header);
+                    }
+
+                    if (tempSelectedIngredient >= 0)
+                    {
+                        selectedIngredients.Add(tempSelectedIngredient);
+
+
+                        string ingname = allIngredients[i].Parent.Header + "_" + allIngredients[i].Header;
+                        if (allIngredients[i].Parent.Header.Contains("membrane"))
+                        {
+                            ingname = allIngredients[i].Header;
+                            //itemid = SceneManager.Instance.ProteinNames.IndexOf(ingname);
+                        }
+
+                        cutobject.ToggleHistogramCutItem(ingname, true);
+                        //Debug.Log("---------" + allIngredients[i].Header);
+                    }
+
+                    Debug.Log(allIngredients[i].Header);
+                }
+
+                Debug.Log("done");
+
+                for (int i = 0; i < selectedIngredients.Count; i++)
+                {
+                    Debug.Log(" .~" + selectedIngredients[i]);
+                }
+
 				//item.Header is a compartement, except if its root highligh all child.
 				GameObject root = GameObject.Find (SceneManager.Instance.scene_name);
 				//grab the gameobbject
@@ -323,6 +408,11 @@ public class RecipeTreeUI : MonoBehaviour {
 		//if selected should show the description ?
 		if (update )
 			SceneManager.Instance.UploadIngredientToggleData();
+
+        foreach (var ingredient in selectedIngredients)
+        {
+            Debug.Log(ingredient);
+        }                
     }
 
     void AddHandlerEvent(out System.EventHandler handler)

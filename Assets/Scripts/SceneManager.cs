@@ -88,6 +88,8 @@ public class SceneManager : MonoBehaviour
     [NonSerialized]
     public List<CutObject> CutObjects = new List<CutObject>();
 
+    public int[] stats = new int[] { 0, 0, 0, 0 };
+
     //--------------------------------------------------------------
 
     public int NumLodLevels = 0;
@@ -294,15 +296,22 @@ public class SceneManager : MonoBehaviour
         var CutPositions = new List<Vector4>();
         var CutRotations = new List<Vector4>();
         var ProteinCutFilters = new List<int>();
+        var HistogramProteinTypes = new List<int>();
 
         //Debug.Log(CutObjects.Count);
 
         // Fill the protein cut filter buffer
+
         for (var i = 0; i < ProteinNames.Count; i++)
         {
             foreach (var cutObject in CutObjects)
             {
+                //Debug.Log(i + " PCF " + cutObject.ProteinCutFilters.Count());
+                //Debug.Log(i + " HPT " + cutObject.HistogramProteinTypes.Count());
                 ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+                HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
+
+                //Debug.Log("---" + i + " -- " + " ~ " + cutObject.HistogramProteinTypes[i].Name + " ~ " + cutObject.HistogramProteinTypes[i].State + " ... " + cutObject.ProteinCutFilters[i].State);
             }
         }
 
@@ -322,6 +331,8 @@ public class SceneManager : MonoBehaviour
         GPUBuffer.Instance.CutPositions.SetData(CutPositions.ToArray());
         GPUBuffer.Instance.CutRotations.SetData(CutRotations.ToArray());
         GPUBuffer.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
+        GPUBuffer.Instance.HistogramProteinTypes.SetData(HistogramProteinTypes.ToArray());
+        //GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 1, 2, 3 });
     }
 
     #endregion
@@ -395,6 +406,8 @@ public class SceneManager : MonoBehaviour
 
         GPUBuffer.Instance.InitBuffers();
 
+        GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 0, 0, 4 });
+
         GPUBuffer.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data
@@ -441,6 +454,9 @@ public class SceneManager : MonoBehaviour
         foreach (var cutObject in cutObjects)
         {
             cutObject.ProteinCutFilters.Clear();
+            cutObject.HistogramProteinTypes.Clear();
+            cutObject.HistogramRanges.Clear();
+
             cutObject.SetCutItems(ProteinNames);
         }
     }

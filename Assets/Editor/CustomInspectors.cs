@@ -61,18 +61,45 @@ public class CutObjectCustomEditor : Editor
             EditorGUILayout.Separator();
             RecipeTreeUI ui = cutObject.GetComponent<RecipeTreeUI>();
 
+            /*Debug.Log("GR" + ui.currentSelectedIngredient);
+            Debug.Log("GL");
+            for (int i = 0; i < ui.selectedIngredients.Count; i++)
+            {
+                Debug.Log(" .~" + ui.selectedIngredients[i]);
+            }*/
+
+            //Debug.Log(Random.Range(1, 999));
+            //Debug.Log(ui.selectedIngredients.Count);
+
             if (ui.currentSelectedIngredient != -1)
             {
                 var name = SceneManager.Instance.ProteinNames[ui.currentSelectedIngredient];
 
                 var rangeValues = cutObject.GetRangeValues(ui.currentSelectedIngredient);
 
-                GUILayout.Label("Visibility Settings: " + name);
+                GUILayout.Label("Visibility: " + name + " ~ " + ui.currentSelectedIngredient);
                 MultiRangeSlider.HandleCascadeSliderGUI(ref rangeValues);
                 EditorGUILayout.Separator();
 
                 cutObject.SetRangeValues(ui.currentSelectedIngredient, rangeValues);
 
+                /*rangeValues[0] = (float)Random.Range(0, 999) / 1000.0f;
+                rangeValues[1] = 0.15f;*/
+
+                float st_cutaway = (float) SceneManager.Instance.stats[0];
+                float st_all = (float) SceneManager.Instance.stats[1];
+                float st_occluding = (float) SceneManager.Instance.stats[2];
+
+                rangeValues[0] = st_occluding / st_all;
+                rangeValues[1] = (1.0f - st_cutaway / st_all) - rangeValues[0];
+
+                //Debug.Log(st_visible + " / " + st_all);
+                //Debug.Log("ú " + rangeValues);
+
+            }
+            else
+            {
+                GUILayout.Label("Nevym.");
             }
 
             // Begin scroll view

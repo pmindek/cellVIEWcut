@@ -60,6 +60,8 @@ public class GPUBuffer : MonoBehaviour
     public ComputeBuffer CutPositions;
     public ComputeBuffer CutRotations;
     public ComputeBuffer ProteinCutFilters;
+    public ComputeBuffer HistogramProteinTypes;
+    public ComputeBuffer HistogramStatistics;
 
     //*****//
 
@@ -141,6 +143,8 @@ public class GPUBuffer : MonoBehaviour
         if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
         if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);
         if (ProteinCutFilters == null) ProteinCutFilters = new ComputeBuffer(NumCutsMax * NumProteinMax, 4);
+        if (HistogramProteinTypes == null) HistogramProteinTypes = new ComputeBuffer(NumCutsMax * NumProteinMax, 4);
+        if (HistogramStatistics == null) HistogramStatistics = new ComputeBuffer(4, 4);
 
     }
 	
@@ -153,6 +157,8 @@ public class GPUBuffer : MonoBehaviour
         if (CutPositions != null) { CutPositions.Release(); CutPositions = null; }
         if (CutRotations != null) { CutRotations.Release(); CutRotations = null; }
         if (ProteinCutFilters != null) { ProteinCutFilters.Release(); ProteinCutFilters = null; }
+        if (HistogramProteinTypes != null) { HistogramProteinTypes.Release(); HistogramProteinTypes = null; }
+        if (HistogramStatistics != null) { HistogramStatistics.Release(); HistogramStatistics = null; }
 
         //*****//
 

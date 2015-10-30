@@ -20,6 +20,18 @@ public class CutItem
     public bool State;
 }
 
+[System.Serializable]
+public class CutItemRanges
+{
+    public string Name;
+    public int r0;
+    public int r1;
+    public int r2;
+
+    public float d0; // delta 0
+    public float d1; // delta 1
+}
+
 [ExecuteInEditMode]
 public class CutObject : MonoBehaviour
 {
@@ -40,20 +52,44 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public List<CutItem> ProteinCutFilters = new List<CutItem>();
 
+    [HideInInspector]
+    public List<CutItem> HistogramProteinTypes = new List<CutItem>();
+
+    [HideInInspector]
+    public List<CutItemRanges> HistogramRanges = new List<CutItemRanges>();
+
 	private TreeViewControl _tree;
 	private RecipeTreeUI _tree_ui;
 
     [HideInInspector]
     public float[] RangeValues = new float[2] { 0.2f, 0.3f };
+    public List<float[]> TreeRangeValues = new List<float[]>();
 
     public float[] GetRangeValues(int ingredientId)
     {
-        return RangeValues;
+        //return RangeValues;
+        int count = TreeRangeValues.Count;
+        if (count <= ingredientId)
+        {
+            if (ingredientId >= TreeRangeValues.Capacity)
+                TreeRangeValues.Capacity = ingredientId + 1;
+            TreeRangeValues.AddRange(Enumerable.Repeat(new float[2] {0.5f, 0.1f} , ingredientId + 1 - count));
+        }
+
+        return TreeRangeValues[ingredientId];
     }
 
     public void SetRangeValues(int ingredientId, float[] rangeValues)
     {
         RangeValues = rangeValues;
+        int count = TreeRangeValues.Count;
+        if (count <= ingredientId)
+        {
+            if (ingredientId >= TreeRangeValues.Capacity)
+                TreeRangeValues.Capacity = ingredientId + 1;
+            TreeRangeValues.AddRange(Enumerable.Repeat(new float[2] { 0.3f, 0.1f }, ingredientId + 1 - count));
+        }
+        TreeRangeValues[ingredientId] = rangeValues;
     }
 
 
@@ -61,7 +97,10 @@ public class CutObject : MonoBehaviour
     {
         foreach(var name in names)
         {
-            ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
+            /*ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
+            HistogramProteinTypes.Add(new CutItem() { Name = name, State = true });
+            HistogramRanges.Add(new CutItemRanges() { Name = name, r0 = 0, r1 = 0, r2 = 0, d0 = 0.0f, d1 = 0.0f });*/
+            AddCutItem(name);
         }
     }
 
@@ -75,11 +114,35 @@ public class CutObject : MonoBehaviour
 			}
 		}
 		if (toRemove != null)ProteinCutFilters.Remove(toRemove);
-	}
+
+        toRemove = null;
+        foreach (CutItem cu in HistogramProteinTypes)
+        {
+            if (string.Equals(cu.Name, name))
+            {
+                toRemove = cu;
+                break;
+            }
+        }
+        if (toRemove != null) HistogramProteinTypes.Remove(toRemove);
+
+        CutItemRanges toRemoveR = null;
+        foreach (CutItemRanges cu in HistogramRanges)
+        {
+            if (string.Equals(cu.Name, name))
+            {
+                toRemoveR = cu;
+                break;
+            }
+        }
+        if (toRemoveR != null) HistogramRanges.Remove(toRemoveR);
+    }
 
 	public  void AddCutItem (string name)
     {
 		ProteinCutFilters.Add(new CutItem() { Name = name, State = true });
+        HistogramProteinTypes.Add(new CutItem() { Name = name, State = true });
+        HistogramRanges.Add(new CutItemRanges() { Name = name, r0 = 0, r1 = 0, r2 = 0, d0 = 0.0f, d1 = 0.0f });
 	}
 
 	public void ToggleCutItem (string name, bool toggle)
@@ -90,7 +153,7 @@ public class CutObject : MonoBehaviour
 				break;
 			}
 		}
-	}
+    }
 
 	public void ToggleAllCutItem (bool toggle)
     {
@@ -98,15 +161,42 @@ public class CutObject : MonoBehaviour
         {
 			cu.State = toggle;
 		}
-	}
+    }
+
+
+    public void ToggleAllHistogramCutItems(bool toggle)
+    {
+        foreach (CutItem cu in HistogramProteinTypes)
+        {
+            cu.State = toggle;
+        }
+    }
+    public void ToggleHistogramCutItem(string name, bool toggle)
+    {
+        foreach (CutItem cu in HistogramProteinTypes)
+        {
+            if (string.Equals(cu.Name, name))
+            {
+                cu.State = toggle;
+                break;
+            }
+        }
+    }
+
+
 
 	//is it awake or load ?
     void Awake()
     {
         Debug.Log("Init cut object");
-		if (ProteinCutFilters.Count == 0)
-        //ProteinCutFilters.Clear();//?maybe shouldnt clear on Awake ?
-        	SetCutItems(SceneManager.Instance.ProteinNames);
+        if (ProteinCutFilters.Count == 0 || HistogramProteinTypes.Count == 0 || HistogramRanges.Count == 0)
+        {
+            //ProteinCutFilters.Clear();//?maybe shouldnt clear on Awake ?
+            ProteinCutFilters.Clear();
+            HistogramProteinTypes.Clear();
+            HistogramRanges.Clear();
+            SetCutItems(SceneManager.Instance.ProteinNames);
+        }
 		_tree = GetComponent<TreeViewControl> ();
 		_tree_ui = GetComponent<RecipeTreeUI> ();
 

@@ -267,12 +267,21 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutPositions", GPUBuffer.Instance.CutPositions);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutRotations", GPUBuffer.Instance.CutRotations);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics);
+
+        var stats = new int[4];
+        GPUBuffer.Instance.HistogramStatistics.GetData(stats);
+        //Debug.Log("STATS: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
+        //Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);
 
         if (noiseTexture == null)
         {
             Debug.Log("Load Texture");
             noiseTexture = (Texture2D)Resources.Load("Textures/noise");
         }
+
+        SceneManager.Instance.stats = stats;
 
         ComputeShaderManager.Instance.SphereBatchCS.SetFloat("noiseTextureW", noiseTexture.width);
         ComputeShaderManager.Instance.SphereBatchCS.SetFloat("noiseTextureH", noiseTexture.height);
@@ -322,7 +331,10 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinRadii", GPUBuffer.Instance.ProteinRadii, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);        
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
         // Count occludees instances
@@ -358,6 +370,9 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
         // Count occluder instances
@@ -410,7 +425,8 @@ public class SceneRenderer : MonoBehaviour
             _itemBuffer= new RenderTexture(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
         }
         
-        DoOcclusionQueries(occludeeType);
+        DoOcclusionQueries(4);
+        //ComputeVisibility();
 
         ///**** Start rendering routine ****/
 
