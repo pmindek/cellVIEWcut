@@ -14,6 +14,12 @@ enum InstanceState
     Highlighted = 1      // Instance will be displayed with highlighted color
 };
 
+struct CutInfoStruct
+{
+    public Vector4 info;
+    public Vector4 info2;
+}
+
 [ExecuteInEditMode]
 public class SceneManager : MonoBehaviour
 {
@@ -291,7 +297,7 @@ public class SceneManager : MonoBehaviour
     // Todo: proceed only if changes are made 
     public void UpdateCutObjects()
     {
-        var CutInfos = new List<Vector4>();
+        var CutInfos = new List<CutInfoStruct>();
         var CutScales = new List<Vector4>();
         var CutPositions = new List<Vector4>();
         var CutRotations = new List<Vector4>();
@@ -322,7 +328,12 @@ public class SceneManager : MonoBehaviour
 
             CutScales.Add(cut.transform.localScale);
             CutPositions.Add(cut.transform.position);
-            CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, 0));
+            //CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f));
+            CutInfos.Add(new CutInfoStruct
+            {
+                info = new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f),
+                info2 = new Vector4((float)cut.Fuzziness, (float)cut.FuzzinessDistance, (float)cut.FuzzinessCurve, 0.0f)
+            });
             CutRotations.Add(MyUtility.QuanternionToVector4(cut.transform.rotation));
         }
 

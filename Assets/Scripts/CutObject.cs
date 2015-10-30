@@ -39,12 +39,23 @@ public class CutObject : MonoBehaviour
     private bool tree_isVisible = true;
     
     public CutType CutType;
+
+    public bool Inverse;
     
     [Range(0, 1)]
     public float Value1;
 
     [Range(0, 1)]
     public float Value2;
+
+    [Range(0, 1)]
+    public float Fuzziness;
+
+    [Range(0, 1)]
+    public float FuzzinessDistance;
+
+    [Range(0.01f, 3)]
+    public float FuzzinessCurve;
 
     [HideInInspector]
     public CutType PreviousCutType;
