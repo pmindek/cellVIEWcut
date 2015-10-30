@@ -128,6 +128,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
     for (int i = 0; i < _NumCutObjects; i++)
     {
         int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+		int histogramFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 		//int proteinCutFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 
         if (proteinCutFilter == 1)
@@ -175,29 +176,33 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			bool adjustTest = true;
 			bool adjustVisibilityTest = true;
 
-			float adjustCut = -1.0 + info.info.y * 2.0;
-			float adjustOcl = -1.0 + info.info.z * 2.0;;
+			if (histogramFilter == 1)
+			{
+				float adjustCut = -1.0 + info.info.y * 2.0;
+				float adjustOcl = -1.0 + info.info.z * 2.0;;
 
-			float pFuzziness = 1.0 - info.info2.x;
-			float pSize = info.info2.y;
-			float pFuzzinessCurve = info.info2.z;
+				float pFuzziness = 1.0 - info.info2.x;
+				float pSize = info.info2.y;
+				float pFuzzinessCurve = info.info2.z;
 			
-			if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
-			{
-				adjustTest = false;
-			}
-			if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !adjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
-			{
-				test = true;
-			}
+				if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+				{
+					adjustTest = false;
+				}
+				if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !adjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+				{
+					test = true;
+				}
 
-			if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
-			{
-				adjustVisibilityTest = false;
-			}
-			if (_ProteinInstanceOcclusionFlags[id] != 0 && !test && adjustOcl < 0 && /*pow(rand(id), 0.5) < -adjustOcl*/ !adjustDistanceTest(id, -adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
-			{
-				test = true;
+				if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
+				{
+					adjustVisibilityTest = false;
+				}
+				if (_ProteinInstanceOcclusionFlags[id] != 0 && !test && adjustOcl < 0 && /*pow(rand(id), 0.5) < -adjustOcl*/ !adjustDistanceTest(id, -adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
+				{
+					test = true;
+				}
+
 			}
 
             if (test && fuzzTest && adjustTest && adjustVisibilityTest) return true;
