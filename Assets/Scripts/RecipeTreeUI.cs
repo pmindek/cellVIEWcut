@@ -25,6 +25,8 @@ public class RecipeTreeUI : MonoBehaviour {
 	private NavigateCamera nvcamera;
 	// Use this for initialization
 
+    public bool itemSelected = false;
+
 
 	public void Awake()
     {
@@ -320,6 +322,7 @@ public class RecipeTreeUI : MonoBehaviour {
                 }
                 Debug.Log(allIngredients.Count);
 
+
                 Debug.Log("|||||||||||||||||||||||||||||" + cutobject);
                 cutobject.ToggleAllHistogramCutItems(false);
 
@@ -406,6 +409,9 @@ public class RecipeTreeUI : MonoBehaviour {
 		//	SceneManager.Instance.SetSelectedElement(-1);
 		//}
 		//if selected should show the description ?
+
+        itemSelected = true;
+
 		if (update )
 			SceneManager.Instance.UploadIngredientToggleData();
 

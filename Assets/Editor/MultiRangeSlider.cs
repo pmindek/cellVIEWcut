@@ -35,9 +35,38 @@ public static class MultiRangeSlider
     private static SceneView s_RestoreSceneView;
     private static bool s_OldSceneLightingMode;
 
+    public static bool mouseDragging = false;
+
+    private static float lastP0;
+    private static float lastP1;
+    private static float n1;
+
+    public static bool resetMouse = false;
+
+
+    public static void updateMousePositionWhileDragging(float newP0, float newP1)
+    {
+        if (mouseDragging && MultiRangeSlider.s_DragCache != null)
+        {
+            if (MultiRangeSlider.s_DragCache.m_ActivePartition == 0)
+            {
+                MultiRangeSlider.s_DragCache.m_NormalizedPartitionSize = newP0;
+            }
+            else
+            {
+                MultiRangeSlider.s_DragCache.m_NormalizedPartitionSize = newP1;
+            }
+        }
+    }
+
+
     public static void HandleCascadeSliderGUI(ref float[] normalizedCascadePartitions)
     {
         //GUILayout.Label("Cascade splits");
+
+        lastP0 = normalizedCascadePartitions[0];
+        lastP1 = normalizedCascadePartitions[1];
+
         Rect rect = GUILayoutUtility.GetRect(GUIContent.none, MultiRangeSlider.s_CascadeSliderBG, new GUILayoutOption[2]
         {
         GUILayout.Height(28f),
@@ -96,6 +125,8 @@ public static class MultiRangeSlider
         switch (current.GetTypeForControl(controlId))
         {
             case EventType.MouseDown:
+                mouseDragging = true;
+
                 if (activePartition < 0)
                     break;
                 MultiRangeSlider.s_DragCache = new MultiRangeSlider.DragCache(activePartition, normalizedCascadePartitions[activePartition], current.mousePosition);
@@ -112,6 +143,8 @@ public static class MultiRangeSlider
                 MultiRangeSlider.s_RestoreSceneView.renderMode = DrawCameraMode.ShadowCascades;
                 break;
             case EventType.MouseUp:
+                mouseDragging = false;
+
                 if (GUIUtility.hotControl == controlId)
                 {
                     GUIUtility.hotControl = 0;
@@ -125,6 +158,8 @@ public static class MultiRangeSlider
                 MultiRangeSlider.s_RestoreSceneView = (SceneView)null;
                 break;
             case EventType.MouseDrag:
+                mouseDragging = true;
+
                 if (GUIUtility.hotControl != controlId)
                     break;
                 float num4 = (current.mousePosition - MultiRangeSlider.s_DragCache.m_LastCachedMousePosition).x / num1;

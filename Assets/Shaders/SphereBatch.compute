@@ -61,7 +61,7 @@ uniform float noiseTextureH;
 
         if (proteinCutFilter == 1)
         {
-            CutInfoStruct info = _CutInfos[i];
+            CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
             float3 position = _CutPositions[i].xyz;
             float4 rotation = _CutRotations[i];
             float3 scale = _CutScales[i].xyz;
@@ -133,7 +133,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 
         if (proteinCutFilter == 1)
         {
-            CutInfoStruct info = _CutInfos[i];
+            CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
             float3 position = _CutPositions[i].xyz;
             float4 rotation = _CutRotations[i];
 			float3 scale = _CutScales[i].xyz;
@@ -176,7 +176,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			bool adjustTest = true;
 			bool adjustVisibilityTest = true;
 
-			if (histogramFilter == 1)
+			//if (histogramFilter == 1) //if this is uncommented, fuzzy filtering works only for the selected protein types (selected rather than checked)
 			{
 				float adjustCut = -1.0 + info.info.y * 2.0;
 				float adjustOcl = -1.0 + info.info.z * 2.0;;

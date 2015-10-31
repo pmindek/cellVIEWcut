@@ -21,7 +21,7 @@ public class CutItem
 }
 
 [System.Serializable]
-public class CutItemRanges
+public class CutItemRanges //i will maybe use this later?
 {
     public string Name;
     public int r0;
@@ -31,6 +31,23 @@ public class CutItemRanges
     public float d0; // delta 0
     public float d1; // delta 1
 }
+
+public class CutParameters
+{
+    public float range0;
+    public float range1;
+
+    public int countAll; //parameters of the multi-range slider
+    public int count0;
+    public int count1;
+
+    public float value1; //other parameters
+    public float value2;
+    public float fuzziness;
+    public float fuzzinessDistance;
+    public float fuzzinessCurve;
+}
+
 
 [ExecuteInEditMode]
 public class CutObject : MonoBehaviour
@@ -67,7 +84,10 @@ public class CutObject : MonoBehaviour
     public List<CutItem> HistogramProteinTypes = new List<CutItem>();
 
     [HideInInspector]
-    public List<CutItemRanges> HistogramRanges = new List<CutItemRanges>();
+    public List<CutItemRanges> HistogramRanges = new List<CutItemRanges>(); //i will maybe use this later?
+
+    [HideInInspector]
+    public List<CutParameters> ProteinTypeParameters = new List<CutParameters>(); //this structure stores the cutaway parameters per protein type
 
 	private TreeViewControl _tree;
 	private RecipeTreeUI _tree_ui;
@@ -75,6 +95,55 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public float[] RangeValues = new float[2] { 0.2f, 0.3f };
     public List<float[]> TreeRangeValues = new List<float[]>();
+
+
+
+    public void InitCutParameters()
+    {
+        ProteinTypeParameters.Clear();
+        ProteinTypeParameters.AddRange(Enumerable.Repeat(new CutParameters()
+        {
+            range0 = 0.0f,
+            range1 = 0.0f,
+
+            countAll = 0,
+            count0 = 0,
+            count1 = 0,
+
+            value1 = 0.5f,
+            value2 = 0.5f,
+            fuzziness = 0.0f,
+            fuzzinessDistance = 1.0f,
+            fuzzinessCurve = 1.0f
+        }, SceneManager.Instance.ProteinNames.Count
+        ));
+    }
+
+    public CutParameters GetCutParametersFor(int ingredientId)
+    {
+        if (ProteinTypeParameters.Count == 0 || ProteinTypeParameters.Count <= ingredientId)
+        {
+            InitCutParameters();
+        }
+
+        return ProteinTypeParameters[ingredientId];
+    }
+
+    public void SetCutParametersFor(int ingredientId, CutParameters cutParameters)
+    {
+        if (ProteinTypeParameters.Count == 0 || ProteinTypeParameters.Count <= ingredientId)
+        {
+            InitCutParameters();
+        }
+
+        ProteinTypeParameters[ingredientId] = cutParameters;
+    }
+
+
+
+
+
+
 
     public float[] GetRangeValues(int ingredientId)
     {

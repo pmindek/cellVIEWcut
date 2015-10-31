@@ -328,13 +328,31 @@ public class SceneManager : MonoBehaviour
 
             CutScales.Add(cut.transform.localScale);
             CutPositions.Add(cut.transform.position);
-            //CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f));
-            CutInfos.Add(new CutInfoStruct
-            {
-                info = new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f),
-                info2 = new Vector4((float)cut.Fuzziness, (float)cut.FuzzinessDistance, (float)cut.FuzzinessCurve, 0.0f)
-            });
             CutRotations.Add(MyUtility.QuanternionToVector4(cut.transform.rotation));
+
+            //CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f));
+        }
+
+        for (int i = 0; i < ProteinNames.Count; i++)
+        {
+            foreach (var cut in CutObjects)
+            {
+                if (i < cut.ProteinTypeParameters.Count)
+                {
+                    CutInfos.Add(new CutInfoStruct
+                    {
+                        info = new Vector4((float)cut.CutType, cut.ProteinTypeParameters[i].value1, cut.ProteinTypeParameters[i].value2, cut.Inverse ? 1.0f : 0.0f),
+                        info2 = new Vector4((float)cut.ProteinTypeParameters[i].fuzziness, (float)cut.ProteinTypeParameters[i].fuzzinessDistance, (float)cut.ProteinTypeParameters[i].fuzzinessCurve, 0.0f)
+
+                        /*info = new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f),
+                        info2 = new Vector4((float)cut.Fuzziness, (float)cut.FuzzinessDistance, (float)cut.FuzzinessCurve, 0.0f)*/
+                    });
+                }
+                else
+                {
+                    CutInfos.Add(new CutInfoStruct { info = new Vector4(), info2 = new Vector4() });
+                }
+            }
         }
 
         GPUBuffer.Instance.CutInfos.SetData(CutInfos.ToArray());
