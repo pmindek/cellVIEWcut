@@ -101,6 +101,9 @@ public class SceneManager : MonoBehaviour
     public int NumLodLevels = 0;
     public int TotalNumProteinAtoms = 0;
 
+
+    public bool isUpdated = false;
+
     public int NumProteinInstances
     {
         get { return ProteinInstancePositions.Count; }

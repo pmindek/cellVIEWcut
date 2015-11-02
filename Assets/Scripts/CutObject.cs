@@ -74,6 +74,8 @@ public class CutObject : MonoBehaviour
     [Range(0.01f, 3)]
     public float FuzzinessCurve;
 
+    public bool Optimize;
+
     [HideInInspector]
     public CutType PreviousCutType;
 
@@ -95,6 +97,20 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public float[] RangeValues = new float[2] { 0.2f, 0.3f };
     public List<float[]> TreeRangeValues = new List<float[]>();
+
+    [HideInInspector]
+    public bool initOptimizing = true;
+    [HideInInspector]
+    public bool distanceOptimized = false;
+    [HideInInspector]
+    public float findDistanceFrom = 0.0f;
+    [HideInInspector]
+    public float findDistanceTo = 1.0f;
+    [HideInInspector]
+    public float initialRange0 = 0.0f;
+    [HideInInspector]
+    public float initialRange1 = 0.0f;
+
 
 
 

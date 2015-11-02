@@ -82,7 +82,8 @@ public class CutObjectCustomEditor : Editor
             //Debug.Log(Random.Range(1, 999));
             //Debug.Log(ui.selectedIngredients.Count);
 
-            if (ui.currentSelectedIngredient != -1)
+            //if (ui.currentSelectedIngredient != -1)
+            if (true)
             {
                 /* non-cached working version
                 var name = SceneManager.Instance.ProteinNames[ui.currentSelectedIngredient];
@@ -153,7 +154,7 @@ public class CutObjectCustomEditor : Editor
                 currentParameters.fuzzinessDistance /= fc;
                 currentParameters.fuzzinessCurve /= fc;
 
-                var name = SceneManager.Instance.ProteinNames[ui.currentSelectedIngredient];
+                //var name = SceneManager.Instance.ProteinNames[ui.currentSelectedIngredient];
 
                 float[] rangeValues = new float[2] {currentParameters.range0, currentParameters.range1};
 
@@ -268,6 +269,79 @@ public class CutObjectCustomEditor : Editor
                     currentParameters.range0 = rangeValues[0];
                     currentParameters.range1 = rangeValues[1];
                 }
+
+
+
+
+                if (cutObject.Optimize)
+                {
+                    if (cutObject.initOptimizing)
+                    {
+                        cutObject.initOptimizing = false;
+                        cutObject.distanceOptimized = false;
+
+                        cutObject.Value1 = 0.5f;
+                        cutObject.Value2 = 0.0f;
+                        cutObject.FuzzinessDistance = 1.0f;
+                        cutObject.Fuzziness = 0.0f;
+
+                        cutObject.findDistanceFrom = 0.0f;
+                        cutObject.findDistanceTo = 1.0f;
+                        //Debug.Log("OPTIMIZE DISTANCE");
+
+                        cutObject.initialRange0 = currentParameters.range0;
+                        cutObject.initialRange1 = currentParameters.range1;
+                    }
+                    else
+                    {
+                        //optimize the fuzziness distance
+                        if (!cutObject.distanceOptimized && SceneManager.Instance.isUpdated)
+                        {
+                            //Debug.Log("optimizing distance: " + cutObject.findDistanceFrom + " - " + cutObject.findDistanceTo);
+                            //Debug.Log("dst: " + cutObject.FuzzinessDistance + "; range0: " + currentParameters.range0);
+                            if (Mathf.Abs(cutObject.findDistanceFrom - cutObject.findDistanceTo) < 0.001f)
+                            {
+                                //Debug.Log("DONE!");
+                                cutObject.distanceOptimized = true;
+                                cutObject.initialRange0 = currentParameters.range0;
+                            }
+                            else if (currentParameters.range0 == 0.0f)
+                            {
+                                //Debug.Log("lower");
+                                cutObject.findDistanceTo = cutObject.FuzzinessDistance;
+                            }
+                            else if (currentParameters.range0 > 0.0f)
+                            {
+                                //Debug.Log("higher");
+                                cutObject.findDistanceFrom = cutObject.FuzzinessDistance;
+                            }
+                            cutObject.FuzzinessDistance = (cutObject.findDistanceFrom + cutObject.findDistanceTo) * 0.5f;
+                            //Debug.Log("distance changed to: " + cutObject.FuzzinessDistance);
+
+                            SceneManager.Instance.isUpdated = false;
+                        }
+                        //optimize the fuzziness
+                        else if (cutObject.distanceOptimized)
+                        {
+                            if (Mathf.Abs(cutObject.initialRange0 - currentParameters.range0) > 0.01f ||
+                                Mathf.Abs(cutObject.initialRange1 - currentParameters.range1) > 0.01f)
+                            {
+                                //if the ranges changed, start the optimization from scratch
+                                cutObject.initOptimizing = true;
+                                SceneManager.Instance.isUpdated = false;
+                            }
+                        }
+                    }
+                }
+                if (!cutObject.Optimize && !cutObject.initOptimizing)
+                {
+                    cutObject.initOptimizing = true;
+                }
+
+
+
+
+
 
                 for (int i = 0; i < ui.selectedIngredients.Count; i++)
                 {

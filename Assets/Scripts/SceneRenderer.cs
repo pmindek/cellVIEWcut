@@ -291,6 +291,8 @@ public class SceneRenderer : MonoBehaviour
 
         // Count sphere batches
         ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
+
+        SceneManager.Instance.isUpdated = true;
     }
 
     int GetBatchCount()
