@@ -75,6 +75,7 @@ public class CutObject : MonoBehaviour
     public float FuzzinessCurve;
 
     public bool Optimize;
+    public bool DataSensitiveSliders;
 
     [HideInInspector]
     public CutType PreviousCutType;

@@ -16,6 +16,14 @@ public class CutObjectCustomEditor : Editor
 
     //private bool[] proteinFoldout = new bool[100];
 
+    private float lastValueChange0;
+    private float lastValueChange1;
+    private float lastRangeChange0;
+    private float lastRangeChange1;
+
+    private float rangeAdjust0;
+    private float rangeAdjust1;
+
     private float lastRange0;
     private float lastRange1;
 
@@ -202,6 +210,13 @@ public class CutObjectCustomEditor : Editor
 
                     MultiRangeSlider.updateMousePositionWhileDragging(rangeValues[0], rangeValues[1]);
 
+
+                    lastValueChange0 = Mathf.Abs(lastValue1 - currentParameters.value1);
+                    lastValueChange1 = Mathf.Abs(lastValue2 - currentParameters.value2);
+
+                    lastRangeChange0 = Mathf.Abs(lastRange0 - rangeValues[0]);
+                    lastRangeChange1 = Mathf.Abs(lastRange1 - rangeValues[1]);
+
                     lastRange0 = rangeValues[0];
                     lastRange1 = rangeValues[1];
 
@@ -243,8 +258,46 @@ public class CutObjectCustomEditor : Editor
                     if (Mathf.Abs(d0) > 0.001f)
                         d1 = 0.0f;
 
-                    float v1 = lastValue1 + d1;
-                    float v2 = lastValue2 + d0;
+                    /*d0 *= rangeValues[0];
+                    d1 *= rangeValues[1];*/
+
+                    float adjust0 = 1.0f;
+                    float adjust1 = 1.0f;
+
+                    if (cutObject.DataSensitiveSliders)
+                    {
+                        if (lastRangeChange0 != 0 && lastValueChange0 != 0)
+                            rangeAdjust0 = lastValueChange0 > 0.0f ? lastRangeChange0 / lastValueChange0 : 1.0f;
+                        if (lastRangeChange1 != 0 && lastValueChange1 != 0)
+                            rangeAdjust1 = lastValueChange1 > 0.0f ? lastRangeChange1 / lastValueChange1 : 1.0f;
+
+                        /*Debug.Log(lastRangeChange0 + " / " + lastValueChange0 + " = " + rangeAdjust0);
+                        Debug.Log(lastRangeChange1 + " / " + lastValueChange1 + " = " + rangeAdjust1);
+                        Debug.Log("---");*/
+
+                        Debug.Log(rangeAdjust0);
+                        Debug.Log(rangeAdjust1);
+                        Debug.Log("---");
+
+                        adjust0 = Mathf.Abs(rangeAdjust0);
+                        adjust1 = Mathf.Abs(rangeAdjust1);
+
+                        if (adjust0 > 1.0f)
+                            adjust0 = 1.0f;
+                        if (adjust1 > 1.0f)
+                            adjust1 = 1.0f;
+
+                        if (adjust0 < 0.1f)
+                            adjust0 = 0.1f;
+                        if (adjust1 < 0.1f)
+                            adjust1 = 0.1f;
+
+                        /*adjust0 = 0.1f;
+                        adjust1 = 0.1f;*/
+                    }
+                    
+                    float v1 = lastValue1 + d1 * adjust1;
+                    float v2 = lastValue2 + d0 * adjust0;
 
                     if (v1 < 0.0f)
                         v1 = 0.0f;
