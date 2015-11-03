@@ -236,8 +236,6 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
     return cut;
 }
 
-
-
 [numthreads(1,1,1)]
 void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 {
@@ -248,8 +246,7 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 	float radius = _ProteinRadii[infos.x] * _Scale;
 	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
 	float4 sphere = float4(pos, radius);
-
-
+    
 	//if(infos.x != 4) return;
     //if(_ProteinInstanceOcclusionFlags[id.x] != 0) return;
 	//if(_ProteinVisibilityFlag[id.x] == 0) return;
@@ -282,10 +279,9 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		}
 	}
 
-
     // if instance is culled return
-    if(_CullingFilter == -1 && cullFlag == 0) return;
-    if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
+    //if(_CullingFilter == -1 && cullFlag == 0) return;
+    //if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
     if (frustrumTest || cutAwayTest /*|| _ProteinVisibilityFlag[infos.x] == 0*/) return;
 
     int lodLevel = 0;		

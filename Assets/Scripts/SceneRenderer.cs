@@ -304,13 +304,13 @@ public class SceneRenderer : MonoBehaviour
     
     void ComputeVisibility()
     {
-        // Clear Buffer
-        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_ProteinInstanceVisibilityFlags", GPUBuffer.Instance.ProteinInstanceVisibilityFlags);
-        ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
+        //// Clear Buffer
+        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffer.Instance.ProteinInstanceVisibilityFlags);
+        ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 1), 1, 1);
 
         // Compute item visibility
         ComputeShaderManager.Instance.ComputeVisibilityCS.SetTexture(1, "_ItemBuffer", _itemBuffer);
-        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(1, "_ProteinInstanceVisibilityFlags", GPUBuffer.Instance.ProteinInstanceVisibilityFlags);
+        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(1, "_FlagBuffer", GPUBuffer.Instance.ProteinInstanceVisibilityFlags);
         ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(1, Mathf.CeilToInt(_itemBuffer.width / 8.0f), Mathf.CeilToInt(_itemBuffer.height / 8.0f), 1);
     }
 
@@ -427,8 +427,8 @@ public class SceneRenderer : MonoBehaviour
             _itemBuffer= new RenderTexture(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
         }
         
-        DoOcclusionQueries(4);
-        //ComputeVisibility();
+        //DoOcclusionQueries(4);
+        ComputeVisibility();
 
         ///**** Start rendering routine ****/
 
@@ -457,16 +457,16 @@ public class SceneRenderer : MonoBehaviour
             _renderProteinsMaterial.SetPass(0);
             Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
             GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
-            
-            ComputeHiZMap(depthBuffer);
-            ComputeOcclusionCulling(frameCount);
 
-            ProteinFillBatchBuffer(frameCount);
-            //Debug.Log(GetBatchCount());
-            Graphics.SetRenderTarget(_itemBuffer.colorBuffer, depthBuffer.depthBuffer);
-            _renderProteinsMaterial.SetPass(0);
-            Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
-            GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+            //ComputeHiZMap(depthBuffer);
+            //ComputeOcclusionCulling(frameCount);
+
+            //ProteinFillBatchBuffer(frameCount);
+            ////Debug.Log(GetBatchCount());
+            //Graphics.SetRenderTarget(_itemBuffer.colorBuffer, depthBuffer.depthBuffer);
+            //_renderProteinsMaterial.SetPass(0);
+            //Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
+            //GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
         }
 
         // Draw curve ingredients

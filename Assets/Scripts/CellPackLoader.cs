@@ -240,37 +240,43 @@ public static class CellPackLoader
 		Vector3 biomtCenter = Vector3.zero;
 		bool containsACarbonOnly = false;
 		bool oneLOD = false;
-		if ((pdbName == "") || (pdbName == "null") || (pdbName == "None")||pdbName.StartsWith("EMDB")) {
-			//check for sphere file//information in the file. if not in file is it on disk ? on repo ?
-			//possibly read the actuall recipe definition ?
-			//check if bin exist
-			var filePath = PdbLoader.DefaultPdbDirectory + ingredientDictionary["name"] + ".bin";
-			if (File.Exists(filePath)){
-				atomSpheres = new List<Vector4>();
-				var points = MyUtility.ReadBytesAsFloats(filePath);
-				for (var i = 0; i < points.Length; i += 4) {
-					var currentAtom = new Vector4 (points [i], points [i + 1], points [i + 2], points [i + 3]);
-					atomSpheres.Add (currentAtom);
-				}
-				containsACarbonOnly = true;
-				oneLOD = true;
-			}
-			else if (ingredientDictionary ["radii"] != null) {
-				atomSpheres = MyUtility.gatherSphereTree(ingredientDictionary)[0];
-				Debug.Log ("nbprim "+atomSpheres.Count.ToString());//one sphere
-				oneLOD = true;
-			} else {
-				float radius = 30.0f;
-				if (name.Contains("dLDL"))
-					radius = 108.08f;//or use the mesh? or make sphere from the mesh ?
-				if (name.Contains("iLDL"))
-					radius = 105.41f;//or use the mesh? or make sphere from the mesh ?
-				atomSpheres = new List<Vector4>();
-				atomSpheres.Add (new Vector4(0,0,0,radius));
-				//No LOD since only one sphere
-				oneLOD = true;
-			}
-		} else {
+
+        if ((pdbName == "") || (pdbName == "null") || (pdbName == "None")||pdbName.StartsWith("EMDB"))
+        {
+            return;
+
+            ////check for sphere file//information in the file. if not in file is it on disk ? on repo ?
+            ////possibly read the actuall recipe definition ?
+            ////check if bin exist
+            //var filePath = PdbLoader.DefaultPdbDirectory + ingredientDictionary["name"] + ".bin";
+            //if (File.Exists(filePath)){
+            //	atomSpheres = new List<Vector4>();
+            //	var points = MyUtility.ReadBytesAsFloats(filePath);
+            //	for (var i = 0; i < points.Length; i += 4) {
+            //		var currentAtom = new Vector4 (points [i], points [i + 1], points [i + 2], points [i + 3]);
+            //		atomSpheres.Add (currentAtom);
+            //	}
+            //	containsACarbonOnly = true;
+            //	oneLOD = true;
+            //}
+            //else if (ingredientDictionary ["radii"] != null) {
+            //	atomSpheres = MyUtility.gatherSphereTree(ingredientDictionary)[0];
+            //	Debug.Log ("nbprim "+atomSpheres.Count.ToString());//one sphere
+            //	oneLOD = true;
+            //} else {
+            //	float radius = 30.0f;
+            //	if (name.Contains("dLDL"))
+            //		radius = 108.08f;//or use the mesh? or make sphere from the mesh ?
+            //	if (name.Contains("iLDL"))
+            //		radius = 105.41f;//or use the mesh? or make sphere from the mesh ?
+            //	atomSpheres = new List<Vector4>();
+            //	atomSpheres.Add (new Vector4(0,0,0,radius));
+            //	//No LOD since only one sphere
+            //	oneLOD = true;
+            //}
+        }
+        else
+        {
 			//if (pdbName.StartsWith("EMDB")) return;
 			//if (pdbName.Contains("1PI7_1vpu_biounit")) return;//??
 			// Load atom set from pdb file
