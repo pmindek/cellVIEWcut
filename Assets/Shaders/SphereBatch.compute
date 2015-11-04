@@ -3,7 +3,7 @@
 #pragma kernel ProteinFillBatchBuffer
 #pragma kernel ProteinFillBatchBuffer2
 
-#define MAX_SPHERE_COUNT_PER_BATCH 4096
+#define MAX_SPHERE_COUNT_PER_BATCH 100
 
 uniform float _Scale;
 uniform int _EnableLod;
