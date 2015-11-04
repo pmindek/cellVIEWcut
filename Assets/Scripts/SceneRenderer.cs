@@ -270,24 +270,24 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics);
 
-        var stats = new int[4];
-        GPUBuffer.Instance.HistogramStatistics.GetData(stats);
-        //Debug.Log("STATS: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
-        //Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);
-
         if (noiseTexture == null)
         {
             Debug.Log("Load Texture");
             noiseTexture = (Texture2D)Resources.Load("Textures/noise");
         }
 
-        SceneManager.Instance.stats = stats;
-
         ComputeShaderManager.Instance.SphereBatchCS.SetFloat("noiseTextureW", noiseTexture.width);
         ComputeShaderManager.Instance.SphereBatchCS.SetFloat("noiseTextureH", noiseTexture.height);
         ComputeShaderManager.Instance.SphereBatchCS.SetTexture(0, "noiseTexture", noiseTexture);
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
+
+        var stats = new int[4];
+        GPUBuffer.Instance.HistogramStatistics.GetData(stats);
+        Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
+        Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);
+
+        SceneManager.Instance.stats = stats;
 
         // Count sphere batches
         ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
@@ -427,7 +427,7 @@ public class SceneRenderer : MonoBehaviour
             _itemBuffer= new RenderTexture(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
         }
         
-        //DoOcclusionQueries(4);
+        DoOcclusionQueries(4);
         ComputeVisibility();
 
         ///**** Start rendering routine ****/
