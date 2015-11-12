@@ -9,7 +9,7 @@ public class CutObjectCustomEditor : Editor
     public Vector2 _scrollPos;
 
     [SerializeField]
-    public bool showFilters = false;
+    public bool showFilters = true;
 
     [SerializeField]
     public CutParameters currentParameters;

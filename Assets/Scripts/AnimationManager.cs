@@ -7,7 +7,7 @@ public class AnimationManager : MonoBehaviour
 {
          
     private List<Vector4> positions;        //original positions of instances
-    private List<Vector4> new_positions;    //DEBUG/DEMO: stores position updates of instances
+    private List<Vector4> new_positions;    //stores position updates of instances
     private List<Vector4> types;            //type info of instances
     public int NumberOfIngredients;         //number of different ingredient types in the data set
     public List<int> InstanceCountPerIngredient = new List<int>();          //molecules per ingedient
@@ -15,23 +15,23 @@ public class AnimationManager : MonoBehaviour
 
     private int debug_frame_counter = 0;    //DEBUG/DEMO: for updating positions each frame
     private float step_size = 0.0f;     
-    private int step_count = 0;         //describes the current step
-    private float current_step = 0.0f;
-    public int NumberOfSteps = 600;
+    private int step_count = 0;         //current step number
+    private float current_step = 0.0f;  //current step size
+    public int NumberOfSteps = 400;  //# of steps to complete the transition
 
     //current animation position
     private float currentX = 0.0f;
     private float currentY = 0.0f;
     private float currentZ = 0.0f;
 
-    private GameObject destinationCube;
-    private List<GameObject> destinationsPerType;
+    public Vector4 Destination; //the origin of the destination volume (= volume to which instances will transition)
+    private GameObject destinationCube; //defines the origin of the destination coordinate system
+    private List<GameObject> destinationsPerType; //transition destination for each molecule type
 
-    private float umfang = 0.0f;
+    private float umfang = 0.0f; //used for the circular layout
 
     //###############################################################################
     //ingredient volume relation stuff
-
     public float AtomUnit = 1.0f; //describes the size of the cube that a single atom occupies -> TODO: editable
     public float XVolume = 10.0f; // XVolume * AtomUnit = length of the volume that houses all ingredient molecules -> TODO: editable
     public float YVolume = 10.0f; // XVolume * AtomUnit = width of the volume -> TODO: editable
@@ -39,57 +39,30 @@ public class AnimationManager : MonoBehaviour
 
     public int TotalNumberOfAtoms = 0;
 
-    //TODO:
-    public Vector4 Destination; // = GameObject.Find("destinationCube").transform.position; //the origin of the destination volume (= volume to which instances will transition)
-
-
     void OnEnable()
     {
         step_size = 1.0f / NumberOfSteps;
         step_count = 0;
     }
 
-    void OnDisable()
-    {
-    }
-
-    void OnDestroy()
-    {
-        //destroy all instantiated game objects
-        foreach (GameObject o in destinationsPerType)
-        {
-            Destroy(o);
-        }
-
-    }
 
 
     // Use this for initialization
     void Start()
     {
-        destinationCube = GameObject.Find("destinationCube");
-        Destination = destinationCube.transform.position / 0.065f;
+        //create molecule objects
+        parseMolecules();
 
-        positions = SceneManager.Instance.ProteinInstancePositions;
-        types = SceneManager.Instance.ProteinInstanceInfos;
-        NumberOfIngredients = SceneManager.Instance.ProteinNames.Count;
-        new_positions = new List<Vector4>();
+        //create destination points for each molecule type
+        createCircularLayout();
+    }
 
-        InstanceCountPerIngredient = calculateInstancesPerIngredient(types);
-
-        Ingredients = setupMolecules(NumberOfIngredients, InstanceCountPerIngredient, SceneManager.Instance.ProteinAtomCount);
-
-        for (int i = 0; i < Ingredients.Count; i++)
-        {
-            TotalNumberOfAtoms += Ingredients[i].TotalAtomsOfType;
-        }
-
-        Debug.Log(TotalNumberOfAtoms);
-
+    private void createCircularLayout()
+    {
         destinationsPerType = new List<GameObject>();
 
         //create game objects for each molecule type
-        foreach(MoleculeGroup m in Ingredients)
+        foreach (MoleculeGroup m in Ingredients)
         {
             GameObject temp = Instantiate(destinationCube);
             DestinationProperties props = temp.GetComponent<DestinationProperties>();
@@ -102,30 +75,25 @@ public class AnimationManager : MonoBehaviour
             //temp.transform.parent = destinationCube.transform;
         }
 
-        float radius = umfang / (2*Mathf.PI);
+        float radius = umfang / (2 * Mathf.PI);
 
         //now that the umfang is known, we can calculate the positions of the game objects along the circle
         foreach (GameObject o in destinationsPerType)
         {
             DestinationProperties props = o.GetComponent<DestinationProperties>();
             float alpha = props.PosOnCircle / radius;
-            float x = radius * Mathf.Cos(alpha);
-            float y = radius * Mathf.Sin(alpha);
+            float x = radius * Mathf.Cos(alpha) * PersistantSettings.Instance.Scale;
+            float y = radius * Mathf.Sin(alpha) * PersistantSettings.Instance.Scale;
 
             o.transform.position = new Vector3(props.origin.x + x, props.origin.y + y, props.origin.z);
+            props.ScaledPosition = o.transform.position / PersistantSettings.Instance.Scale;
         }
-
-
-
     }
 
     // Update is called once per frame
     void Update()
     {
-        //Destination = GameObject.Find("destinationCube").transform.position;
-
-        debug_frame_counter++;
-
+        //debug_frame_counter++;
         new_positions.Clear();
 
         current_step = step_size * step_count;
@@ -133,11 +101,20 @@ public class AnimationManager : MonoBehaviour
         //update position buffer...
         for (int i = 0; i < types.Count; i++)
         {
+            //initial proof of concept: manipualtion of original instance positions along an axis
             //new_positions.Add(new Vector4(positions[i].x - debug_frame_counter, positions[i].y, positions[i].z, positions[i].w));
 
-            currentX = LinearInterpol(positions[i].x, Destination.x, Mathf.Pow(current_step, 1));
-            currentY = LinearInterpol(positions[i].y, Destination.y, Mathf.Pow(current_step, 1));
-            currentZ = LinearInterpol(positions[i].z, Destination.z, Mathf.Pow(current_step, 1));
+            //second proof of concept: linear interpolation for all instances towards a user specified gameobject position
+            //currentX = LinearInterpol(positions[i].x, Destination.x, Mathf.Pow(current_step, 1));
+            //currentY = LinearInterpol(positions[i].y, Destination.y, Mathf.Pow(current_step, 1));
+            //currentZ = LinearInterpol(positions[i].z, Destination.z, Mathf.Pow(current_step, 1));
+
+            //send each molecule type towards its designated target cube
+            Vector4 pos = destinationsPerType[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
+            //Vector4 pos = destinationsPerType[(int)types[i].x].transform.position;
+            currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
+            currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
+            currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
 
             new_positions.Add(new Vector4(currentX, currentY, currentZ, positions[i].w));
         }
@@ -158,6 +135,31 @@ public class AnimationManager : MonoBehaviour
         return result;
     }
 
+
+    private void parseMolecules()
+    {
+        destinationCube = GameObject.Find("destinationCube");
+        //scale the position to bring it to "protein space"
+        Destination = destinationCube.transform.position / 0.065f;
+
+        positions = SceneManager.Instance.ProteinInstancePositions;
+        types = SceneManager.Instance.ProteinInstanceInfos;
+        NumberOfIngredients = SceneManager.Instance.ProteinNames.Count;
+        new_positions = new List<Vector4>();
+
+        InstanceCountPerIngredient = calculateInstancesPerIngredient(types);
+
+        Ingredients = setupMolecules(NumberOfIngredients, InstanceCountPerIngredient, SceneManager.Instance.ProteinAtomCount);
+
+        for (int i = 0; i < Ingredients.Count; i++)
+        {
+            TotalNumberOfAtoms += Ingredients[i].TotalAtomsOfType;
+        }
+
+        Debug.Log(TotalNumberOfAtoms);
+    }
+
+
     //represents all molecule instances of a molecule type
     public class MoleculeGroup
     {
@@ -168,8 +170,6 @@ public class AnimationManager : MonoBehaviour
         public int StartIndex = 0;
         public List<Vector4> OriginalPositions;
         public List<Vector4> OriginalRotations;
-
-        //TODO:
         
         //the origin of the container that will house all instances of this ingredient type after the transition
         //-> depends on: atom volume, volume length&width of the complete container, volumes of all prior ingredients
@@ -254,5 +254,18 @@ public class AnimationManager : MonoBehaviour
         countPerIngredient.Add(currentInstanceCount);
 
         return countPerIngredient;
+    }
+
+    void OnDisable()
+    {
+    }
+
+    void OnDestroy()
+    {
+        foreach (GameObject o in destinationsPerType)
+        {
+            Destroy(o);
+        }
+
     }
 }

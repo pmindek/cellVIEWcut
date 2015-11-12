@@ -9,6 +9,7 @@ public class DestinationProperties : MonoBehaviour {
     public int spacer = 5;
     public float PosOnCircle = 0.0f;
     public Vector4 origin;
+    public Vector4 ScaledPosition;
 
     public void Initialize(float ID)
     {
