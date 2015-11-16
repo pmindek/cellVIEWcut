@@ -26,10 +26,15 @@ public class SceneRenderer : MonoBehaviour
     private ComputeBuffer _argBuffer;
     private ComputeBuffer _proteinInstanceCullFlags;
 
+
     /*****/
 
     public Texture2D noiseTexture = null;
     
+    
+    public Material guiMaterial;
+
+
     void OnEnable()
     {
         this.hideFlags = HideFlags.None;
@@ -284,8 +289,8 @@ public class SceneRenderer : MonoBehaviour
 
         var stats = new int[4];
         GPUBuffer.Instance.HistogramStatistics.GetData(stats);
-        Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
-        Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);
+        /*Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
+        Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
 
         SceneManager.Instance.stats = stats;
 
@@ -517,6 +522,36 @@ public class SceneRenderer : MonoBehaviour
             SelectionManager.Instance.MouseRightClickFlag = false;
         }
 
+
+        /*Debug.Log(SelectionManager.Instance.MousePosition.x + ":" + SelectionManager.Instance.MousePosition.y);
+
+        Graphics.SetRenderTarget(dst);
+
+        CreateMaterial();
+
+        GL.PushMatrix();
+        guiMaterial.SetPass(0);
+        GL.LoadOrtho();
+        GL.Color(Color.red);
+        GL.Begin(GL.TRIANGLES);
+        GL.Vertex3(0.25f, 0.1351f, 0.0f);
+        GL.Vertex3(0.25f, 0.3f, 0.0f);
+        GL.Vertex3(0.5f, 0.3f, 0.0f);
+        GL.End();
+        GL.Color(Color.yellow);
+        GL.Begin(GL.TRIANGLES);
+        GL.Vertex3(0.5f, 0.25f, -1f);
+        GL.Vertex3(0.5f, 0.1351f, -1f);
+        GL.Vertex3(0.1f, 0.25f, -1f);
+        GL.End();
+        GL.PopMatrix();*/
+
+
+
+
+
+
+
         // Release temp buffers
         RenderTexture.ReleaseTemporary(colorBuffer);
         RenderTexture.ReleaseTemporary(depthBuffer);
@@ -525,5 +560,23 @@ public class SceneRenderer : MonoBehaviour
         RenderTexture.ReleaseTemporary(compositeDepthBuffer);
 
         frameCount++;
+    }
+
+    void CreateMaterial()
+    {
+        if (!guiMaterial)
+        {
+            // simple colored things.
+            var shader = Shader.Find("Hidden/Internal-Colored");
+            guiMaterial = new Material(shader);
+            guiMaterial.hideFlags = HideFlags.HideAndDontSave;
+            // Turn on alpha blending
+            //guiMaterial.SetInt("_SrcBlend", guiMaterial.Rendering.BlendMode.SrcAlpha);
+            //guiMaterial.SetInt("_DstBlend", guiMaterial.Rendering.BlendMode.OneMinusSrcAlpha);
+            // Turn backface culling off
+            //guiMaterial.SetInt("_Cull", guiMaterial.Rendering.CullMode.Off);
+            // Turn off depth writes
+            guiMaterial.SetInt("_ZWrite", 0);
+        }
     }
 }

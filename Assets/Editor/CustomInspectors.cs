@@ -275,9 +275,9 @@ public class CutObjectCustomEditor : Editor
                         Debug.Log(lastRangeChange1 + " / " + lastValueChange1 + " = " + rangeAdjust1);
                         Debug.Log("---");*/
 
-                        Debug.Log(rangeAdjust0);
+                        /*Debug.Log(rangeAdjust0);
                         Debug.Log(rangeAdjust1);
-                        Debug.Log("---");
+                        Debug.Log("---");*/
 
                         adjust0 = Mathf.Abs(rangeAdjust0);
                         adjust1 = Mathf.Abs(rangeAdjust1);
@@ -312,10 +312,54 @@ public class CutObjectCustomEditor : Editor
                     currentParameters.value1 = v1;
                     currentParameters.value2 = v2;
                     
+
+
+
+
+                    currentParameters.countAll = SceneManager.Instance.stats[1];
+                    currentParameters.count0 = SceneManager.Instance.stats[0];
+                    currentParameters.count1 = SceneManager.Instance.stats[2];
+
+                    float st_cutaway = (float)currentParameters.count0;
+                    float st_all = (float)currentParameters.countAll;
+                    float st_occluding = (float)currentParameters.count1;
+
+
+                    float want0 = (st_occluding / st_all);
+                    float want1 = ((1.0f - st_cutaway / st_all) - (st_occluding / st_all));
+
+                    if (rangeValues[1] > want1)
+                    {
+                        lastValue1 = currentParameters.value1;
+                        currentParameters.value1 *= 0.999f;
+                        Debug.Log("--");
+                    }
+                    else if (rangeValues[1] < want1)
+                    {
+                        lastValue1 = currentParameters.value1;
+                        currentParameters.value1 *= 1.001f;
+                        Debug.Log("++");
+                    }
+
+                    Debug.Log("is " + rangeValues[1] + "; want " + want1 + " || " + Random.Range(0, 999));
+
                     cutObject.Value1 = currentParameters.value1;
                     cutObject.Value2 = currentParameters.value2;
 
-                    once = true;
+
+                    
+
+                    /*if (st_all == 0.0f)
+                        st_all = 0.001f;
+
+                    rangeValues[0] = st_occluding / st_all;
+                    rangeValues[1] = (1.0f - st_cutaway / st_all) - rangeValues[0];
+
+                    MultiRangeSlider.updateMousePositionWhileDragging(rangeValues[0], rangeValues[1]);*/
+
+                    //Debug.Log(rangeValues[0] + " -- " + st_occluding / st_all);
+
+                    once = false;
                 }
 
                 {
@@ -326,7 +370,7 @@ public class CutObjectCustomEditor : Editor
 
 
 
-                if (cutObject.Optimize)
+                if (cutObject.Optimize && SceneManager.Instance.isUpdated)
                 {
                     if (cutObject.initOptimizing)
                     {
@@ -340,7 +384,7 @@ public class CutObjectCustomEditor : Editor
 
                         cutObject.findDistanceFrom = 0.0f;
                         cutObject.findDistanceTo = 1.0f;
-                        //Debug.Log("OPTIMIZE DISTANCE");
+                        Debug.Log("OPTIMIZE DISTANCE");
 
                         cutObject.initialRange0 = currentParameters.range0;
                         cutObject.initialRange1 = currentParameters.range1;
@@ -348,7 +392,7 @@ public class CutObjectCustomEditor : Editor
                     else
                     {
                         //optimize the fuzziness distance
-                        if (!cutObject.distanceOptimized && SceneManager.Instance.isUpdated)
+                        if (!cutObject.distanceOptimized)
                         {
                             //Debug.Log("optimizing distance: " + cutObject.findDistanceFrom + " - " + cutObject.findDistanceTo);
                             //Debug.Log("dst: " + cutObject.FuzzinessDistance + "; range0: " + currentParameters.range0);
@@ -390,8 +434,6 @@ public class CutObjectCustomEditor : Editor
                 {
                     cutObject.initOptimizing = true;
                 }
-
-
 
 
 

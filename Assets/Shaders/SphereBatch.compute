@@ -163,6 +163,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
 			}
 
+			
 			//inverse
 			if (info.info.w == 1)
 			{
@@ -202,11 +203,11 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				{
 					test = true;
 				}
-
 			}
 
             if (test && fuzzTest && adjustTest && adjustVisibilityTest) return true;
 
+			return false;
         }    
 
         //	//sphere
@@ -282,6 +283,9 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
     //if(_CullingFilter == -1 && cullFlag == 0) return;
     //if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
     if (frustrumTest || cutAwayTest /*|| _ProteinVisibilityFlag[infos.x] == 0*/) return;
+
+
+	//if(_ProteinInstanceOcclusionFlags[id.x] != 0) return;
 
     int lodLevel = 0;		
 	float cameraDistance = dot(sphere.xyz - _CameraPosition.xyz, _CameraForward.xyz);
