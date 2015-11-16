@@ -91,8 +91,116 @@ public static class CellPackLoader
 			//collider should be the primitive from cellPACK
 		}
 	}
-	
-	public static void buildHierarchy(JSONNode resultData){
+
+    public static string GetPath(List<string> path)
+    {
+        var value = path[0];
+
+        if (value.Count() > 1)
+        {
+            for (var i = 1; i < path.Count; i++)
+            {
+                value += "." + path[i];
+            }
+        }
+
+        return value;
+    }
+
+    static void BuildHierachy2()
+    {
+        var component = PersistantSettings.Instance;
+        component.hierachy.Clear();
+
+        var path = EditorUtility.OpenFilePanel("Select .cpr", "", "cpr");
+        if (string.IsNullOrEmpty(path)) return;
+
+        Debug.Log(path);
+
+        var currentPath = new List<string>();
+        var resultData = MyUtility.ParseJson(path);
+
+        //currentPath.Add(resultData["recipe"]["name"]);
+        //component.hierachy.Add(new Node(currentPath.Last()));
+
+        if (resultData["cytoplasme"] != null)
+        {
+            currentPath.Add("cytoplasm");
+            component.hierachy.Add(new PersistantSettings.Node("cytoplasm", GetPath(currentPath)));
+
+            var ingredients = resultData["cytoplasme"];
+
+            for (int j = 0; j < ingredients["ingredients"].Count; j++)
+            {
+                string iname = ingredients["ingredients"][j]["name"];
+                currentPath.Add(iname);
+                component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
+                currentPath.Remove(currentPath.Last());
+
+            }
+
+            currentPath.Remove(currentPath.Last());
+        }
+
+        for (int i = 0; i < resultData["compartments"].Count; i++)
+        {
+            var compartment = resultData["compartments"].GetKey(i);
+
+            currentPath.Add(compartment);
+            component.hierachy.Add(new PersistantSettings.Node(compartment, GetPath(currentPath)));
+
+            //*****//
+
+            var surface = "surface";
+            var ingredients = resultData["compartments"][i][surface];
+
+            if (ingredients["ingredients"].Count > 0)
+            {
+                currentPath.Add(surface);
+                component.hierachy.Add(new PersistantSettings.Node(surface, GetPath(currentPath)));
+
+                for (int j = 0; j < ingredients["ingredients"].Count; j++)
+                {
+                    string iname = ingredients["ingredients"][j]["name"];
+                    currentPath.Add(iname);
+                    component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
+                    currentPath.Remove(currentPath.Last());
+                }
+
+                currentPath.Remove(currentPath.Last());
+            }
+
+            //*****//
+
+            var interior = "interior";
+            ingredients = resultData["compartments"][i][interior];
+
+            if (ingredients["ingredients"].Count > 0)
+            {
+                currentPath.Add(interior);
+                component.hierachy.Add(new PersistantSettings.Node(interior, GetPath(currentPath)));
+
+                for (int j = 0; j < ingredients["ingredients"].Count; j++)
+                {
+                    string iname = ingredients["ingredients"][j]["name"];
+                    currentPath.Add(iname);
+                    component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
+                    currentPath.Remove(currentPath.Last());
+                }
+
+                currentPath.Remove(currentPath.Last());
+            }
+
+            currentPath.Remove(currentPath.Last());
+        }
+
+        //foreach (var node in component.hierachy)
+        //{
+        //    Debug.Log(" path: " + node.path);
+        //}
+    }
+
+    public static void buildHierarchy(JSONNode resultData){
 		SceneManager.Instance.scene_name = resultData ["recipe"] ["name"];
 		var root = new GameObject(resultData["recipe"]["name"]);//in case we want to have more than one recipe loaded
 		//create empty null object or sphere ?

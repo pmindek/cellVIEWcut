@@ -125,9 +125,12 @@ public class NavigateCamera : MonoBehaviour
             Distance = Vector3.Distance(TargetPosition, transform.position);
         }
     }
-    
+
+    public bool FreezeState = false;
+
     private void OnGUI()
     {
+        if (FreezeState) return;
 
 #if UNITY_EDITOR
         if (Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint)
