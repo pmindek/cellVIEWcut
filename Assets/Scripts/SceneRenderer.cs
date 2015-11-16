@@ -13,9 +13,11 @@ public class SceneRenderer : MonoBehaviour
 {
     public int occludeeType = 0;
 
+    public Shader RenderProteinShader;
+
     public Material _contourMaterial;
     public Material _compositeMaterial;
-    public Material _renderProteinsMaterial;
+    private Material _renderProteinsMaterial;
     public Material _renderCurveIngredientsMaterial;
 
     /*****/
@@ -46,6 +48,13 @@ public class SceneRenderer : MonoBehaviour
         }
 
         if (_proteinInstanceCullFlags == null) _proteinInstanceCullFlags = new ComputeBuffer(GPUBuffer.NumProteinInstancesMax, 4);
+
+
+        if (_renderProteinsMaterial == null)
+        {
+            _renderProteinsMaterial = new Material(RenderProteinShader);
+            _renderProteinsMaterial.hideFlags = HideFlags.HideAndDontSave;
+        }
     }
 
     void OnDisable()
@@ -68,6 +77,12 @@ public class SceneRenderer : MonoBehaviour
         {
             _proteinInstanceCullFlags.Release();
             _proteinInstanceCullFlags = null;
+        }
+
+        if (_renderProteinsMaterial != null)
+        {
+            DestroyImmediate(_renderProteinsMaterial);
+            _renderProteinsMaterial = null;
         }
     }
 
