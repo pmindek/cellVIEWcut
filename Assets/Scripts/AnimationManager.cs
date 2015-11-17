@@ -5,6 +5,35 @@ using System;
 
 public class AnimationManager : MonoBehaviour
 {
+    // Declare the AnimationManager as a singleton
+    private static AnimationManager _instance = null;
+    public static AnimationManager Instance
+    {
+        get
+        {
+            if (_instance != null) return _instance;
+
+            _instance = FindObjectOfType<AnimationManager>();
+            if (_instance == null)
+            {
+                var go = GameObject.Find("_animationManager");
+                if (go != null) DestroyImmediate(go);
+
+                go = new GameObject("_animationManager") {  };
+                _instance = go.AddComponent<AnimationManager>();
+            }
+
+            //_instance.OnUnityReload();
+            return _instance;
+        }
+    }
+
+    public static bool CheckInstance()
+    {
+        return _instance != null;
+    }
+
+    //--------------------------------------------------------------
          
     private List<Vector4> positions;        //original positions of instances
     private List<Vector4> new_positions;    //stores position updates of instances
@@ -27,6 +56,7 @@ public class AnimationManager : MonoBehaviour
     public Vector4 Destination; //the origin of the destination volume (= volume to which instances will transition)
     private GameObject destinationCube; //defines the origin of the destination coordinate system
     private List<GameObject> destinationsPerType; //transition destination for each molecule type
+    public List<Vector4> destinationsPerInstance; //transition destination for each molecule instance
 
     private float umfang = 0.0f; //used for the circular layout
 
@@ -60,6 +90,7 @@ public class AnimationManager : MonoBehaviour
     private void createMoleculeLayout()
     {
         destinationsPerType = new List<GameObject>();
+        destinationsPerInstance = new List<Vector4>();
 
         //create game objects for each molecule type
         foreach (MoleculeGroup m in Ingredients)
@@ -87,6 +118,8 @@ public class AnimationManager : MonoBehaviour
 
             o.transform.position = new Vector3(props.origin.x + x, props.origin.y + y, props.origin.z);
             props.ScaledPosition = o.transform.position / PersistantSettings.Instance.Scale;
+            //now we can calculate the instance positions
+            props.SetInstancePositions();
         }
     }
 
@@ -110,8 +143,14 @@ public class AnimationManager : MonoBehaviour
             //currentZ = LinearInterpol(positions[i].z, Destination.z, Mathf.Pow(current_step, 1));
 
             //send each molecule type towards its designated target cube
-            Vector4 pos = destinationsPerType[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
-            //Vector4 pos = destinationsPerType[(int)types[i].x].transform.position;
+            //Vector4 pos = destinationsPerType[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
+            //currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
+            //currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
+            //currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
+
+            //nextup/TODO: individual target points for each instance
+            //needed: destinationsPerType = position for each instance ==>> destinationsPerInstance, size = #instances
+            Vector4 pos = destinationsPerInstance[i];  //Type[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
             currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
             currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
             currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
@@ -219,6 +258,12 @@ public class MoleculeGroup
     public List<Vector4> OriginalPositions;
     public List<Vector4> OriginalRotations;
 
+    public float moleculeRadius; //bounding sphere radius
+    public float cubicVolumeTotal;
+    public float cubeMSingle; //m = side of the cube that describes the volume of an instance
+    public float cubeMTotal;  //m of the volume that describes the sum of all instances
+    public float sphericRTotal;
+
     //the origin of the container that will house all instances of this ingredient type after the transition
     //-> depends on: atom volume, volume length&width of the complete container, volumes of all prior ingredients
     //(as they fill the complete container) => total height of prev molecule groups
@@ -237,6 +282,7 @@ public class MoleculeGroup
         InstanceCount = instanceCounts[(int)ID];
         AtomsPerInstance = atomCount;
         TotalAtomsOfType = InstanceCount * AtomsPerInstance;
+        moleculeRadius = SceneManager.Instance.ProteinRadii[(int)id];
 
         for (int i = 0; i < (int)ID; i++)
         {
@@ -246,6 +292,7 @@ public class MoleculeGroup
         OriginalPositions = copyOriginalValues(SceneManager.Instance.ProteinInstancePositions, InstanceCount, StartIndex);
         OriginalRotations = copyOriginalValues(SceneManager.Instance.ProteinInstanceRotations, InstanceCount, StartIndex);
 
+        SetVolumes(moleculeRadius);
     }
 
     /// <summary>
@@ -263,5 +310,45 @@ public class MoleculeGroup
         }
 
         return outvec;
+    }
+
+    public void SetVolumes(float radius)
+    {
+        cubeMSingle = radiusToLength(radius); //side of cube that describes the same volume as the sphere
+        cubicVolumeTotal = Mathf.Pow(cubeMSingle, 3.0f) * InstanceCount; //total cubic volume of all instances
+        float sphereVolumeTotal = (4.0f * Mathf.PI * Mathf.Pow(radius, 3.0f) / 3.0f) * InstanceCount;
+
+        cubeMTotal = Mathf.Pow(cubicVolumeTotal, 1.0f / 3.0f); //side of the cube
+
+        //radius of the sphere
+        sphericRTotal = lengthToRadius(cubeMTotal);
+        //Debug.Log("bla");
+
+        //calculate plane
+        //TODO
+
+        //calculate bar height
+        //TODO
+
+    }
+
+    //given the bounding sphere radius, calculate the lenght of the cube that occupies the same volume as the sphere
+    private float radiusToLength(float radius)
+    {
+        float length = 0.0f;
+
+        length = Mathf.Pow(2.0f, 2.0f / 3.0f) * Mathf.Pow(((Mathf.PI) / 3.0f), 1.0f / 3.0f) * radius;
+
+        return length;
+    }
+
+    //convert the length of a cube to the radius of a sphere
+    private float lengthToRadius(float length)
+    {
+        float radius = 0.0f;
+
+        radius = Mathf.Pow(((3.0f) / Mathf.PI), 1.0f / 3.0f) * length / Mathf.Pow(2.0f, 2.0f / 3.0f);
+
+        return radius;
     }
 }

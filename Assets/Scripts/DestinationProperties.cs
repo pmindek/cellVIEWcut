@@ -5,21 +5,17 @@ public class DestinationProperties : MonoBehaviour {
 
     public float MoleculeType;
     public float arcLength;
-    private float moleculeRadius;
 
     public MoleculeGroup MoleculeInfo;
 
     public int spacer = 5;
     public float PosOnCircle = 0.0f;
-    public Vector4 origin;
+    public Vector4 origin; //position of the "marker" cube / center of the instance target location
     public Vector4 ScaledPosition;
 
-    private float cubicVolumeTotal;
-    private float cubeMSingle; //m = side of the cube that describes the volume of an instance
-    private float cubeMTotal;  //m of the volume that describes the sum of all instances
-    private float sphericRTotal;
-    private float planeSurface; //cuboid with depth 1
-    
+    //properties of plane and histogram representations forms
+    //TODO: move to moleculegroup class one actually used
+    private float planeSurface; //cuboid with depth 1    
     //histogram properties
     public float BarWidth;
     public float BarDepth;
@@ -30,56 +26,48 @@ public class DestinationProperties : MonoBehaviour {
         origin = transform.position;
 
         MoleculeType = molecule.ID;
-        moleculeRadius = SceneManager.Instance.ProteinRadii[(int)MoleculeType]; // *PersistantSettings.Instance.Scale;
         MoleculeInfo = molecule;
 
-        SetVolumes(moleculeRadius);
+        //sphere layout
 
+        //radius = instance bounding sphere radius
+        //if (MoleculeType < (SceneManager.Instance.ProteinRadii.Count - 1)) arcLength = MoleculeInfo.moleculeRadius + AnimationManager.Instance.Ingredients[(int)MoleculeType + 1].moleculeRadius + spacer;
+        //else arcLength = MoleculeInfo.moleculeRadius + AnimationManager.Instance.Ingredients[0].moleculeRadius + spacer;
 
-        //todo: scale the spacer too?        
-        //if(ID < (SceneManager.Instance.ProteinRadii.Count - 1)) arcLength = radiusScaled + SceneManager.Instance.ProteinRadii[(int)ID + 1] * PersistantSettings.Instance.Scale + spacer;
-        //else arcLength = radiusScaled + SceneManager.Instance.ProteinRadii[0] * PersistantSettings.Instance.Scale + spacer;
-        if (MoleculeType < (SceneManager.Instance.ProteinRadii.Count - 1)) arcLength = moleculeRadius + SceneManager.Instance.ProteinRadii[(int)MoleculeType + 1] + spacer;
-        else arcLength = moleculeRadius + SceneManager.Instance.ProteinRadii[0] + spacer;
+        //radius = sphere volume of all instances radius
+        if (MoleculeType < (SceneManager.Instance.ProteinRadii.Count - 1)) arcLength = MoleculeInfo.sphericRTotal + AnimationManager.Instance.Ingredients[(int)MoleculeType + 1].sphericRTotal + spacer;
+        else arcLength = MoleculeInfo.sphericRTotal + AnimationManager.Instance.Ingredients[0].sphericRTotal + spacer;
+
+        //other layouts
+        //TODO...
     }
 
-    public void SetVolumes(float radius)
+    public void SetInstancePositions()
     {
-        cubeMSingle = radiusToLength(radius); //side of cube that describes the same volume as the sphere
-        cubicVolumeTotal = Mathf.Pow(cubeMSingle, 3.0f) * MoleculeInfo.InstanceCount; //total cubic volume of all instances
-        float sphereVolumeTotal = (4.0f * Mathf.PI * Mathf.Pow(radius, 3.0f) / 3.0f) * MoleculeInfo.InstanceCount;
+        float targetSphereRadius = MoleculeInfo.sphericRTotal - MoleculeInfo.moleculeRadius;
 
-        cubeMTotal = Mathf.Pow(cubicVolumeTotal, 1.0f / 3.0f); //side of the cube
-        
-        //radius of the sphere
-        sphericRTotal = lengthToRadius(cubeMTotal);
+        //sample sphere positions for each instance
+        float stepSize = 1.0f / MoleculeInfo.InstanceCount;
+        //float currentStep = 0.0f;
 
-        //calculate plane
-        //TODO
+        for (int i = 0; i < MoleculeInfo.InstanceCount; i++)
+        {
+            Vector3 newPos = new Vector3();
 
-        //calculate bar height
-        //TODO
+            do
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    newPos[j] = Random.Range(-1.0F, 1.0F);
+                }
 
-    }
+            } while (newPos.sqrMagnitude > 1.0);
 
-    //given the bounding sphere radius, calculate the lenght of the cube that occupies the same volume as the sphere
-    private float radiusToLength(float radius)
-    {
-        float length = 0.0f;
-
-        length = Mathf.Pow(2.0f, 2.0f / 3.0f) * Mathf.Pow(((Mathf.PI * radius) / 3.0f), 1.0f / 3.0f);
-
-        return length;
-    }
-
-    //convert the length of a cube to the radius of a sphere
-    private float lengthToRadius(float length)
-    {
-        float radius = 0.0f;
-
-        radius = Mathf.Pow(((3.0f * length) / Mathf.PI), 1.0f / 3.0f) / Mathf.Pow(2.0f, 2.0f / 3.0f);
-
-        return radius;
+            newPos = newPos * MoleculeInfo.sphericRTotal;
+            
+            AnimationManager.Instance.destinationsPerInstance.Add(new Vector4(ScaledPosition.x + newPos.x, ScaledPosition.y + newPos.y, ScaledPosition.z + newPos.z, ScaledPosition.w));
+            //currentStep += stepSize;
+        }
     }
 
     public float getArcLength()
