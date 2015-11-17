@@ -54,10 +54,10 @@ public class AnimationManager : MonoBehaviour
         parseMolecules();
 
         //create destination points for each molecule type
-        createCircularLayout();
+        createMoleculeLayout();
     }
 
-    private void createCircularLayout()
+    private void createMoleculeLayout()
     {
         destinationsPerType = new List<GameObject>();
 
@@ -66,7 +66,7 @@ public class AnimationManager : MonoBehaviour
         {
             GameObject temp = Instantiate(destinationCube);
             DestinationProperties props = temp.GetComponent<DestinationProperties>();
-            props.Initialize(m.ID);
+            props.Initialize(m);
             props.PosOnCircle = umfang;
 
             umfang += props.getArcLength();
@@ -121,8 +121,6 @@ public class AnimationManager : MonoBehaviour
 
         if(step_count <= NumberOfSteps) step_count++;
 
-        
-        //var x = SceneManager.Instance.ProteinRadii;
         GPUBuffer.Instance.ProteinInstancePositions.SetData(new_positions.ToArray());
     }
 
@@ -158,66 +156,6 @@ public class AnimationManager : MonoBehaviour
 
         Debug.Log(TotalNumberOfAtoms);
     }
-
-
-    //represents all molecule instances of a molecule type
-    public class MoleculeGroup
-    {
-        public float ID = -1.0f;
-        public int InstanceCount = 0;
-        public int AtomsPerInstance = 0;
-        public int TotalAtomsOfType = 0;
-        public int StartIndex = 0;
-        public List<Vector4> OriginalPositions;
-        public List<Vector4> OriginalRotations;
-        
-        //the origin of the container that will house all instances of this ingredient type after the transition
-        //-> depends on: atom volume, volume length&width of the complete container, volumes of all prior ingredients
-        //(as they fill the complete container) => total height of prev molecule groups
-        public Vector4 IngredientDestOrigin;
-        public Vector4 MoleculeBoundingVolume; //w/h/l of a single molecule
-        public float GroupHeight = 0;
-        //molecule lenght, width? space filling alg to determine?
-        //molecule group height = how much space do all molecules of this type need? (w&h already defined in total volume)
-
-        //depending on: MoleculeBoundingVolume & the number of previous molecules from this group
-        public List<Vector4> MoleculeDestOrigins; //the origin of the destination of each molecule (within the coord system of the ingredient type destination container)
-
-        public MoleculeGroup(float id, List<int> instanceCounts, int atomCount)
-        {
-            ID = id;
-            InstanceCount = instanceCounts[(int)ID];
-            AtomsPerInstance = atomCount;
-            TotalAtomsOfType = InstanceCount * AtomsPerInstance;
-
-            for (int i = 0; i < (int)ID; i++)
-            {
-                StartIndex += instanceCounts[i];
-            }
-
-            OriginalPositions = copyOriginalValues(SceneManager.Instance.ProteinInstancePositions, InstanceCount, StartIndex);
-            OriginalRotations = copyOriginalValues(SceneManager.Instance.ProteinInstanceRotations, InstanceCount, StartIndex);
-
-        }
-        
-        /// <summary>
-        /// copies original position/rotation values from the composite list based on ID & count (length)
-        /// </summary>
-        private List<Vector4> copyOriginalValues(List<Vector4> invec, int instcount, int start)
-        {
-            List<Vector4> outvec = new List<Vector4>();
-            Vector4 current;
-
-            for (int i = 0; i < instcount; i++)
-            {
-                current = invec[i + start];
-                outvec.Add(current);
-            }
-
-            return outvec;
-        }
-    }
-
 
     private List<MoleculeGroup> setupMolecules(int numIngredients, List<int> instanceCounts, List<int> atomCounts)
     {
@@ -267,5 +205,63 @@ public class AnimationManager : MonoBehaviour
             Destroy(o);
         }
 
+    }
+}
+
+//represents all molecule instances of a molecule type
+public class MoleculeGroup
+{
+    public float ID = -1.0f;
+    public int InstanceCount = 0;
+    public int AtomsPerInstance = 0;
+    public int TotalAtomsOfType = 0;
+    public int StartIndex = 0;
+    public List<Vector4> OriginalPositions;
+    public List<Vector4> OriginalRotations;
+
+    //the origin of the container that will house all instances of this ingredient type after the transition
+    //-> depends on: atom volume, volume length&width of the complete container, volumes of all prior ingredients
+    //(as they fill the complete container) => total height of prev molecule groups
+    public Vector4 IngredientDestOrigin;
+    public Vector4 MoleculeBoundingVolume; //w/h/l of a single molecule
+    public float GroupHeight = 0;
+    //molecule lenght, width? space filling alg to determine?
+    //molecule group height = how much space do all molecules of this type need? (w&h already defined in total volume)
+
+    //depending on: MoleculeBoundingVolume & the number of previous molecules from this group
+    public List<Vector4> MoleculeDestOrigins; //the origin of the destination of each molecule (within the coord system of the ingredient type destination container)
+
+    public MoleculeGroup(float id, List<int> instanceCounts, int atomCount)
+    {
+        ID = id;
+        InstanceCount = instanceCounts[(int)ID];
+        AtomsPerInstance = atomCount;
+        TotalAtomsOfType = InstanceCount * AtomsPerInstance;
+
+        for (int i = 0; i < (int)ID; i++)
+        {
+            StartIndex += instanceCounts[i];
+        }
+
+        OriginalPositions = copyOriginalValues(SceneManager.Instance.ProteinInstancePositions, InstanceCount, StartIndex);
+        OriginalRotations = copyOriginalValues(SceneManager.Instance.ProteinInstanceRotations, InstanceCount, StartIndex);
+
+    }
+
+    /// <summary>
+    /// copies original position/rotation values from the composite list based on ID & count (length)
+    /// </summary>
+    private List<Vector4> copyOriginalValues(List<Vector4> invec, int instcount, int start)
+    {
+        List<Vector4> outvec = new List<Vector4>();
+        Vector4 current;
+
+        for (int i = 0; i < instcount; i++)
+        {
+            current = invec[i + start];
+            outvec.Add(current);
+        }
+
+        return outvec;
     }
 }
