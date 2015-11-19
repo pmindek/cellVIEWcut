@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class DestinationProperties : MonoBehaviour {
 
@@ -47,7 +48,7 @@ public class DestinationProperties : MonoBehaviour {
         float targetSphereRadius = MoleculeInfo.sphericRTotal - MoleculeInfo.moleculeRadius;
 
         //sample sphere positions for each instance
-        float stepSize = 1.0f / MoleculeInfo.InstanceCount;
+        //float stepSize = 1.0f / MoleculeInfo.InstanceCount;
         //float currentStep = 0.0f;
 
         for (int i = 0; i < MoleculeInfo.InstanceCount; i++)
@@ -64,9 +65,15 @@ public class DestinationProperties : MonoBehaviour {
             } while (newPos.sqrMagnitude > 1.0);
 
             newPos = newPos * MoleculeInfo.sphericRTotal;
-            
-            AnimationManager.Instance.destinationsPerInstance.Add(new Vector4(ScaledPosition.x + newPos.x, ScaledPosition.y + newPos.y, ScaledPosition.z + newPos.z, ScaledPosition.w));
-            //currentStep += stepSize;
+
+            Vector4 target = new Vector4(ScaledPosition.x + newPos.x, ScaledPosition.y + newPos.y, ScaledPosition.z + newPos.z, ScaledPosition.w);            
+            AnimationManager.Instance.destinationsPerInstance.Add(target); //TODO: remove this as soon as baked animation stuff is working
+
+            List<ControlPointPair> cpList = new List<ControlPointPair>();
+            Vector4 source = AnimationManager.Instance.Ingredients[(int)MoleculeType].OriginalPositions[i];
+            //ControlPointPair cp = new ControlPointPair(source, target);
+            cpList.Add(new ControlPointPair(source, target));
+            AnimationManager.Instance.Ingredients[(int)MoleculeType].InstanceAnimationPaths.Add(cpList);
         }
     }
 

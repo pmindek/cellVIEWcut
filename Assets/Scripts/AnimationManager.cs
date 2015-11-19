@@ -57,6 +57,7 @@ public class AnimationManager : MonoBehaviour
     private GameObject destinationCube; //defines the origin of the destination coordinate system
     private List<GameObject> destinationsPerType; //transition destination for each molecule type
     public List<Vector4> destinationsPerInstance; //transition destination for each molecule instance
+    private List<Vector4> lastPosPerInstance; //saves the last animation position to support staged animation
 
     private float umfang = 0.0f; //used for the circular layout
 
@@ -80,12 +81,23 @@ public class AnimationManager : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        //create molecule objects
+        //create molecule objects that store the original pos/rot of each instance
         parseMolecules();
 
-        //create destination points for each molecule type
+        //create destination points for each instance per molecule type
         createMoleculeLayout();
+
+        //now that we have the final layout, we can calculate and store the animation paths
+        //bakeAnimations();
     }
+
+    //private void bakeAnimations()
+    //{
+    //    foreach (MoleculeGroup m in Ingredients)
+    //    {
+            
+    //    }
+    //}
 
     private void createMoleculeLayout()
     {
@@ -120,6 +132,7 @@ public class AnimationManager : MonoBehaviour
             props.ScaledPosition = o.transform.position / PersistantSettings.Instance.Scale;
             //now we can calculate the instance positions
             props.SetInstancePositions();
+
         }
     }
 
@@ -129,41 +142,80 @@ public class AnimationManager : MonoBehaviour
         //debug_frame_counter++;
         new_positions.Clear();
 
-        current_step = step_size * step_count;
+        //current_step = step_size * step_count;
 
-        //update position buffer...
-        for (int i = 0; i < types.Count; i++)
+        ////update position buffer...
+        //for (int i = 0; i < types.Count; i++)
+        //{
+        //    //initial proof of concept: manipualtion of original instance positions along an axis
+        //    //new_positions.Add(new Vector4(positions[i].x - debug_frame_counter, positions[i].y, positions[i].z, positions[i].w));
+
+        //    //second proof of concept: linear interpolation for all instances towards a user specified gameobject position
+        //    //currentX = LinearInterpol(positions[i].x, Destination.x, Mathf.Pow(current_step, 1));
+        //    //currentY = LinearInterpol(positions[i].y, Destination.y, Mathf.Pow(current_step, 1));
+        //    //currentZ = LinearInterpol(positions[i].z, Destination.z, Mathf.Pow(current_step, 1));
+
+        //    //third proof of concept: interpolate instances towards a point per type
+        //    //send each molecule type towards its designated target cube
+        //    //Vector4 pos = destinationsPerType[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
+        //    //currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
+        //    //currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
+        //    //currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
+
+        //    //fourth proof of concept: individual target point for each instance
+        //    //Vector4 pos = destinationsPerInstance[i];
+        //    //currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
+        //    //currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
+        //    //currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
+
+        //    new_positions.Add(new Vector4(currentX, currentY, currentZ, positions[i].w));
+
+        //    //fifth proof of concept: load baked animation for each instance
+
+        //    //new_positions.Add() --> current point pos is picked from
+        //}
+
+        //read baked animations..
+        foreach(MoleculeGroup m in Ingredients)
         {
-            //initial proof of concept: manipualtion of original instance positions along an axis
-            //new_positions.Add(new Vector4(positions[i].x - debug_frame_counter, positions[i].y, positions[i].z, positions[i].w));
+            //TODO: check whether we should animate the respective molecule type (filtered)
+            //TODO: or if we should wait a certain number of steps until we animate the next type (staged)
+            //in both cases, we should fill the new_positions vector with the original values / values from the last iteration
+            //TODO: initialize new_positions with the original positions
 
-            //second proof of concept: linear interpolation for all instances towards a user specified gameobject position
-            //currentX = LinearInterpol(positions[i].x, Destination.x, Mathf.Pow(current_step, 1));
-            //currentY = LinearInterpol(positions[i].y, Destination.y, Mathf.Pow(current_step, 1));
-            //currentZ = LinearInterpol(positions[i].z, Destination.z, Mathf.Pow(current_step, 1));
+            int step_store = step_count;
 
-            //send each molecule type towards its designated target cube
-            //Vector4 pos = destinationsPerType[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
-            //currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
-            //currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
-            //currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
+            //go through all the instances of the current m-type
+            foreach(List<ControlPointPair> cpp in m.InstanceAnimationPaths)
+            {
+                //each update call, read the next baked point - start with first in list..
+                foreach(ControlPointPair cp in cpp)
+                {
+                    if(step_count > cp.NumSteps)
+                        step_count -= cp.NumSteps;
+                    else
+                    {
+                        new_positions.Add(cp.bakedPoints[step_count]);
+                        break; //move to next instance
+                    }
+                }              
+            }
 
-            //nextup/TODO: individual target points for each instance
-            //needed: destinationsPerType = position for each instance ==>> destinationsPerInstance, size = #instances
-            Vector4 pos = destinationsPerInstance[i];  //Type[(int)types[i].x].GetComponent<DestinationProperties>().ScaledPosition;
-            currentX = LinearInterpol(positions[i].x, pos.x, Mathf.Pow(current_step, 1));
-            currentY = LinearInterpol(positions[i].y, pos.y, Mathf.Pow(current_step, 1));
-            currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
-
-            new_positions.Add(new Vector4(currentX, currentY, currentZ, positions[i].w));
+            //restore the step_count - we assume that each instance has the same #steps but that they may differ between types
+            step_count = step_store;
         }
 
+        //new_positions.Add(new Vector4(currentX, currentY, currentZ, positions[i].w));
+
+        //save the last animation position of all instances
+        lastPosPerInstance = new_positions;
+        
         if(step_count <= NumberOfSteps) step_count++;
 
         GPUBuffer.Instance.ProteinInstancePositions.SetData(new_positions.ToArray());
     }
 
-    float LinearInterpol(float origin, float destination, float step)
+    public static float LinearInterpol(float origin, float destination, float step)
     {
         float result = 0.0f;
 
@@ -276,6 +328,9 @@ public class MoleculeGroup
     //depending on: MoleculeBoundingVolume & the number of previous molecules from this group
     public List<Vector4> MoleculeDestOrigins; //the origin of the destination of each molecule (within the coord system of the ingredient type destination container)
 
+    //for each instance, we store a list of ControlPairPoints that contain the baked animation path between the pair of points
+    public List<List<ControlPointPair>> InstanceAnimationPaths;
+
     public MoleculeGroup(float id, List<int> instanceCounts, int atomCount)
     {
         ID = id;
@@ -283,6 +338,7 @@ public class MoleculeGroup
         AtomsPerInstance = atomCount;
         TotalAtomsOfType = InstanceCount * AtomsPerInstance;
         moleculeRadius = SceneManager.Instance.ProteinRadii[(int)id];
+        InstanceAnimationPaths = new List<List<ControlPointPair>>();
 
         for (int i = 0; i < (int)ID; i++)
         {
@@ -350,5 +406,46 @@ public class MoleculeGroup
         radius = Mathf.Pow(((3.0f) / Mathf.PI), 1.0f / 3.0f) * length / Mathf.Pow(2.0f, 2.0f / 3.0f);
 
         return radius;
+    }
+}
+
+public class ControlPointPair
+{
+    public Vector4 StartPoint;
+    public Vector4 EndPoint;
+    public int NumSteps;
+    //TODO: control points for non-linear interpol?
+    public int InterpolationMethod;
+    public List<Vector4> bakedPoints; //baked interpolation in #NumSteps samples between StartPoint and EndPoint
+
+    //current animation position
+    private float currentX = 0.0f;
+    private float currentY = 0.0f;
+    private float currentZ = 0.0f;
+
+    public ControlPointPair(Vector4 start, Vector4 end, int steps = 300, int method = 0)
+    {
+        StartPoint = start;
+        EndPoint = end;
+        NumSteps = steps;
+        float stepsize = 1.0f / NumSteps;
+        float currentStep = 0.0f;
+        InterpolationMethod = method;
+        bakedPoints = new List<Vector4>();
+
+        switch (InterpolationMethod)
+        {
+            case 0: //linear
+                for (int i = 1; i <= NumSteps; i++)
+                {
+                    currentStep = stepsize * i;
+                    currentX = AnimationManager.LinearInterpol(start.x, end.x, currentStep);
+                    currentY = AnimationManager.LinearInterpol(start.y, end.y, currentStep);
+                    currentZ = AnimationManager.LinearInterpol(start.z, end.z, currentStep);
+
+                    bakedPoints.Add(new Vector4(currentX, currentY, currentZ, 0.0f));
+                }
+                break;
+        }
     }
 }
