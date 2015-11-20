@@ -70,6 +70,28 @@ public class AnimationManager : MonoBehaviour
 
     public int TotalNumberOfAtoms = 0;
 
+    //animation states:
+    public enum AnimState { Paused, Play, Rewind };
+    public AnimState AnimationState = AnimState.Play;
+    private int anistate = 0;
+    public int PausePlayRewind
+    {
+        get
+        {
+            return anistate;
+        } 
+        set
+        {
+            if (anistate <= 0 && anistate >= 2)
+                AnimationState = (AnimState)anistate;
+            else
+            {
+                anistate = 0;
+                AnimationState = (AnimState)anistate;
+            }
+        }
+    }
+
     void OnEnable()
     {
         step_size = 1.0f / NumberOfSteps;
@@ -174,16 +196,31 @@ public class AnimationManager : MonoBehaviour
 
         //fifth proof of concept: load baked animation for each instance
         //read baked animations..
-        foreach(MoleculeGroup m in Ingredients)
-        {
-            //TODO: check whether we should animate the respective molecule type (filtered)
-            //TODO: or if we should wait a certain number of steps until we animate the next type (staged)
-            //in both cases, we should fill the new_positions vector with the original values / values from the last iteration
 
-            //go through all the instances of the current m-type
-            foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+        if (AnimationState == AnimState.Play)
+        {
+            foreach(MoleculeGroup m in Ingredients)
             {
-                new_positions.Add(cpp.GetNext());            
+                //TODO: check whether we should animate the respective molecule type (filtered)
+                //TODO: or if we should wait a certain number of steps until we animate the next type (staged)
+                //in both cases, we should fill the new_positions vector with the original values / values from the last iteration
+
+                //go through all the instances of the current m-type
+                foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                {
+                    new_positions.Add(cpp.GetNext());
+                }
+            }
+        }
+        else if (AnimationState == AnimState.Rewind)
+        {
+            foreach (MoleculeGroup m in Ingredients)
+            {
+                //go through all the instances of the current m-type
+                foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                {
+                    new_positions.Add(cpp.GetPrev());
+                }
             }
         }
         
@@ -211,7 +248,7 @@ public class AnimationManager : MonoBehaviour
     {
         destinationCube = GameObject.Find("destinationCube");
         //scale the position to bring it to "protein space"
-        Destination = destinationCube.transform.position / 0.065f;
+        //Destination = destinationCube.transform.position / 0.065f;
 
         positions = SceneManager.Instance.ProteinInstancePositions;
         types = SceneManager.Instance.ProteinInstanceInfos;
@@ -333,9 +370,7 @@ public class MoleculeGroup
         SetVolumes(moleculeRadius);
     }
 
-    /// <summary>
-    /// copies original position/rotation values from the composite list based on ID & count (length)
-    /// </summary>
+    //copies original position/rotation values from the composite list based on ID & count (length)
     private List<Vector4> copyOriginalValues(List<Vector4> invec, int instcount, int start)
     {
         List<Vector4> outvec = new List<Vector4>();
@@ -402,9 +437,15 @@ public class InstanceControlPoints
         ControlPointPair cpp;
         Vector4 pointOfReturn;
 
+        //clamp the pointer (not very elegant)
+        if (CurrentCPP < 0) CurrentCPP = 0;
+
         while (CurrentCPP < ControlPoints.Count)
         {
             cpp = ControlPoints[CurrentCPP];
+
+            //clamp the pointer (not very elegant)
+            if (cpp.CurrentFrame < 0) cpp.CurrentFrame = 0;
 
             if (cpp.CurrentFrame < cpp.bakedPoints.Count)
             {
@@ -415,7 +456,33 @@ public class InstanceControlPoints
             }
             else CurrentCPP++;
         }
+        return lastPoint;
+    }
 
+    public Vector4 GetPrev()
+    {
+        ControlPointPair cpp;
+        Vector4 pointOfReturn;
+
+        //clamp the pointer (not very elegant)
+        if (CurrentCPP >= ControlPoints.Count) CurrentCPP = ControlPoints.Count - 1;
+
+        while (CurrentCPP >= 0)
+        {
+            cpp = ControlPoints[CurrentCPP];
+
+            //clamp the pointer (not very elegant)
+            if (cpp.CurrentFrame >= cpp.bakedPoints.Count) cpp.CurrentFrame = cpp.bakedPoints.Count - 1;
+
+            if (cpp.CurrentFrame >= 0)
+            {
+                pointOfReturn = cpp.bakedPoints[cpp.CurrentFrame];
+                lastPoint = pointOfReturn;
+                cpp.CurrentFrame--;
+                return pointOfReturn;
+            }
+            else CurrentCPP--;
+        }
         return lastPoint;
     }
 
@@ -426,10 +493,6 @@ public class InstanceControlPoints
         if (lastPoint == null) lastPoint = cpp.bakedPoints[0];
     }
 
-    //public Vector4 GetPrev()
-    //{
-       
-    //}
 
     public InstanceControlPoints()
     {
