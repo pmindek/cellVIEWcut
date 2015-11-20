@@ -67,12 +67,14 @@ public class DestinationProperties : MonoBehaviour {
             newPos = newPos * MoleculeInfo.sphericRTotal;
 
             Vector4 target = new Vector4(ScaledPosition.x + newPos.x, ScaledPosition.y + newPos.y, ScaledPosition.z + newPos.z, ScaledPosition.w);            
-            AnimationManager.Instance.destinationsPerInstance.Add(target); //TODO: remove this as soon as baked animation stuff is working
-
-            List<ControlPointPair> cpList = new List<ControlPointPair>();
+            //AnimationManager.Instance.destinationsPerInstance.Add(target); //TODO: remove this as soon as baked animation stuff is working
             Vector4 source = AnimationManager.Instance.Ingredients[(int)MoleculeType].OriginalPositions[i];
-            //ControlPointPair cp = new ControlPointPair(source, target);
-            cpList.Add(new ControlPointPair(source, target));
+
+            InstanceControlPoints cpList = new InstanceControlPoints();
+            cpList.AddCPP(new ControlPointPair(source, target));
+            //*****************************
+            //*** INFO: at this point additional control points for the motion path can/would be added
+            //*****************************
             AnimationManager.Instance.Ingredients[(int)MoleculeType].InstanceAnimationPaths.Add(cpList);
         }
     }

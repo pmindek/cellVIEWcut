@@ -46,7 +46,7 @@ public class AnimationManager : MonoBehaviour
     private float step_size = 0.0f;     
     private int step_count = 0;         //current step number
     private float current_step = 0.0f;  //current step size
-    public int NumberOfSteps = 400;  //# of steps to complete the transition
+    public int NumberOfSteps = 300;  //# of steps to complete the transition
 
     //current animation position
     private float currentX = 0.0f;
@@ -169,47 +169,29 @@ public class AnimationManager : MonoBehaviour
         //    //currentZ = LinearInterpol(positions[i].z, pos.z, Mathf.Pow(current_step, 1));
 
         //    new_positions.Add(new Vector4(currentX, currentY, currentZ, positions[i].w));
-
-        //    //fifth proof of concept: load baked animation for each instance
-
         //    //new_positions.Add() --> current point pos is picked from
         //}
 
+        //fifth proof of concept: load baked animation for each instance
         //read baked animations..
         foreach(MoleculeGroup m in Ingredients)
         {
             //TODO: check whether we should animate the respective molecule type (filtered)
             //TODO: or if we should wait a certain number of steps until we animate the next type (staged)
             //in both cases, we should fill the new_positions vector with the original values / values from the last iteration
-            //TODO: initialize new_positions with the original positions
-
-            int step_store = step_count;
 
             //go through all the instances of the current m-type
-            foreach(List<ControlPointPair> cpp in m.InstanceAnimationPaths)
+            foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
             {
-                //each update call, read the next baked point - start with first in list..
-                foreach(ControlPointPair cp in cpp)
-                {
-                    if(step_count > cp.NumSteps)
-                        step_count -= cp.NumSteps;
-                    else
-                    {
-                        new_positions.Add(cp.bakedPoints[step_count]);
-                        break; //move to next instance
-                    }
-                }              
+                new_positions.Add(cpp.GetNext());            
             }
-
-            //restore the step_count - we assume that each instance has the same #steps but that they may differ between types
-            step_count = step_store;
         }
-
-        //new_positions.Add(new Vector4(currentX, currentY, currentZ, positions[i].w));
-
+        
         //save the last animation position of all instances
+        //TODO: initialize with original positions
         lastPosPerInstance = new_positions;
         
+        //TODO: new way for stopping the animation... should end when no more "frames" are to be played and not in dependency to NumberOfSteps, since the number can differ between molecule  types
         if(step_count <= NumberOfSteps) step_count++;
 
         GPUBuffer.Instance.ProteinInstancePositions.SetData(new_positions.ToArray());
@@ -329,7 +311,7 @@ public class MoleculeGroup
     public List<Vector4> MoleculeDestOrigins; //the origin of the destination of each molecule (within the coord system of the ingredient type destination container)
 
     //for each instance, we store a list of ControlPairPoints that contain the baked animation path between the pair of points
-    public List<List<ControlPointPair>> InstanceAnimationPaths;
+    public List<InstanceControlPoints> InstanceAnimationPaths;
 
     public MoleculeGroup(float id, List<int> instanceCounts, int atomCount)
     {
@@ -338,7 +320,7 @@ public class MoleculeGroup
         AtomsPerInstance = atomCount;
         TotalAtomsOfType = InstanceCount * AtomsPerInstance;
         moleculeRadius = SceneManager.Instance.ProteinRadii[(int)id];
-        InstanceAnimationPaths = new List<List<ControlPointPair>>();
+        InstanceAnimationPaths = new List<InstanceControlPoints>();
 
         for (int i = 0; i < (int)ID; i++)
         {
@@ -409,11 +391,58 @@ public class MoleculeGroup
     }
 }
 
+public class InstanceControlPoints
+{
+    public List<ControlPointPair> ControlPoints;
+    public int CurrentCPP = 0;
+    private Vector4 lastPoint;
+
+    public Vector4 GetNext()
+    {
+        ControlPointPair cpp;
+        Vector4 pointOfReturn;
+
+        while (CurrentCPP < ControlPoints.Count)
+        {
+            cpp = ControlPoints[CurrentCPP];
+
+            if (cpp.CurrentFrame < cpp.bakedPoints.Count)
+            {
+                pointOfReturn = cpp.bakedPoints[cpp.CurrentFrame];
+                lastPoint = pointOfReturn;
+                cpp.CurrentFrame++;
+                return pointOfReturn;
+            }
+            else CurrentCPP++;
+        }
+
+        return lastPoint;
+    }
+
+    public void AddCPP(ControlPointPair cpp)
+    {
+        ControlPoints.Add(cpp);
+        //initialize lastPoint with the very first baked point
+        if (lastPoint == null) lastPoint = cpp.bakedPoints[0];
+    }
+
+    //public Vector4 GetPrev()
+    //{
+       
+    //}
+
+    public InstanceControlPoints()
+    {
+        ControlPoints = new List<ControlPointPair>();
+    }
+}
+
 public class ControlPointPair
 {
     public Vector4 StartPoint;
     public Vector4 EndPoint;
     public int NumSteps;
+    public int CurrentFrame = 0;
     //TODO: control points for non-linear interpol?
     public int InterpolationMethod;
     public List<Vector4> bakedPoints; //baked interpolation in #NumSteps samples between StartPoint and EndPoint
