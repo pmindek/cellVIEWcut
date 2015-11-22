@@ -367,6 +367,9 @@ public class SceneRenderer : MonoBehaviour
         Graphics.SetRenderTarget(tempBuffer);
         GL.Clear(true, true, Color.white);
 
+        // Clear occludees buffer
+        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+
         // Prepare draw call
         OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
         OcclusionQueriesMaterial.SetBuffer("_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
@@ -421,7 +424,7 @@ public class SceneRenderer : MonoBehaviour
         Graphics.ClearRandomWriteTargets();
 
         // Clear occluders buffer
-        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+        //GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
         //_argBuffer.LogDebug();
 
         // Release render target
@@ -470,13 +473,16 @@ public class SceneRenderer : MonoBehaviour
         if (SceneManager.Instance.NumProteinInstances > 0)
         {
             SetProteinShaderParams();
+            
+            GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
 
             ProteinFillBatchBuffer(-1);
             //Debug.Log(GetBatchCount());
             Graphics.SetRenderTarget(_itemBuffer.colorBuffer, depthBuffer.depthBuffer);
             _renderProteinsMaterial.SetPass(0);
             Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
-            GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+
+            //GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
 
             //ComputeHiZMap(depthBuffer);
             //ComputeOcclusionCulling(frameCount);
