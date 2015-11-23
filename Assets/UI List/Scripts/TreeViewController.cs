@@ -121,7 +121,8 @@ public class TreeViewController : MonoBehaviour
             var treeLevel = Mathf.Max(node.GetTreeLevel() - 1, 0);
 
             var rt = node.GetComponent<RectTransform>();
-            rt.localPosition = new Vector3(treeLevel * Indent + LeftPadding, currentYPos);
+            //rt.localPosition = new Vector3(treeLevel * Indent + LeftPadding, currentYPos);
+            rt.localPosition = new Vector3(Indent + LeftPadding, currentYPos);
             node.SaveInitPositionY();
             
             if (node.gameObject.activeInHierarchy)
@@ -210,7 +211,8 @@ public class TreeViewController : MonoBehaviour
             // Do the apple dock layout list style
             foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
             {
-                node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(false);
+                //node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(false);
+                node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(0.5f);
                 node.transform.localScale = new Vector3(0.5f, 0.5f, 1);
                 node.transform.localPosition = new Vector3(node.transform.localPosition.x,
                     node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
