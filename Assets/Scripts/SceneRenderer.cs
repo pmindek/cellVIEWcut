@@ -37,6 +37,7 @@ public class SceneRenderer : MonoBehaviour
     
     public Material guiMaterial;
 
+    public TreeViewController TreeViewController;
 
     void OnEnable()
     {
@@ -305,12 +306,12 @@ public class SceneRenderer : MonoBehaviour
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 
-        var stats = new int[4];
-        GPUBuffer.Instance.HistogramStatistics.GetData(stats);
-        /*Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
-        Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
+        //var stats = new int[4];
+        //GPUBuffer.Instance.HistogramStatistics.GetData(stats);
+        ///*Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
+        //Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
 
-        SceneManager.Instance.stats = stats;
+        //SceneManager.Instance.stats = stats;
 
 
         //all histograms
@@ -319,10 +320,8 @@ public class SceneRenderer : MonoBehaviour
 
         var histograms = new HistStruct[PersistantSettings.Instance.hierachy.Count];
         GPUBuffer.Instance.Histograms.GetData(histograms);
-
         SceneManager.Instance.histograms = histograms;
-
-        NewBehaviourScript.Instance.UpdateValues();
+        TreeViewController.UpdateRangeValues();
 
         /*Debug.Log("--------------------------------------------------hsl");
         foreach (var hl0 in histogramsLk)
@@ -368,6 +367,8 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffer.Instance.ProteinInstanceOcclusionFlags);
         ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
+        // Clear occludees buffer
+        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
 
         ////***** Do Depth-Stencil mask *****//
 
@@ -394,9 +395,6 @@ public class SceneRenderer : MonoBehaviour
         var tempBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.ARGB32);
         Graphics.SetRenderTarget(tempBuffer);
         GL.Clear(true, true, Color.white);
-
-        // Clear occludees buffer
-        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
 
         // Prepare draw call
         OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
@@ -452,10 +450,6 @@ public class SceneRenderer : MonoBehaviour
         // Issue draw call for occluders - bounding quads only - depth/stencil test enabled - no write to color/depth/stencil
         Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
         Graphics.ClearRandomWriteTargets();
-
-        // Clear occluders buffer
-        //GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
-        //_argBuffer.LogDebug();
 
         // Release render target
         RenderTexture.ReleaseTemporary(tempBuffer);

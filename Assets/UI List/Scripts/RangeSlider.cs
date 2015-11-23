@@ -7,8 +7,6 @@ using UnityEngine.UI;
 
 public class RangeSlider : MonoBehaviour 
 {
-    private const int MIN_RANGE_WIDTH = 2;
-
     public Texture2D cursor;
     public int totalLength = 200;
 
@@ -24,53 +22,35 @@ public class RangeSlider : MonoBehaviour
     // Use this for initialization
     private void Start()
     {
-        foreach (var range in ranges)
+        for(int i = 0; i < rangeValues.Count; i++)
         {
-            var initValue = GetRangeWidth(0.33333f);
-            range.GetComponent<LayoutElement>().minWidth = initValue;
+            rangeValues[i] = 1.0f / rangeValues.Count; ;
         }
-
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
-
-        UpdateRangeValues();
-        UpdateText(true);
     }
 
     private int GetRangeWidth(float value)
     {
-        return (int)((float)totalLength * value);
-    }
-
-    public void UpdateRangeValues()
-    {
-        var nullRangeCount = 0;
-        for (int i = 0; i < ranges.Count; i++)
-        {
-            if (ranges[i].GetComponent<LayoutElement>().minWidth == MIN_RANGE_WIDTH)
-            {
-                rangeValues[i] = 0;
-                nullRangeCount ++;
-            }
-            else
-            {
-                rangeValues[i] = -1;
-            }
-        }
-
-        for (int i = 0; i < ranges.Count; i++)
-        {
-            if (rangeValues[i] == -1)
-            {
-                var rangeWidth = ranges[i].GetComponent<LayoutElement>().minWidth;
-                rangeWidth += nullRangeCount*0.5f*MIN_RANGE_WIDTH;
-                rangeValues[i] = rangeWidth/(float)totalLength;
-            }
-        }
+        return Mathf.RoundToInt(totalLength * value);
     }
 
     // Update is called once per frame
     void Update()
     {
+        for (int i = 0; i < rangeValues.Count; i++)
+        {
+            var setValue = GetRangeWidth(rangeValues[i]);
+            var layout = ranges[i].GetComponent<LayoutElement>();//
+            if (layout.minWidth != setValue) layout.minWidth = setValue;// = Mathf.Max(setValue, MIN_RANGE_WIDTH);
+
+            var textUI = ranges[i].GetChild(0).GetComponent<Text>();
+            var newText = (textUI.gameObject.GetComponent<RectTransform>().rect.width > 5) ? Mathf.Round(rangeValues[i] * 100.0f) + " %" : "";
+            if (textUI.text != newText)
+            {
+                textUI.text = newText;
+            }
+        }
+
         if (GetComponent<CanvasGroup>().alpha < 0.9f)
         {
             SlowDownState = false;
@@ -95,64 +75,19 @@ public class RangeSlider : MonoBehaviour
 
         var handleIndex = handles.IndexOf(gameObject.GetComponent<RectTransform>());
 
-        var previousRange = ranges[handleIndex];
-        var nextRange = ranges[handleIndex + 1];
+        var previousRangeValue = rangeValues[handleIndex];
+        var nextRangeValue = rangeValues[handleIndex + 1];
+        var total = previousRangeValue + nextRangeValue;
 
-        var previousLayoutElement = previousRange.GetComponent<LayoutElement>();
-        var nextLayoutElement = nextRange.GetComponent<LayoutElement>();
+        var ratio = 100.0f * 3;
+        previousRangeValue += pointerEvent.delta.x / ratio;
+        previousRangeValue = Mathf.Clamp(previousRangeValue, 0.0f, total);
+        nextRangeValue = total - previousRangeValue;
 
-        if (previousLayoutElement.minWidth + pointerEvent.delta.x >= MIN_RANGE_WIDTH && nextLayoutElement.minWidth - pointerEvent.delta.x > MIN_RANGE_WIDTH)
-        {
-            previousLayoutElement.minWidth += pointerEvent.delta.x;
-            nextLayoutElement.minWidth -= pointerEvent.delta.x;
-        }
-        else if (previousLayoutElement.minWidth + pointerEvent.delta.x < MIN_RANGE_WIDTH)
-        {
-            var delta = previousLayoutElement.minWidth - MIN_RANGE_WIDTH;
-
-            previousLayoutElement.minWidth -= delta;
-            nextLayoutElement.minWidth += delta;
-        }
-        else if (nextLayoutElement.minWidth - pointerEvent.delta.x < MIN_RANGE_WIDTH)
-        {
-            var delta = nextLayoutElement.minWidth - MIN_RANGE_WIDTH;
-
-            previousLayoutElement.minWidth += delta;
-            nextLayoutElement.minWidth -= delta;
-        }
-
-        UpdateRangeValues();
-        UpdateText();
+        rangeValues[handleIndex] = previousRangeValue;
+        rangeValues[handleIndex + 1] = nextRangeValue;
     }
-
-    public void UpdateText(bool forceText = false)
-    {
-        for (int i = 0; i < ranges.Count; i++)
-        {
-            var textUI = ranges[i].GetChild(0).GetComponent<Text>();
-            textUI.text = Mathf.Round(rangeValues[i] * 100.0f) + " %";
-            if (forceText == false && textUI.gameObject.GetComponent<RectTransform>().rect.width < 25)
-            {
-                textUI.text = "";
-            }
-        }
-    }
-
-    public void SetRangeValues(List<float> values)
-    {
-        rangeValues = values;
-
-        int i = 0;
-        foreach (var range in ranges)
-        {
-            var setValue = GetRangeWidth(rangeValues[i]);
-            range.GetComponent<LayoutElement>().minWidth = setValue;
-            i++;
-        }
-
-        UpdateText();
-    }
-
+    
     public void OnEnter()
     {
         LockState = true;

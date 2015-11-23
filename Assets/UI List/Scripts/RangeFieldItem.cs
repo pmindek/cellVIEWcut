@@ -17,19 +17,12 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     /// </summary>
     /// <value>The parameters.</value>
 
-    //public void Update()
-    //{
-    //    GetLockState();
-    //}
-
     public void SetRangeValues(List<float> rangeValues)
     {
-        //Debug.Log("Updating range values: " + rangeValues[0] + " | " + rangeValues[1] + " | " + rangeValues[2]);
-        RangeSliderUI.SetRangeValues(rangeValues);
-
+        RangeSliderUI.rangeValues = rangeValues;
     }
 
-    public List<float> getRangeValues()
+    public List<float> GetRangeValues()
     {
         return RangeSliderUI.rangeValues;
     }

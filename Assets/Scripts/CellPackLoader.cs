@@ -107,18 +107,13 @@ public static class CellPackLoader
         return value;
     }
 
-    static void BuildHierachy2()
+    static void BuildHierachy2(JSONNode resultData)
     {
         var component = PersistantSettings.Instance;
         component.hierachy.Clear();
-
-        var path = EditorUtility.OpenFilePanel("Select .cpr", "", "cpr");
-        if (string.IsNullOrEmpty(path)) return;
-
-        Debug.Log(path);
+        
 
         var currentPath = new List<string>();
-        var resultData = MyUtility.ParseJson(path);
 
         //currentPath.Add(resultData["recipe"]["name"]);
         //component.hierachy.Add(new Node(currentPath.Last()));
@@ -133,6 +128,8 @@ public static class CellPackLoader
             for (int j = 0; j < ingredients["ingredients"].Count; j++)
             {
                 string iname = ingredients["ingredients"][j]["name"];
+
+                if (!SceneManager.Instance.ProteinNames.Contains("cytoplasme" + "_" + iname)) continue;
                 currentPath.Add(iname);
                 component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
                 currentPath.Remove(currentPath.Last());
@@ -144,6 +141,9 @@ public static class CellPackLoader
 
         for (int i = 0; i < resultData["compartments"].Count; i++)
         {
+            var surfaceName = "surface" + i;
+            var interiorName = "interior" + i;
+
             var compartment = resultData["compartments"].GetKey(i);
 
             currentPath.Add(compartment);
@@ -162,6 +162,7 @@ public static class CellPackLoader
                 for (int j = 0; j < ingredients["ingredients"].Count; j++)
                 {
                     string iname = ingredients["ingredients"][j]["name"];
+                    if (!SceneManager.Instance.ProteinNames.Contains(surfaceName + "_" + iname)) continue;
                     currentPath.Add(iname);
                     component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
                     currentPath.Remove(currentPath.Last());
@@ -183,6 +184,7 @@ public static class CellPackLoader
                 for (int j = 0; j < ingredients["ingredients"].Count; j++)
                 {
                     string iname = ingredients["ingredients"][j]["name"];
+                    if (!SceneManager.Instance.ProteinNames.Contains(interiorName + "_" + iname)) continue;
                     currentPath.Add(iname);
                     component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
                     currentPath.Remove(currentPath.Last());
@@ -193,6 +195,8 @@ public static class CellPackLoader
 
             currentPath.Remove(currentPath.Last());
         }
+
+        int a = 0;
 
         //foreach (var node in component.hierachy)
         //{
@@ -320,6 +324,7 @@ public static class CellPackLoader
             current_color += 1;
         }
 		buildHierarchy (resultData);
+        BuildHierachy2(resultData);
     }
 
 	public static void AddRecipeIngredients(JSONNode recipeDictionary, Color baseColor, string prefix)

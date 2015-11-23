@@ -16,12 +16,22 @@ public class TreeViewController : MonoBehaviour
     public float LeftPadding;
 
     public GameObject BaseItemPrefab;
-    public List<BaseItem> RootNodes = new List<BaseItem>();
+    private List<BaseItem> RootNodes;
 
-
+    // Use this for initialization
+    void Start()
+    {
+        if (RootNodes == null) RootNodes = new List<BaseItem>();
+        foreach (var node in PersistantSettings.Instance.hierachy)
+        {
+            AddNodeObject(node.path, new object[] { node.name }, "Text");
+        }
+        Init();
+    }
 
     public void UpdateRangeValues()
     {
+        if(RootNodes != null)
         foreach (var Node in RootNodes)
         {
             List<float> rangeValues = new List<float>();
@@ -29,8 +39,8 @@ public class TreeViewController : MonoBehaviour
             //Debug.Log("nodeid = " + Node.Name);
             HistStruct hist = SceneManager.Instance.histograms[Node.Id];
 
-            rangeValues.Add((float) hist.occluding / (float) hist.all);
-            rangeValues.Add(1.0f - (float) hist.cutaway / (float) hist.all - rangeValues[0]);
+            rangeValues.Add((float)hist.occluding / (float)hist.all);
+            rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
             rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
 
             Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
@@ -42,7 +52,7 @@ public class TreeViewController : MonoBehaviour
     {
         foreach (var Node in RootNodes)
         {
-            Node.FieldObject.GetComponent<RangeFieldItem>().getRangeValues();
+            Node.FieldObject.GetComponent<RangeFieldItem>().GetRangeValues();
             //Node.Name
         }
     }
@@ -55,7 +65,7 @@ public class TreeViewController : MonoBehaviour
     // Add a new object to the tree
 	public void AddNodeObject(string fullPath, object[] args, string type)
 	{
-	    var name = TreeUtility.GetNodeName(fullPath);
+        var name = TreeUtility.GetNodeName(fullPath);
 	    var parentPath = TreeUtility.GetNodeParentPath(fullPath);
 
         // If the node is a root node
@@ -157,7 +167,7 @@ public class TreeViewController : MonoBehaviour
     }
 
     private bool initState = false;
-    private bool lockState = true;
+    private bool _treeIsActive = true;
 
     void Update()
     {
@@ -180,22 +190,27 @@ public class TreeViewController : MonoBehaviour
             }
         }
 
-        if (lockState && Input.GetMouseButtonDown(0) && Input.mousePosition.x < 200)
+        if (_treeIsActive && Input.GetMouseButtonDown(0) && Input.mousePosition.x < 200)
         {
-            lockState = false;
+            _treeIsActive = false;
             Camera.main.GetComponent<NavigateCamera>().FreezeState = true;
             currentMousePos = Input.mousePosition;
+
+            foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
+            {
+                node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(true);
+            }
         }
 
         if (initState || Input.GetMouseButtonDown(1))
         {
-            lockState = true;
+            _treeIsActive = true;
             Camera.main.GetComponent<NavigateCamera>().FreezeState = false;
 
             // Do the apple dock layout list style
             foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
             {
-                node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(0);
+                node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(false);
                 node.transform.localScale = new Vector3(0.5f, 0.5f, 1);
                 node.transform.localPosition = new Vector3(node.transform.localPosition.x,
                     node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
@@ -205,7 +220,7 @@ public class TreeViewController : MonoBehaviour
             initState = false;
         }
 
-        if (GetLockState() || lockState) return;
+        if (GetLockState() || _treeIsActive) return;
 
 
         if (GetSlowDownState())
