@@ -41,7 +41,7 @@ public class RangeSlider : MonoBehaviour
         return (int)((float)totalLength * value);
     }
 
-    private void UpdateRangeValues()
+    public void UpdateRangeValues()
     {
         var nullRangeCount = 0;
         for (int i = 0; i < ranges.Count; i++)
@@ -136,6 +136,21 @@ public class RangeSlider : MonoBehaviour
                 textUI.text = "";
             }
         }
+    }
+
+    public void SetRangeValues(List<float> values)
+    {
+        rangeValues = values;
+
+        int i = 0;
+        foreach (var range in ranges)
+        {
+            var setValue = GetRangeWidth(rangeValues[i]);
+            range.GetComponent<LayoutElement>().minWidth = setValue;
+            i++;
+        }
+
+        UpdateText();
     }
 
     public void OnEnter()

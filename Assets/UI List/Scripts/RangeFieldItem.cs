@@ -22,6 +22,13 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     //    GetLockState();
     //}
 
+    public void SetRangeValues(List<float> rangeValues)
+    {
+        //Debug.Log("Updating range values: " + rangeValues[0] + " | " + rangeValues[1] + " | " + rangeValues[2]);
+        RangeSliderUI.SetRangeValues(rangeValues);
+
+    }
+
     public List<float> getRangeValues()
     {
         return RangeSliderUI.rangeValues;

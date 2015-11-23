@@ -20,7 +20,7 @@ struct CutInfoStruct
     public Vector4 info2;
 }
 
-struct HistStruct
+public struct HistStruct
 {
     public int parent; //also write data to this id, unless it is < 0
 
@@ -28,6 +28,10 @@ struct HistStruct
     public int cutaway;
     public int occluding;
     public int visible;
+
+    public int pad0;
+    public int pad1;
+    public int pad2;
 }
 
 [ExecuteInEditMode]
@@ -85,6 +89,8 @@ public class SceneManager : MonoBehaviour
     public List<int> ProteinAtomClusterCount = new List<int>();
     public List<int> ProteinAtomClusterStart = new List<int>();
 
+    public List<int> HistogramsLookup = new List<int>();
+
     public string scene_name;
     
     // Curve ingredients data
@@ -104,7 +110,11 @@ public class SceneManager : MonoBehaviour
     [NonSerialized]
     public List<CutObject> CutObjects = new List<CutObject>();
 
+    public List<HistStruct> Histograms = new List<HistStruct>();
+
     public int[] stats = new int[] { 0, 0, 0, 0 };
+
+    public HistStruct[] histograms;
 
     //--------------------------------------------------------------
 
@@ -448,7 +458,97 @@ public class SceneManager : MonoBehaviour
 
         GPUBuffer.Instance.InitBuffers();
 
+        HistogramsLookup.Clear();
+
+        Debug.Log("NOW UPDATING");
+        HistogramsLookup.Add(0);
+
+        foreach (var node in PersistantSettings.Instance.hierachy)
+        {
+            HistStruct hist = new HistStruct();
+            hist.parent = -1;
+            hist.all = 0;
+            hist.cutaway = 0;
+            hist.occluding = 0;
+            hist.visible = 0;
+
+            string parentPath = TreeUtility.GetNodeParentPath(node.path);
+
+            if (string.IsNullOrEmpty(parentPath))
+            {
+                hist.parent = -1;
+            }
+            else
+            {
+                int index = 0;
+                foreach (var node0 in PersistantSettings.Instance.hierachy)
+                {
+                    if (parentPath == node0.path)
+                    {
+                        hist.parent = index;
+                        break;
+                    }
+                    index++;
+                }
+            }
+
+            Histograms.Add(hist);
+
+            //TreeViewController.AddNodeObject(node.path, new object[] { node.name }, "Text");
+            Debug.Log(node.path + " ~~ " + node.name);
+            Debug.Log(":::::::: " + hist.parent);
+        }
+
+        Debug.Log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+
+
+        foreach (var name in ProteinNames)
+        {
+            /*if (name.Contains("cytoplasme") || name.Contains("membrane") || name.Contains("surface") ||
+                name.Contains("interior"))
+            {
+                HistogramsLookup.Add(-1);
+            }
+            else*/
+            {
+                string[] parts = name.Split(new char[] { '_' }, 2);
+
+                if (parts.Length > 1)
+                {
+                    Debug.Log("////////// " + parts[1]);
+
+                    int index = 0;
+                    foreach (var node in PersistantSettings.Instance.hierachy)
+                    {
+                        if (node.name == parts[1])
+                        {
+                            break;
+                        }
+                        index++;
+                    }
+
+                    Debug.Log("found at " + index);
+
+                    HistogramsLookup.Add(index);
+                }
+            }
+
+            Debug.Log(name);
+        }
+
+        Debug.Log("-------------------------------------------------------------");
+
+        foreach (var lk in HistogramsLookup)
+        {
+            Debug.Log(lk);
+        }
+
+
         GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 0, 0, 4 });
+
+        //todo - fill histograms lookup
+        GPUBuffer.Instance.HistogramsLookup.SetData(HistogramsLookup.ToArray());
+        GPUBuffer.Instance.Histograms.SetData(Histograms.ToArray());
 
         GPUBuffer.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
@@ -507,6 +607,18 @@ public class SceneManager : MonoBehaviour
 
     public int GetProteinId(String name)
     {
-        return ProteinNames.IndexOf(name);        
+        int index = 0;
+
+        foreach (var node in PersistantSettings.Instance.hierachy)
+        {
+            if (node.name == name)
+            {
+                return index;
+            }
+
+            index++;
+        }
+
+        return -1;
     }
 }

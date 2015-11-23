@@ -48,6 +48,10 @@ struct HistStruct
 	int cutaway;
 	int occluding;
 	int visible;
+
+	int pad0;
+	int pad1;
+	int pad2;
 };
 
 uniform int _NumCutObjects;
@@ -293,6 +297,25 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		}
 	}
 
+	int pof = _ProteinInstanceOcclusionFlags[id.x];
+	int pvf = _ProteinInstanceVisibilityFlags[id.x];
+
+	int addWhere = _HistogramsLookup[infos.x];
+
+	while (addWhere >= 0)
+	{
+		InterlockedAdd(_Histograms[addWhere].all, 1);
+		if (cutAwayTest)
+		{
+			InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+		}
+		InterlockedAdd(_Histograms[addWhere].occluding, pof);
+		/*InterlockedAdd(_Histograms[addWhere].visible, pvf);*/
+
+		addWhere = _Histograms[addWhere].parent;
+	}
+	
+
     // if instance is culled return
     //if(_CullingFilter == -1 && cullFlag == 0) return;
     //if (_CullingFilter != -1 && cullFlag != _CullingFilter) return;
@@ -379,4 +402,18 @@ void ProteinFillBatchBuffer2(uint3 id : SV_DispatchThreadID)
 	_HistogramStatistics[1] = 0;
 	_HistogramStatistics[2] = 0;
 	_HistogramStatistics[3] = 0;
+
+	//this is stupid. do it in separate shader, once per item
+	int nullWhere = _HistogramsLookup[infos.x];
+
+	while (nullWhere >= 0)
+	{
+		_Histograms[nullWhere].all = 0;
+		_Histograms[nullWhere].cutaway = 0;
+		_Histograms[nullWhere].occluding = 0;
+		_Histograms[nullWhere].visible = 0;
+
+		nullWhere = _Histograms[nullWhere].parent;
+	}
+
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Remoting.Messaging;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -289,6 +290,8 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_Histograms", GPUBuffer.Instance.Histograms);
 
         if (noiseTexture == null)
         {
@@ -308,6 +311,29 @@ public class SceneRenderer : MonoBehaviour
         Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
 
         SceneManager.Instance.stats = stats;
+
+
+        //all histograms
+        /*var histogramsLk = new int[SceneManager.Instance.ProteinNames.Count];
+        GPUBuffer.Instance.HistogramsLookup.GetData(histogramsLk);*/
+
+        var histograms = new HistStruct[PersistantSettings.Instance.hierachy.Count];
+        GPUBuffer.Instance.Histograms.GetData(histograms);
+
+        SceneManager.Instance.histograms = histograms;
+
+        NewBehaviourScript.Instance.UpdateValues();
+
+        /*Debug.Log("--------------------------------------------------hsl");
+        foreach (var hl0 in histogramsLk)
+        {
+            Debug.Log(hl0);
+        }*/
+        /*Debug.Log("--------------------------------------------------hs");
+        foreach (var h0 in histograms)
+        {
+            Debug.Log(h0.parent + " -- " + h0.all + " -- " + h0.cutaway + " -- " + h0.occluding + " -- " + h0.visible);
+        }*/
 
         // Count sphere batches
         ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
@@ -357,6 +383,8 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_Histograms", GPUBuffer.Instance.Histograms, 1);
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
         // Count occludees instances
@@ -398,6 +426,8 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup, 1);
+        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_Histograms", GPUBuffer.Instance.Histograms, 1);
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
         // Count occluder instances

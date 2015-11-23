@@ -19,6 +19,25 @@ public class TreeViewController : MonoBehaviour
     public List<BaseItem> RootNodes = new List<BaseItem>();
 
 
+
+    public void UpdateRangeValues()
+    {
+        foreach (var Node in RootNodes)
+        {
+            List<float> rangeValues = new List<float>();
+
+            //Debug.Log("nodeid = " + Node.Name);
+            HistStruct hist = SceneManager.Instance.histograms[Node.Id];
+
+            rangeValues.Add((float) hist.occluding / (float) hist.all);
+            rangeValues.Add(1.0f - (float) hist.cutaway / (float) hist.all - rangeValues[0]);
+            rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
+
+            Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
+        }        
+    }
+
+
     public void LogRangeValues()
     {
         foreach (var Node in RootNodes)
