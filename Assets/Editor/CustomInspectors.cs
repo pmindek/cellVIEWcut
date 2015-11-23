@@ -473,20 +473,22 @@ public class CutObjectCustomEditor : Editor
                 //GUILayout.Label("Nevym.");
             }
 
-            // Begin scroll view
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
-            {
-                if (needsRepainted)
-                {
-                    Repaint();
-                    SceneView.RepaintAll();
-                }
-                
-                item.DisplayTreeView(TreeViewControl.DisplayTypes.NONE);
-            }
-            EditorGUILayout.EndScrollView();
+            //// Begin scroll view
+            //_scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandWidth(true));
+            //{
 
-            
+            //}
+            //EditorGUILayout.EndScrollView();
+
+            if (needsRepainted)
+            {
+                Repaint();
+                SceneView.RepaintAll();
+            }
+
+            item.DisplayTreeView(TreeViewControl.DisplayTypes.NONE);
+
+
         }
 
         //showFilters = EditorGUILayout.Foldout(showFilters, "Protein Filters");
