@@ -12,6 +12,7 @@ public class BaseItem : MonoBehaviour
     public bool IsVisible = true;
     
     public string Name;
+    public int Id;
     public string Path;
     public string Type;
 
@@ -32,7 +33,7 @@ public class BaseItem : MonoBehaviour
         ViewController.UpdateLayout();
     }
 
-    public void Initialize(string name, string path, string type, object[] args, bool isFolded, TreeViewController controller)
+    public void Initialize(string name, string path, string type, object[] args, bool isFolded, TreeViewController controller, int id)
 	{
         Name = name;
         Path = path;
@@ -40,6 +41,7 @@ public class BaseItem : MonoBehaviour
         Args = args;
         IsFolded = isFolded;
         ViewController = controller;
+        Id = id;
 
         var rt = GetComponent<RectTransform>();
         //rt.sizeDelta = new Vector2(rt.sizeDelta.x, 15);

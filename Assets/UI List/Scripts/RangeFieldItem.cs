@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class RangeFieldItem : MonoBehaviour, IItemInterface
 {
@@ -20,6 +21,11 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     //{
     //    GetLockState();
     //}
+
+    public List<float> getRangeValues()
+    {
+        return RangeSliderUI.rangeValues;
+    }
 
     public object[] Parameters
     {

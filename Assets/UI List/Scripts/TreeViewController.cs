@@ -18,6 +18,16 @@ public class TreeViewController : MonoBehaviour
     public GameObject BaseItemPrefab;
     public List<BaseItem> RootNodes = new List<BaseItem>();
 
+
+    public void LogRangeValues()
+    {
+        foreach (var Node in RootNodes)
+        {
+            Node.FieldObject.GetComponent<RangeFieldItem>().getRangeValues();
+            //Node.Name
+        }
+    }
+
     public BaseItem FindBaseItem(string path)
     {
         return RootNodes.FirstOrDefault(n => n.Path == path);
@@ -60,7 +70,7 @@ public class TreeViewController : MonoBehaviour
         go.transform.SetParent(this.transform, false);
 
         var node = go.GetComponent<BaseItem>();
-        node.Initialize(name, fullPath, type, args, false, this);
+        node.Initialize(name, fullPath, type, args, false, this, SceneManager.Instance.GetProteinId(name));
         
         return node;
     }
@@ -211,7 +221,7 @@ public class TreeViewController : MonoBehaviour
             var scale = 1 - (Math.Abs(distanceY) / maxDistanceY);
             scale = 0.5f + (0.25f * scale);
 
-            var alpha = 1-x;
+            var alpha = Mathf.Max(1-x, 0.2f);
             node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(alpha);
 
             node.transform.localScale = new Vector3(scale, scale, 1);

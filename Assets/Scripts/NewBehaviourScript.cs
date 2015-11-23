@@ -7,6 +7,7 @@ public class NewBehaviourScript : MonoBehaviour
 	// Use this for initialization
 	void Start ()
     {
+        int x;
 	    foreach (var node in PersistantSettings.Instance.hierachy)
 	    {
             TreeViewController.AddNodeObject(node.path, new object[] { node.name }, "Text");

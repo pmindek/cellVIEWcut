@@ -12,12 +12,22 @@ enum InstanceState
     Null = -1,           // Instance will not be displayed
     Normal = 0,          // Instance will be displayed with normal color
     Highlighted = 1      // Instance will be displayed with highlighted color
-};
+}
 
 struct CutInfoStruct
 {
     public Vector4 info;
     public Vector4 info2;
+}
+
+struct HistStruct
+{
+    public int parent; //also write data to this id, unless it is < 0
+
+    public int all;
+    public int cutaway;
+    public int occluding;
+    public int visible;
 }
 
 [ExecuteInEditMode]
@@ -494,4 +504,9 @@ public class SceneManager : MonoBehaviour
     }
     
     #endregion
+
+    public int GetProteinId(String name)
+    {
+        return ProteinNames.IndexOf(name);        
+    }
 }

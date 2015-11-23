@@ -39,6 +39,17 @@ struct CutInfoStruct
 	float4 info2;
 };
 
+//histograms
+struct HistStruct
+{
+	int parent; //also write data to this id, unless it is < 0
+
+	int all;
+	int cutaway;
+	int occluding;
+	int visible;
+};
+
 uniform int _NumCutObjects;
 uniform StructuredBuffer<CutInfoStruct> _CutInfos;
 uniform	StructuredBuffer<float4> _CutScales;
@@ -47,6 +58,9 @@ uniform StructuredBuffer<float4> _CutRotations;
 uniform StructuredBuffer<int> _ProteinCutFilters;
 uniform StructuredBuffer<int> _HistogramProteinTypes;
 RWStructuredBuffer<int> _HistogramStatistics;
+
+uniform StructuredBuffer<int> _HistogramsLookup;
+RWStructuredBuffer<HistStruct> _Histograms;
 
 uniform Texture2D<float4> noiseTexture;
 uniform float noiseTextureW;
