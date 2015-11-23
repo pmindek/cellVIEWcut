@@ -35,96 +35,108 @@ public class AnimationManager : MonoBehaviour
 
     //--------------------------------------------------------------
          
-    private List<Vector4> positions;        //original positions of instances
+    //private List<Vector4> positions;        //original positions of instances
     private List<Vector4> new_positions;    //stores position updates of instances
     private List<Vector4> types;            //type info of instances
     public int NumberOfIngredients;         //number of different ingredient types in the data set
     public List<int> InstanceCountPerIngredient = new List<int>();          //molecules per ingedient
     public List<MoleculeGroup> Ingredients = new List<MoleculeGroup>();     //one molecule group stores: ingredient ID, # instances from that ingredient, original pos&rot of each instance
+    public Stack<MoleculeGroup> MoleculeAnimationQueue; // = new Queue<MoleculeGroup>();     //holds all molecule types that should be animated
+    public Stack<MoleculeGroup> SuspendedMolecules; // = new Queue<MoleculeGroup>();     //holds all molecule types that currently should not be animated
 
-    private int debug_frame_counter = 0;    //DEBUG/DEMO: for updating positions each frame
-    private float step_size = 0.0f;     
-    private int step_count = 0;         //current step number
-    private float current_step = 0.0f;  //current step size
-    public int NumberOfSteps = 300;  //# of steps to complete the transition
+    //private int debug_frame_counter = 0;    //DEBUG/DEMO: for updating positions each frame
+    //private float step_size = 0.0f;     
+    //private int step_count = 0;         //current step number
+    //private float current_step = 0.0f;  //current step size
+    //public int NumberOfSteps = 300;  //# of steps to complete the transition
 
-    //current animation position
-    private float currentX = 0.0f;
-    private float currentY = 0.0f;
-    private float currentZ = 0.0f;
+    ////current animation position
+    //private float currentX = 0.0f;
+    //private float currentY = 0.0f;
+    //private float currentZ = 0.0f;
 
-    public Vector4 Destination; //the origin of the destination volume (= volume to which instances will transition)
+    //public Vector4 Destination; //the origin of the destination volume (= volume to which instances will transition)
     private GameObject destinationCube; //defines the origin of the destination coordinate system
     private List<GameObject> destinationsPerType; //transition destination for each molecule type
-    public List<Vector4> destinationsPerInstance; //transition destination for each molecule instance
+    //public List<Vector4> destinationsPerInstance; //transition destination for each molecule instance
     private List<Vector4> lastPosPerInstance; //saves the last animation position to support staged animation
 
     private float umfang = 0.0f; //used for the circular layout
-
-    //###############################################################################
-    //ingredient volume relation stuff
-    public float AtomUnit = 1.0f; //describes the size of the cube that a single atom occupies -> TODO: editable
-    public float XVolume = 10.0f; // XVolume * AtomUnit = length of the volume that houses all ingredient molecules -> TODO: editable
-    public float YVolume = 10.0f; // XVolume * AtomUnit = width of the volume -> TODO: editable
-    public List<int> VolumeOrder = new List<int>(); //contains the order in which the ingredients should be placed in the volume -> TODO: editable
-
     public int TotalNumberOfAtoms = 0;
+
+    ////###############################################################################
+    ////ingredient volume relation stuff
+    //public float AtomUnit = 1.0f; //describes the size of the cube that a single atom occupies -> TODO: editable
+    //public float XVolume = 10.0f; // XVolume * AtomUnit = length of the volume that houses all ingredient molecules -> TODO: editable
+    //public float YVolume = 10.0f; // XVolume * AtomUnit = width of the volume -> TODO: editable
+    //public List<int> VolumeOrder = new List<int>(); //contains the order in which the ingredients should be placed in the volume -> TODO: editable
+
+    //determines how long to wait before starting the animation of the next molecule type / instance
+    public int TicksPerInstance = 0;
+    private int instanceTicksWaited = 0;
+    public int TicksPerType = 70;
+    private int typeTicksWaited = 0;
 
     //animation states:
     public enum AnimState { Paused, Play, Rewind };
-    public AnimState AnimationState = AnimState.Play;
-    private int anistate = 0;
-    public int PausePlayRewind
-    {
-        get
-        {
-            return anistate;
-        } 
-        set
-        {
-            if (anistate <= 0 && anistate >= 2)
-                AnimationState = (AnimState)anistate;
-            else
-            {
-                anistate = 0;
-                AnimationState = (AnimState)anistate;
-            }
-        }
-    }
+    public AnimState AnimationState = AnimState.Paused;
+    //private int anistate = 0;
+    //public int PausePlayRewind
+    //{
+    //    get
+    //    {
+    //        return anistate;
+    //    } 
+    //    set
+    //    {
+    //        if (anistate <= 0 && anistate >= 2)
+    //            AnimationState = (AnimState)anistate;
+    //        else
+    //        {
+    //            anistate = 0;
+    //            AnimationState = (AnimState)anistate;
+    //        }
+    //    }
+    //}
 
     void OnEnable()
     {
-        step_size = 1.0f / NumberOfSteps;
-        step_count = 0;
     }
 
-
+    public static MoleculeGroup copyMolecule(MoleculeGroup mol)
+    {
+        return mol;
+    }
 
     // Use this for initialization
     void Start()
     {
+        destinationCube = GameObject.Find("destinationCube");
+        //Destination = destinationCube.transform.position / 0.065f;   //scale the position to bring it to "protein space"
+
+        lastPosPerInstance = SceneManager.Instance.ProteinInstancePositions;
+        types = SceneManager.Instance.ProteinInstanceInfos;
+        NumberOfIngredients = SceneManager.Instance.ProteinNames.Count;
+        new_positions = new List<Vector4>();
+
         //create molecule objects that store the original pos/rot of each instance
         parseMolecules();
 
         //create destination points for each instance per molecule type
         createMoleculeLayout();
 
-        //now that we have the final layout, we can calculate and store the animation paths
-        //bakeAnimations();
+        //initialize queue with first molecule type
+        Ingredients.Reverse();
+        SuspendedMolecules = new Stack<MoleculeGroup>(Ingredients);
+        Ingredients.Reverse();
+        MoleculeAnimationQueue = new Stack<MoleculeGroup>();
+        MoleculeAnimationQueue.Push(SuspendedMolecules.Pop());
     }
-
-    //private void bakeAnimations()
-    //{
-    //    foreach (MoleculeGroup m in Ingredients)
-    //    {
-            
-    //    }
-    //}
 
     private void createMoleculeLayout()
     {
         destinationsPerType = new List<GameObject>();
-        destinationsPerInstance = new List<Vector4>();
+        //destinationsPerInstance = new List<Vector4>();
 
         //create game objects for each molecule type
         foreach (MoleculeGroup m in Ingredients)
@@ -195,42 +207,71 @@ public class AnimationManager : MonoBehaviour
         //}
 
         //fifth proof of concept: load baked animation for each instance
-        //read baked animations..
-
         if (AnimationState == AnimState.Play)
         {
-            foreach(MoleculeGroup m in Ingredients)
+            foreach (MoleculeGroup m in Ingredients)
             {
                 //TODO: check whether we should animate the respective molecule type (filtered)
                 //TODO: or if we should wait a certain number of steps until we animate the next type (staged)
                 //in both cases, we should fill the new_positions vector with the original values / values from the last iteration
 
                 //go through all the instances of the current m-type
-                foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                if(MoleculeAnimationQueue.Contains(m))
                 {
-                    new_positions.Add(cpp.GetNext());
+                    foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                    {
+                        new_positions.Add(cpp.GetNext());
+                    }
+                }
+                else
+                {
+                    foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                    {
+                        new_positions.Add(cpp.GetCurrent());
+                    }
                 }
             }
+
+            //once we waited the required amount of ticks, we reset the tick counter and add a molecule type to the queue
+            if (typeTicksWaited > TicksPerType)
+            {
+                typeTicksWaited = 0;
+                MoleculeAnimationQueue.Push(SuspendedMolecules.Pop());
+            }
+            else typeTicksWaited++;
         }
         else if (AnimationState == AnimState.Rewind)
         {
             foreach (MoleculeGroup m in Ingredients)
             {
-                //go through all the instances of the current m-type
-                foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                if (SuspendedMolecules.Contains(m))
                 {
-                    new_positions.Add(cpp.GetPrev());
+                    //go through all the instances of the current m-type
+                    foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                    {
+                        new_positions.Add(cpp.GetPrev());
+                    }
+                }
+                else
+                {
+                    foreach (InstanceControlPoints cpp in m.InstanceAnimationPaths)
+                    {
+                        new_positions.Add(cpp.GetCurrent());
+                    }
                 }
             }
+            if (typeTicksWaited > TicksPerType)
+            {
+                typeTicksWaited = 0;
+                SuspendedMolecules.Push(MoleculeAnimationQueue.Pop());
+            }
+            else typeTicksWaited++;
         }
-        
+
+
         //save the last animation position of all instances
-        //TODO: initialize with original positions
         lastPosPerInstance = new_positions;
         
-        //TODO: new way for stopping the animation... should end when no more "frames" are to be played and not in dependency to NumberOfSteps, since the number can differ between molecule  types
-        if(step_count <= NumberOfSteps) step_count++;
-
         GPUBuffer.Instance.ProteinInstancePositions.SetData(new_positions.ToArray());
     }
 
@@ -246,15 +287,6 @@ public class AnimationManager : MonoBehaviour
 
     private void parseMolecules()
     {
-        destinationCube = GameObject.Find("destinationCube");
-        //scale the position to bring it to "protein space"
-        //Destination = destinationCube.transform.position / 0.065f;
-
-        positions = SceneManager.Instance.ProteinInstancePositions;
-        types = SceneManager.Instance.ProteinInstanceInfos;
-        NumberOfIngredients = SceneManager.Instance.ProteinNames.Count;
-        new_positions = new List<Vector4>();
-
         InstanceCountPerIngredient = calculateInstancesPerIngredient(types);
 
         Ingredients = setupMolecules(NumberOfIngredients, InstanceCountPerIngredient, SceneManager.Instance.ProteinAtomCount);
@@ -389,7 +421,7 @@ public class MoleculeGroup
     {
         cubeMSingle = radiusToLength(radius); //side of cube that describes the same volume as the sphere
         cubicVolumeTotal = Mathf.Pow(cubeMSingle, 3.0f) * InstanceCount; //total cubic volume of all instances
-        float sphereVolumeTotal = (4.0f * Mathf.PI * Mathf.Pow(radius, 3.0f) / 3.0f) * InstanceCount;
+        //float sphereVolumeTotal = (4.0f * Mathf.PI * Mathf.Pow(radius, 3.0f) / 3.0f) * InstanceCount;
 
         cubeMTotal = Mathf.Pow(cubicVolumeTotal, 1.0f / 3.0f); //side of the cube
 
@@ -486,11 +518,16 @@ public class InstanceControlPoints
         return lastPoint;
     }
 
+    public Vector4 GetCurrent()
+    {
+        return lastPoint;
+    }
+
     public void AddCPP(ControlPointPair cpp)
     {
         ControlPoints.Add(cpp);
         //initialize lastPoint with the very first baked point
-        if (lastPoint == null) lastPoint = cpp.bakedPoints[0];
+        lastPoint = ControlPoints[0].bakedPoints[0];
     }
 
 
@@ -515,7 +552,7 @@ public class ControlPointPair
     private float currentY = 0.0f;
     private float currentZ = 0.0f;
 
-    public ControlPointPair(Vector4 start, Vector4 end, int steps = 300, int method = 0)
+    public ControlPointPair(Vector4 start, Vector4 end, int steps = 150, int method = 0)
     {
         StartPoint = start;
         EndPoint = end;
