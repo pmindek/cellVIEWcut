@@ -306,12 +306,12 @@ public class SceneRenderer : MonoBehaviour
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 
-        //var stats = new int[4];
-        //GPUBuffer.Instance.HistogramStatistics.GetData(stats);
+        var stats = new int[4];
+        GPUBuffer.Instance.HistogramStatistics.GetData(stats);
         ///*Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
         //Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
 
-        //SceneManager.Instance.stats = stats;
+        SceneManager.Instance.stats = stats;
 
 
         //all histograms

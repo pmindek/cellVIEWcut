@@ -461,7 +461,7 @@ public class SceneManager : MonoBehaviour
         HistogramsLookup.Clear();
 
         Debug.Log("NOW UPDATING");
-        HistogramsLookup.Add(0);
+        //HistogramsLookup.Add(0);
 
         foreach (var node in PersistantSettings.Instance.hierachy)
         {

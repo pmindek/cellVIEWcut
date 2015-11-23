@@ -309,8 +309,11 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		{
 			InterlockedAdd(_Histograms[addWhere].cutaway, 1);
 		}
-		InterlockedAdd(_Histograms[addWhere].occluding, pof);
-		/*InterlockedAdd(_Histograms[addWhere].visible, pvf);*/
+		else
+		{
+			InterlockedAdd(_Histograms[addWhere].occluding, pof);
+			/*InterlockedAdd(_Histograms[addWhere].visible, pvf);*/
+		}
 
 		addWhere = _Histograms[addWhere].parent;
 	}
