@@ -34,7 +34,9 @@ public class AnimationManager : MonoBehaviour
     }
 
     //--------------------------------------------------------------
-         
+    [HideInInspector] // we do this beacause we call base.OnInspectorGUI(); And we don't want that to draw the list aswell.
+    public List<ListItemExample> list;
+    
     //private List<Vector4> positions;        //original positions of instances
     private List<Vector4> new_positions;    //stores position updates of instances
     private List<Vector4> types;            //type info of instances
@@ -130,7 +132,17 @@ public class AnimationManager : MonoBehaviour
         SuspendedMolecules = new Stack<MoleculeGroup>(Ingredients);
         Ingredients.Reverse();
         MoleculeAnimationQueue = new Stack<MoleculeGroup>();
+
+        foreach (MoleculeGroup m in Ingredients)
+        {
+            list.Add(new ListItemExample((int)m.ID));
+        }
+
         MoleculeAnimationQueue.Push(SuspendedMolecules.Pop());
+
+
+        
+
     }
 
     private void createMoleculeLayout()
@@ -360,6 +372,7 @@ public class MoleculeGroup
     public int StartIndex = 0;
     public List<Vector4> OriginalPositions;
     public List<Vector4> OriginalRotations;
+    public bool Animate = true;
 
     public float moleculeRadius; //bounding sphere radius
     public float cubicVolumeTotal;
@@ -576,5 +589,20 @@ public class ControlPointPair
                 }
                 break;
         }
+    }
+}
+
+[Serializable]
+public class ListItemExample
+{
+    public bool Selected;
+    public int ID;
+    public string MoleculeName;
+
+    public ListItemExample(int type, bool select = true)
+    {
+        Selected = select;
+        MoleculeName = SceneManager.Instance.ProteinNames[type];
+        ID = type;
     }
 }
