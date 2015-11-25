@@ -92,7 +92,7 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public List<CutParameters> ProteinTypeParameters = new List<CutParameters>(); //this structure stores the cutaway parameters per protein type
 
-	private TreeViewControl _tree;
+	private TreeViewControlEditor _tree;
 	private RecipeTreeUI _tree_ui;
 
     [HideInInspector]
@@ -294,7 +294,7 @@ public class CutObject : MonoBehaviour
             HistogramRanges.Clear();
             SetCutItems(SceneManager.Instance.ProteinNames);
         }
-		_tree = GetComponent<TreeViewControl> ();
+		_tree = GetComponent<TreeViewControlEditor> ();
 		_tree_ui = GetComponent<RecipeTreeUI> ();
 
         _tree.hideFlags = HideFlags.HideInInspector;

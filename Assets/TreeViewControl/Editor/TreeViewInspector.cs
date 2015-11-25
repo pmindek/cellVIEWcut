@@ -1,21 +1,21 @@
 using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(TreeViewControl))]
+[CustomEditor(typeof(TreeViewControlEditor))]
 public class TreeViewInspector : Editor
 {
     /// <summary>
     /// Add a tree view control to the game object
     /// </summary>
     /// <param name="go"></param>
-    public static TreeViewControl AddTreeView(GameObject go)
+    public static TreeViewControlEditor AddTreeView(GameObject go)
     {
         if (null == go)
         {
             return null;
         }
 
-        TreeViewControl item = go.AddComponent<TreeViewControl>();
+        TreeViewControlEditor item = go.AddComponent<TreeViewControlEditor>();
         AssignDefaults(go);
         return item;
     }
@@ -27,13 +27,13 @@ public class TreeViewInspector : Editor
             return;
         }
 
-        TreeViewControl[] items = go.GetComponents<TreeViewControl>();
+        TreeViewControlEditor[] items = go.GetComponents<TreeViewControlEditor>();
         if (null == items)
         {
             return;
         }
 
-        foreach (TreeViewControl item in items)
+        foreach (TreeViewControlEditor item in items)
         {
             if (null == item)
             {
@@ -81,7 +81,7 @@ public class TreeViewInspector : Editor
             return;
         }
 
-        TreeViewControl[] items = go.GetComponents<TreeViewControl>();
+        TreeViewControlEditor[] items = go.GetComponents<TreeViewControlEditor>();
         if (null == items)
         {
             return;
@@ -97,7 +97,7 @@ public class TreeViewInspector : Editor
         skinSelected.name = "Selected";
         skinUnselected.name = "Unselected";
 		
-		foreach (TreeViewControl item in items)
+		foreach (TreeViewControlEditor item in items)
 		{
 			if (null == item)
 			{
@@ -223,7 +223,7 @@ public class TreeViewInspector : Editor
             return false;
         }
 
-        TreeViewControl item = go.GetComponent<TreeViewControl>();
+        TreeViewControlEditor item = go.GetComponent<TreeViewControlEditor>();
         if (null == item)
         {
             return false;
@@ -244,7 +244,7 @@ public class TreeViewInspector : Editor
             return false;
         }
 
-        TreeViewControl item = go.GetComponent<TreeViewControl>();
+        TreeViewControlEditor item = go.GetComponent<TreeViewControlEditor>();
         if (null == item)
         {
             return false;
@@ -267,13 +267,13 @@ public class TreeViewInspector : Editor
         }
 
         if (null == target &&
-            !(target is TreeViewControl))
+            !(target is TreeViewControlEditor))
         {
             Debug.LogError("Not a TreeViewControl");
             return;
         }
 
-        TreeViewControl item = (TreeViewControl)target;
+        TreeViewControlEditor item = (TreeViewControlEditor)target;
         if (null == item)
         {
             Debug.LogError("TreeViewControl is null");
@@ -285,11 +285,11 @@ public class TreeViewInspector : Editor
             return;
         }
 
-        item.DisplayTreeView(TreeViewControl.DisplayTypes.USE_SCROLL_AREA);
+        item.DisplayTreeView(TreeViewControlEditor.DisplayTypes.USE_SCROLL_AREA);
 
-        if (item.SelectedItem != m_lastSelectedItem)
+        if (item.SelectedItemEditor != _mLastSelectedItemEditor)
         {
-            m_lastSelectedItem = item.SelectedItem;
+            _mLastSelectedItemEditor = item.SelectedItemEditor;
             needsRepainted = true;
         }
 
@@ -300,7 +300,7 @@ public class TreeViewInspector : Editor
         }
     }
 
-    TreeViewItem m_lastSelectedItem = null;
+    TreeViewItemEditor _mLastSelectedItemEditor = null;
 
     public override void OnInspectorGUI()
     {
@@ -310,13 +310,13 @@ public class TreeViewInspector : Editor
         }
 
         if (null == target &&
-            !(target is TreeViewControl))
+            !(target is TreeViewControlEditor))
         {
             Debug.LogError("Not a TreeViewControl");
             return;
         }
 
-        TreeViewControl item = (TreeViewControl)target;
+        TreeViewControlEditor item = (TreeViewControlEditor)target;
         if (null == item)
         {
             Debug.LogError("TreeViewControl is null");
@@ -331,127 +331,127 @@ public class TreeViewInspector : Editor
             needsRepainted = true;
         }
         
-        if (item.SelectedItem != m_lastSelectedItem)
+        if (item.SelectedItemEditor != _mLastSelectedItemEditor)
         {
-            m_lastSelectedItem = item.SelectedItem;
+            _mLastSelectedItemEditor = item.SelectedItemEditor;
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
-            string.IsNullOrEmpty(item.SelectedItem.Header))
+        if (null != item.SelectedItemEditor &&
+            string.IsNullOrEmpty(item.SelectedItemEditor.Header))
         {
-            item.SelectedItem.Header = "Root item";
+            item.SelectedItemEditor.Header = "Root item";
             needsRepainted = true;
         }
 
         if (GUILayout.Button("Select Root TreeViewItem"))
         {
-            item.SelectedItem = item.RootItem;
+            item.SelectedItemEditor = item.RootItemEditor;
             Selection.activeGameObject = item.gameObject;
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
+        if (null != item.SelectedItemEditor &&
             GUILayout.Button("Add Child TreeView Item"))
         {
-            item.SelectedItem.AddItem("Default text");
+            item.SelectedItemEditor.AddItem("Default text");
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
-            item.SelectedItem != item.RootItem &&
-            null != item.SelectedItem.Parent &&
+        if (null != item.SelectedItemEditor &&
+            item.SelectedItemEditor != item.RootItemEditor &&
+            null != item.SelectedItemEditor.Parent &&
             GUILayout.Button("Remove TreeView Item"))
         {
-            TreeViewItem oldItem = item.SelectedItem;
-            item.SelectedItem.Parent.Items.Remove(oldItem);
-            item.SelectedItem = null;
+            TreeViewItemEditor oldItemEditor = item.SelectedItemEditor;
+            item.SelectedItemEditor.Parent.Items.Remove(oldItemEditor);
+            item.SelectedItemEditor = null;
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
-            null != item.SelectedItem.Parent &&
-            item.SelectedItem != item.RootItem &&
-            item.SelectedItem.Parent.Items.IndexOf(item.SelectedItem) > 0 &&
+        if (null != item.SelectedItemEditor &&
+            null != item.SelectedItemEditor.Parent &&
+            item.SelectedItemEditor != item.RootItemEditor &&
+            item.SelectedItemEditor.Parent.Items.IndexOf(item.SelectedItemEditor) > 0 &&
             GUILayout.Button("Move Up"))
         {
-            TreeViewItem oldItem = item.SelectedItem;
-            item.SelectedItem = null;
-            int index = oldItem.Parent.Items.IndexOf(oldItem);
-            oldItem.Parent.Items.Remove(oldItem);
-            oldItem.Parent.Items.Insert(index - 1, oldItem);
-            item.SelectedItem = oldItem;
+            TreeViewItemEditor oldItemEditor = item.SelectedItemEditor;
+            item.SelectedItemEditor = null;
+            int index = oldItemEditor.Parent.Items.IndexOf(oldItemEditor);
+            oldItemEditor.Parent.Items.Remove(oldItemEditor);
+            oldItemEditor.Parent.Items.Insert(index - 1, oldItemEditor);
+            item.SelectedItemEditor = oldItemEditor;
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
-            null != item.SelectedItem.Parent &&
-            item.SelectedItem != item.RootItem &&
-            (item.SelectedItem.Parent.Items.IndexOf(item.SelectedItem) + 1) < item.SelectedItem.Parent.Items.Count &&
+        if (null != item.SelectedItemEditor &&
+            null != item.SelectedItemEditor.Parent &&
+            item.SelectedItemEditor != item.RootItemEditor &&
+            (item.SelectedItemEditor.Parent.Items.IndexOf(item.SelectedItemEditor) + 1) < item.SelectedItemEditor.Parent.Items.Count &&
             GUILayout.Button("Move Down"))
         {
-            TreeViewItem oldItem = item.SelectedItem;
-            item.SelectedItem = null;
-            int index = oldItem.Parent.Items.IndexOf(oldItem);
-            oldItem.Parent.Items.Remove(oldItem);
-            oldItem.Parent.Items.Insert(index + 1, oldItem);
-            item.SelectedItem = oldItem;
+            TreeViewItemEditor oldItemEditor = item.SelectedItemEditor;
+            item.SelectedItemEditor = null;
+            int index = oldItemEditor.Parent.Items.IndexOf(oldItemEditor);
+            oldItemEditor.Parent.Items.Remove(oldItemEditor);
+            oldItemEditor.Parent.Items.Insert(index + 1, oldItemEditor);
+            item.SelectedItemEditor = oldItemEditor;
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
-            null != item.SelectedItem.Parent &&
-            null != item.SelectedItem.Parent.Parent &&
-            item.SelectedItem != item.RootItem &&
-            item.SelectedItem.Parent != item.RootItem &&
+        if (null != item.SelectedItemEditor &&
+            null != item.SelectedItemEditor.Parent &&
+            null != item.SelectedItemEditor.Parent.Parent &&
+            item.SelectedItemEditor != item.RootItemEditor &&
+            item.SelectedItemEditor.Parent != item.RootItemEditor &&
             GUILayout.Button("Promote TreeView Item"))
         {
-            TreeViewItem oldItem = item.SelectedItem;
-            item.SelectedItem = null;
-            oldItem.Parent.Items.Remove(oldItem);
-            oldItem.Parent.Parent.Items.Insert(0, oldItem);
-            oldItem.Parent = oldItem.Parent.Parent;
-            item.SelectedItem = oldItem;
+            TreeViewItemEditor oldItemEditor = item.SelectedItemEditor;
+            item.SelectedItemEditor = null;
+            oldItemEditor.Parent.Items.Remove(oldItemEditor);
+            oldItemEditor.Parent.Parent.Items.Insert(0, oldItemEditor);
+            oldItemEditor.Parent = oldItemEditor.Parent.Parent;
+            item.SelectedItemEditor = oldItemEditor;
             needsRepainted = true;
         }
 
         EditorGUILayout.Separator();
 
-        if (null != item.SelectedItem)
+        if (null != item.SelectedItemEditor)
         {
-            EditorGUILayout.LabelField("Parent:", (item.SelectedItem.Parent == null) ? "(null)" : "(valid)");
-            EditorGUILayout.LabelField("Parent Control:", (item.SelectedItem.ParentControl == null) ? "(null)" : "(valid)");
+            EditorGUILayout.LabelField("Parent:", (item.SelectedItemEditor.Parent == null) ? "(null)" : "(valid)");
+            EditorGUILayout.LabelField("Parent Control:", (item.SelectedItemEditor.ParentControlEditor == null) ? "(null)" : "(valid)");
         }
 
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("***** Selected Item:", "(editable fields) *******");
-        if (null != item.SelectedItem)
+        if (null != item.SelectedItemEditor)
         {
-            if (!string.IsNullOrEmpty(item.SelectedItem.Header))
+            if (!string.IsNullOrEmpty(item.SelectedItemEditor.Header))
             {
-                string header = EditorGUILayout.TextField("Header:", item.SelectedItem.Header);
-                if (!item.SelectedItem.Header.Equals(header))
+                string header = EditorGUILayout.TextField("Header:", item.SelectedItemEditor.Header);
+                if (!item.SelectedItemEditor.Header.Equals(header))
                 {
-                    item.SelectedItem.Header = header;
+                    item.SelectedItemEditor.Header = header;
                     needsRepainted = true;
                 }
             }
-            bool isExpanded = EditorGUILayout.Toggle("IsExpanded:", item.SelectedItem.IsExpanded);
-            if (isExpanded != item.SelectedItem.IsExpanded)
+            bool isExpanded = EditorGUILayout.Toggle("IsExpanded:", item.SelectedItemEditor.IsExpanded);
+            if (isExpanded != item.SelectedItemEditor.IsExpanded)
             {
-                item.SelectedItem.IsExpanded = isExpanded;
+                item.SelectedItemEditor.IsExpanded = isExpanded;
                 needsRepainted = true;
             }
-			bool isCheckBox = EditorGUILayout.Toggle("IsCheckBox:", item.SelectedItem.IsCheckBox);
-            if (isCheckBox != item.SelectedItem.IsCheckBox)
+			bool isCheckBox = EditorGUILayout.Toggle("IsCheckBox:", item.SelectedItemEditor.IsCheckBox);
+            if (isCheckBox != item.SelectedItemEditor.IsCheckBox)
             {
-                item.SelectedItem.IsCheckBox = isCheckBox;
+                item.SelectedItemEditor.IsCheckBox = isCheckBox;
                 needsRepainted = true;
             }
-			bool isChecked = EditorGUILayout.Toggle("IsChecked:", item.SelectedItem.IsChecked);
-            if (isChecked != item.SelectedItem.IsChecked)
+			bool isChecked = EditorGUILayout.Toggle("IsChecked:", item.SelectedItemEditor.IsChecked);
+            if (isChecked != item.SelectedItemEditor.IsChecked)
             {
-                item.SelectedItem.IsChecked = isChecked;
+                item.SelectedItemEditor.IsChecked = isChecked;
                 needsRepainted = true;
             }
         }
@@ -467,7 +467,7 @@ public class TreeViewInspector : Editor
         if (item.DisplayInInspector)
 		{
 			EditorGUILayout.Separator();
-            item.DisplayTreeView(TreeViewControl.DisplayTypes.NONE);
+            item.DisplayTreeView(TreeViewControlEditor.DisplayTypes.NONE);
 			EditorGUILayout.Separator();
 		}
     }

@@ -219,7 +219,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
             foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
             {
-                node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(true);
+                node.FieldObject.GetComponent<RangeFieldItem>().CustomRangeSliderUi.gameObject.SetActive(true);
             }
         }
 

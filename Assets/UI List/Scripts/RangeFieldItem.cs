@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class RangeFieldItem : MonoBehaviour, IItemInterface
 {
     public Text TextUI;
-    public RangeSlider RangeSliderUI;
+    public CustomRangeSlider CustomRangeSliderUi;
     public Toggle Toggle1;
     public Toggle Toggle2;
 
@@ -30,7 +30,7 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
 
     public void SetRangeValues(List<float> rangeValues)
     {
-        RangeSliderUI.rangeValues = rangeValues;
+        CustomRangeSliderUi.rangeValues = rangeValues;
     }
 
     public void SetToggle1(bool value)
@@ -45,7 +45,7 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
 
     public List<float> GetRangeValues()
     {
-        return RangeSliderUI.rangeValues;
+        return CustomRangeSliderUi.rangeValues;
     }
 
     public object[] Parameters
@@ -67,19 +67,19 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
 
     public void SetContentAlpha(float alpha)
     {
-        RangeSliderUI.GetComponent<CanvasGroup>().alpha = alpha;
+        CustomRangeSliderUi.GetComponent<CanvasGroup>().alpha = alpha;
     }
 
     public bool GetLockState()
     {
         //if(RangeSliderUI.LockState) Debug.Log("Lock state");
-        return RangeSliderUI.LockState;
+        return CustomRangeSliderUi.LockState;
     }
 
     public bool GetSlowDownState()
     {
         //if (RangeSliderUI.LockState) Debug.Log("Lock state");
-        return RangeSliderUI.SlowDownState;
+        return CustomRangeSliderUi.SlowDownState;
     }
 
     private object[] GetVals()

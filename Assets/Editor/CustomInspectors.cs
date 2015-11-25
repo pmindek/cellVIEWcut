@@ -33,7 +33,7 @@ public class CutObjectCustomEditor : Editor
     private bool once = false;
     
     
-    TreeViewItem m_lastSelectedItem = null;
+    TreeViewItemEditor _mLastSelectedItemEditor = null;
 
     Vector2 m_mousePos = Vector2.zero;
 
@@ -44,7 +44,7 @@ public class CutObjectCustomEditor : Editor
         CutObject cutObject = (CutObject)target;
 
 
-        TreeViewControl item = cutObject.GetComponent<TreeViewControl>();
+        TreeViewControlEditor item = cutObject.GetComponent<TreeViewControlEditor>();
         if (null == item)
         {
             Debug.LogError("TreeViewControl is null");
@@ -59,16 +59,16 @@ public class CutObjectCustomEditor : Editor
             needsRepainted = true;
         }
 
-        if (item.SelectedItem != m_lastSelectedItem)
+        if (item.SelectedItemEditor != _mLastSelectedItemEditor)
         {
-            m_lastSelectedItem = item.SelectedItem;
+            _mLastSelectedItemEditor = item.SelectedItemEditor;
             needsRepainted = true;
         }
 
-        if (null != item.SelectedItem &&
-            string.IsNullOrEmpty(item.SelectedItem.Header))
+        if (null != item.SelectedItemEditor &&
+            string.IsNullOrEmpty(item.SelectedItemEditor.Header))
         {
-            item.SelectedItem.Header = "Root item";
+            item.SelectedItemEditor.Header = "Root item";
             needsRepainted = true;
         }
         
@@ -486,7 +486,7 @@ public class CutObjectCustomEditor : Editor
                 SceneView.RepaintAll();
             }
 
-            item.DisplayTreeView(TreeViewControl.DisplayTypes.NONE);
+            item.DisplayTreeView(TreeViewControlEditor.DisplayTypes.NONE);
 
 
         }
