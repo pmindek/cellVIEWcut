@@ -2,8 +2,10 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.EventSystems;
 
-public class TreeViewController : MonoBehaviour
+public class TreeViewController : MonoBehaviour, IEventSystemHandler
+
 {
     public int TextFontSize;
 
@@ -47,6 +49,10 @@ public class TreeViewController : MonoBehaviour
         }        
     }
 
+    public void OnItemToggle(BaseEventData eventData)
+    { 
+
+    }
 
     public void LogRangeValues()
     {
@@ -121,8 +127,8 @@ public class TreeViewController : MonoBehaviour
             var treeLevel = Mathf.Max(node.GetTreeLevel() - 1, 0);
 
             var rt = node.GetComponent<RectTransform>();
-            //rt.localPosition = new Vector3(treeLevel * Indent + LeftPadding, currentYPos);
-            rt.localPosition = new Vector3(Indent + LeftPadding, currentYPos);
+            rt.localPosition = new Vector3(treeLevel * Indent + LeftPadding, currentYPos);
+            //rt.localPosition = new Vector3(Indent + LeftPadding, currentYPos);
             node.SaveInitPositionY();
             
             if (node.gameObject.activeInHierarchy)
@@ -263,5 +269,35 @@ public class TreeViewController : MonoBehaviour
             node.transform.localScale = new Vector3(scale, scale, 1);
             node.transform.localPosition = new Vector3(node.transform.localPosition.x, node.InitLocalPositionY + distanceY, node.transform.localPosition.z);
         }
+    }
+
+    public void OnToggleItem1(BaseItem baseItem)
+    {
+        var value = baseItem.RangeFieldItem.Toggle1.isOn;
+
+        foreach (var child in baseItem.Children)
+        {
+            child.RangeFieldItem.SetToggle1(value);
+        }
+    }
+
+    public void OnToggleItem2(BaseItem baseItem)
+    {
+        var value = baseItem.RangeFieldItem.Toggle2.isOn;
+
+        foreach (var child in baseItem.Children)
+        {
+            child.RangeFieldItem.SetToggle2(value);
+        }
+    }
+
+    public List<bool> GetAllToggleItems1()
+    {
+        return RootNodes.Select(node => node.RangeFieldItem.Toggle1.isOn).ToList();
+    }
+
+    public List<bool> GetAllToggleItems2()
+    {
+        return RootNodes.Select(node => node.RangeFieldItem.Toggle2.isOn).ToList();
     }
 }

@@ -19,12 +19,20 @@ public class BaseItem : MonoBehaviour
     [SerializeField]
     public object[] Args;
 
+    public RangeFieldItem RangeFieldItem;
+
     // Children ui elements
     public GameObject ArrowObject;
     public GameObject FieldObject;
     
     public TreeViewController ViewController;
     public List<BaseItem> Children = new List<BaseItem>();
+
+
+    void Start()
+    {
+        RangeFieldItem = GetComponentInChildren<RangeFieldItem>();
+    }
 
     private void DropDownToggleDelegate(bool value)
     {

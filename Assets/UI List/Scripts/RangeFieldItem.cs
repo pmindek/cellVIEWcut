@@ -7,6 +7,8 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
 {
     public Text TextUI;
     public RangeSlider RangeSliderUI;
+    public Toggle Toggle1;
+    public Toggle Toggle2;
 
     /// <summary>
     /// Parameters = new object[]{ string DisplayText }   OR
@@ -17,9 +19,28 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     /// </summary>
     /// <value>The parameters.</value>
 
+    private BaseItem baseItem;
+
+    public void Start()
+    {
+        baseItem = transform.parent.GetComponent<BaseItem>();
+        Toggle1.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem1(baseItem); });
+        Toggle2.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem2(baseItem); });
+    }
+
     public void SetRangeValues(List<float> rangeValues)
     {
         RangeSliderUI.rangeValues = rangeValues;
+    }
+
+    public void SetToggle1(bool value)
+    {
+        Toggle1.isOn = value;
+    }
+
+    public void SetToggle2(bool value)
+    {
+        Toggle2.isOn = value;
     }
 
     public List<float> GetRangeValues()
@@ -38,7 +59,7 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
             SetVals(value);
         }
     }
-
+    
     public void SetTextFontSize(int fontSize)
     {
         TextUI.fontSize = fontSize;
