@@ -3,11 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UIWidgets;
+using UnityEngine.UI;
 
 public class CutObjectUIController : MonoBehaviour
 {
     public GameObject cutObjectPrefab;
     public ListView listViewUI;
+
+    public Slider fuzziness;
+    public Slider distance;
+    public Slider curve;
 
     private List<DummyCutObject> cutObjects = new List<DummyCutObject>();
 
@@ -28,7 +33,37 @@ public class CutObjectUIController : MonoBehaviour
     {
 	    
 	}
-    
+
+    public void SetFuzzinessSliderValue(float value)
+    {
+        fuzziness.value = value;
+    }
+
+    public void SetDistanceSliderValue(float value)
+    {
+        distance.value = value;
+    }
+
+    public void SetCurveSliderValue(float value)
+    {
+        curve.value = value;
+    }
+
+    public void OnFuzzinessValueChanged(float value)
+    {
+        int a = 0;
+    }
+
+    public void OnDistanceValueChanged(float value)
+    {
+        int a = 0;
+    }
+
+    public void OnCurveValueChanged(float value)
+    {
+        int a = 0;
+    }
+
     public void AddCutObject()
     {
         cutObjects.Add(Instantiate(cutObjectPrefab).GetComponent<DummyCutObject>());
