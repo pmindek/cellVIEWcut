@@ -520,7 +520,7 @@ public class SceneManager : MonoBehaviour
                     int index = 0;
                     foreach (var node in PersistantSettings.Instance.hierachy)
                     {
-                        if (node.name == parts[1])
+                        if (node.name == parts[1] && !HistogramsLookup.Contains(index))
                         {
                             break;
                         }
