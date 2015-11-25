@@ -460,7 +460,7 @@ public class SceneManager : MonoBehaviour
 
         HistogramsLookup.Clear();
 
-        Debug.Log("NOW UPDATING");
+        //Debug.Log("Reload Unity");
         //HistogramsLookup.Add(0);
 
         foreach (var node in PersistantSettings.Instance.hierachy)
@@ -495,11 +495,11 @@ public class SceneManager : MonoBehaviour
             Histograms.Add(hist);
 
             //TreeViewController.AddNodeObject(node.path, new object[] { node.name }, "Text");
-            Debug.Log(node.path + " ~~ " + node.name);
-            Debug.Log(":::::::: " + hist.parent);
+            //Debug.Log(node.path + " ~~ " + node.name);
+            //Debug.Log(":::::::: " + hist.parent);
         }
 
-        Debug.Log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        //Debug.Log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
 
         foreach (var name in ProteinNames)
@@ -515,7 +515,7 @@ public class SceneManager : MonoBehaviour
 
                 if (parts.Length > 1)
                 {
-                    Debug.Log("////////// " + parts[1]);
+                    //Debug.Log("////////// " + parts[1]);
 
                     int index = 0;
                     foreach (var node in PersistantSettings.Instance.hierachy)
@@ -527,21 +527,21 @@ public class SceneManager : MonoBehaviour
                         index++;
                     }
 
-                    Debug.Log("found at " + index);
+                    //Debug.Log("found at " + index);
 
                     HistogramsLookup.Add(index);
                 }
             }
 
-            Debug.Log(name);
+            //Debug.Log(name);
         }
 
-        Debug.Log("-------------------------------------------------------------");
+        //Debug.Log("-------------------------------------------------------------");
 
-        foreach (var lk in HistogramsLookup)
-        {
-            Debug.Log(lk);
-        }
+        //foreach (var lk in HistogramsLookup)
+        //{
+        //    Debug.Log(lk);
+        //}
 
 
         GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 0, 0, 4 });
