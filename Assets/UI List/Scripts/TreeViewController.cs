@@ -39,7 +39,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             List<float> rangeValues = new List<float>();
 
             //if dragging the RangeSlider
-            if (Node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.DragState)
+            if (Node.FieldObject.GetComponent<RangeFieldItem>().CustomRangeSliderUi.DragState)
             {
                 List<CutObject> cuts = SceneManager.Instance.CutObjects;
                 List<BaseItem> children = FindBaseItem(Node.Path).GetAllChildren();
