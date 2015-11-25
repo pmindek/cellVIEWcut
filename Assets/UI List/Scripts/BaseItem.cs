@@ -5,6 +5,7 @@ using System.Text;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using UnityEditor.Animations;
 
 public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
 {
@@ -205,5 +206,19 @@ public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
     public void Reset()
     {
         //throw new NotImplementedException();
+    }
+
+
+    public List<BaseItem> GetAllChildren()
+    {
+        List<BaseItem> allChildren = new List<BaseItem>();
+
+        foreach (var child in Children)
+        {
+            allChildren.Add(child);
+            allChildren.AddRange(child.GetAllChildren());
+        }
+
+        return allChildren;
     }
 }

@@ -38,14 +38,28 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             List<float> rangeValues = new List<float>();
 
-            //Debug.Log("nodeid = " + Node.Name);
-            HistStruct hist = SceneManager.Instance.histograms[Node.Id];
+            //if dragging the RangeSlider
+            if (Node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.DragState)
+            {
+                List<CutObject> cuts = SceneManager.Instance.CutObjects;
+                List<BaseItem> children = FindBaseItem(Node.Path).GetAllChildren();
 
-            rangeValues.Add((float)hist.occluding / (float)hist.all);
-            rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
-            rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
+                foreach (var child in children)
+                {
+                    //Debug.Log("|~!" + child.Name);
+                }
 
-            Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
+            }
+            else
+            {
+                HistStruct hist = SceneManager.Instance.histograms[Node.Id];
+
+                rangeValues.Add((float)hist.occluding / (float)hist.all);
+                rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
+                rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
+
+                Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);                
+            }
         }        
     }
 
