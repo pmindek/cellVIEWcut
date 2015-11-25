@@ -6,7 +6,7 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
-public class BaseItem : MonoBehaviour
+public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
 {
     public bool IsFolded = true;
     public bool IsVisible = true;
@@ -28,6 +28,25 @@ public class BaseItem : MonoBehaviour
     public TreeViewController ViewController;
     public List<BaseItem> Children = new List<BaseItem>();
 
+
+    [UnityEditor.Callbacks.DidReloadScripts]
+    private static void DidReloadScripts()
+    {
+        //Debug.Log("HEllloooooooo");
+    }
+
+    public void OnBeforeSerialize()
+    {
+        //Debug.Log("HEllloooooooo");
+    }
+
+    public void OnAfterDeserialize()
+    {
+        ArrowObject.GetComponent<ArrowScript>().DropDownToggle += DropDownToggleDelegate;
+        ArrowObject.GetComponent<ArrowScript>().SetState(IsFolded);
+        ArrowObject.GetComponent<ArrowScript>().SetState(IsVisible);
+        ArrowObject.GetComponent<ArrowScript>().SetAlpha(0.5f);
+    }
 
     void Start()
     {
@@ -61,6 +80,10 @@ public class BaseItem : MonoBehaviour
         SetChildrenVisibility(!IsFolded);
 
         ArrowObject.GetComponent<ArrowScript>().DropDownToggle += DropDownToggleDelegate;
+        ArrowObject.GetComponent<ArrowScript>().SetState(isFolded);
+        ArrowObject.GetComponent<ArrowScript>().SetState(IsVisible);
+        ArrowObject.GetComponent<ArrowScript>().SetAlpha(0.5f);
+        
 
         //FieldObject = TreeUtility.InstantiateNodeField(Type);
         FieldObject = Instantiate(Resources.Load("RangeItem", typeof(GameObject))) as GameObject;

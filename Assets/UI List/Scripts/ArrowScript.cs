@@ -13,13 +13,13 @@ public class ArrowScript : MonoBehaviour, IPointerClickHandler
 	public Sprite ArrowClosed;
 	public Sprite ArrowOpen;
 
-    void Awake()
-    {
-        SetState(Folded);
-        SetEnabled(Visible);
-        SetAlpha(Alpha);
-        //SetSize(Size);
-    }
+    //public void Init()
+    //{
+    //    SetState(true);
+    //    //SetEnabled(Visible);
+    //    SetAlpha(0.5f);
+    //    //SetSize(Size);
+    //}
 
     public void SetState(bool value)
     {
