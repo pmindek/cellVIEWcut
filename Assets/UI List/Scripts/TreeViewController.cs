@@ -41,6 +41,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     private BaseItem onceItem = null;
 
     private List<float> rangeValues = new List<float>();
+    private List<float> nextRangeValues = new List<float>();
 
 
     // Use this for initialization
@@ -74,7 +75,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
             //not dragging it
             //else
-            if (!range.CustomRangeSliderUi.DragState)
+            if (!range.CustomRangeSliderUi.DragState || range.CustomRangeSliderUi.recalcOnce)
             {
                 HistStruct hist = SceneManager.Instance.histograms[Node.Id];
 
@@ -87,9 +88,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
                 Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
 
-                /*range.CustomRangeSliderUi.recalcOnce = false;
+                
+                
+                range.CustomRangeSliderUi.recalcOnce = false;
                 range.CustomRangeSliderUi.disableDragging = false;
-                range.CustomRangeSliderUi.StartedDragging = true;*/
+                range.CustomRangeSliderUi.StartedDragging = true;
             }
 
 
@@ -202,7 +205,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 } //end of initialization
 
 
-
+                //rangeValues = Node.RangeFieldItem.GetRangeValues();
 
                 /*rangeValues.Clear();
                 rangeValues.Add(currentParameters.range0);
@@ -213,6 +216,28 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
 
                 //this happens on every frame while dragging
+
+
+
+
+                //HistStruct hist = SceneManager.Instance.histograms[Node.Id];
+
+                /*rangeValues.Clear();
+
+                rangeValues.Add((float)hist.occluding / (float)hist.all);
+                rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
+                rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);*/
+
+                //Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
+
+
+
+
+
+
+
+
+
 
 
                 float d0 = 0.0f;
@@ -248,9 +273,6 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 if (Mathf.Abs(d0) > 0.001f)
                     d1 = 0.0f;
 
-                /*d0 *= rangeValues[0];
-                d1 *= rangeValues[1];*/
-
                 float adjust0 = 1.0f;
                 float adjust1 = 1.0f;
 
@@ -284,48 +306,14 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 float st_occluding = (float)currentParameters.count1;
 
 
+                List<float> rv = new List<float>();
+                rv.Clear();
 
-                /*float want0 = (st_occluding / st_all);
-                float want1 = ((1.0f - st_cutaway / st_all) - (st_occluding / st_all));
-
-                if (rangeValues[1] > want1)
-                {
-                    lastValue1 = currentParameters.value1;
-                    currentParameters.value1 *= 0.999f;
-                    Debug.Log("--");
-                }
-                else if (rangeValues[1] < want1)
-                {
-                    lastValue1 = currentParameters.value1;
-                    currentParameters.value1 *= 1.001f;
-                    Debug.Log("++");
-                }*/
-
-                //Debug.Log("is " + rangeValues[1] + "; want " + want1 + " || " + Random.Range(0, 999));
+                rv.Add((float)hist.occluding / (float)hist.all);
+                rv.Add(1.0f - (float)hist.cutaway / (float)hist.all - rv[0]);
+                rv.Add(1.0f - rv[0] - rv[1]);
 
 
-
-
-                /*foreach (var cut in SceneManager.Instance.CutObjects)
-                {
-                    cut.Value1 = currentParameters.value1;
-                    cut.Value2 = currentParameters.value2;
-                }*/
-
-
-
-
-                /*if (st_all == 0.0f)
-                    st_all = 0.001f;
-
-                rangeValues[0] = st_occluding / st_all;
-                rangeValues[1] = (1.0f - st_cutaway / st_all) - rangeValues[0];
-
-                MultiRangeSlider.updateMousePositionWhileDragging(rangeValues[0], rangeValues[1]);*/
-
-                //Debug.Log(rangeValues[0] + " -- " + st_occluding / st_all);
-
-                //once = false;
 
 
 
@@ -343,23 +331,14 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 }
 
 
-                Debug.Log("rv0 " + rangeValues[0]);
-                Debug.Log("rv1 " + rangeValues[1]);
+                Debug.Log("is " + rangeValues[0] + "; want " + rv[0]);
+                Debug.Log("is " + rangeValues[1] + "; want " + rv[1]);
                 Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
 
-                /*{
-                    List<float> rv = new List<float>();
-                    rangeValues.Clear();
+                //nextRangeValues = rv;
 
-                    rv.Add((float) hist.occluding/(float) hist.all);
-                    rv.Add(1.0f - (float) hist.cutaway/(float) hist.all - rv[0]);
-                    rv.Add(1.0f - rv[0] - rv[1]);
-
-                    Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rv);
-                }*/
-
-                /*range.CustomRangeSliderUi.disableDragging = true;
-                range.CustomRangeSliderUi.recalcOnce = true;*/
+                //range.CustomRangeSliderUi.disableDragging = true;
+                //range.CustomRangeSliderUi.recalcOnce = true;
             }
         }        
     }
