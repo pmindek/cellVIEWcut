@@ -1,14 +1,17 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UIWidgets;
+using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
 
 public class CutObjectUIController : MonoBehaviour
 {
     public GameObject cutObjectPrefab;
     public ListView listViewUI;
+    public Combobox comboBox;
 
     public Slider fuzziness;
     public Slider distance;
@@ -26,12 +29,29 @@ public class CutObjectUIController : MonoBehaviour
 	    {
 	        listViewUI.Add(cutObject.name);
 	    }
+
+        for (CutType type = CutType.Plane; type <= CutType.None; type++)
+        {
+            string value2 = type.ToString();
+            comboBox.ListView.Add(value2);
+        }
     }
 	
 	// Update is called once per frame
 	void Update ()
-    {
-	    
+	{
+	    var selected = listViewUI.SelectedIndicies;
+
+	    if (selected.Count == 1)
+	    {
+	        
+	    }
+
+        var selectedCutObjects = new List<DummyCutObject>();
+	    foreach (var s in selected)
+	    {
+	        selectedCutObjects.Add(cutObjects[s]);
+	    }
 	}
 
     public void SetFuzzinessSliderValue(float value)

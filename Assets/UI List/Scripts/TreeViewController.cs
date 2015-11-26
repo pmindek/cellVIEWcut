@@ -44,6 +44,8 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     private List<float> nextRangeValues = new List<float>();
 
 
+    public bool enableAppleEffect = false;
+
     // Use this for initialization
     void Start()
     {
@@ -488,77 +490,113 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             }
         }
 
-        if (_treeIsActive && Input.GetMouseButtonDown(0) && Input.mousePosition.x < 200)
+        if (!enableAppleEffect)
         {
-            _treeIsActive = false;
-            Camera.main.GetComponent<NavigateCamera>().FreezeState = true;
+            
+
             currentMousePos = Input.mousePosition;
-
-            foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
-            {
-                node.FieldObject.GetComponent<RangeFieldItem>().CustomRangeSliderUi.gameObject.SetActive(true);
-            }
-        }
-
-        if (initState || Input.GetMouseButtonDown(1))
-        {
-            _treeIsActive = true;
-            Camera.main.GetComponent<NavigateCamera>().FreezeState = false;
+       
+            // Fetch the scroll offset from scroll view content (this)
+            var scrollOffset = transform.localPosition.y;
 
             // Do the apple dock layout list style
             foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
             {
-                //node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(false);
-                node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(0.5f);
+                if (Input.mousePosition.x < 300)
+                {
+                    // TODO: Use the real base node height here
+                    var distanceY = (node.InitGlobalPositionY + scrollOffset + maxDistanceY) - 5 - currentMousePos.y;
+                    //var distanceY = node.transform.position.y - node.GetComponent<RectTransform>().sizeDelta.y * 0.5f - mousePos.y;
+                    distanceY = Mathf.Clamp(distanceY, -maxDistanceY, maxDistanceY);
+
+                    var x = (Math.Abs(distanceY) / maxDistanceY);
+                    var alpha = Mathf.Max(1 - x, 0.2f);
+                    node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(alpha);
+                }
+                else
+                {
+                    node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(0.2f);
+                }
+
                 node.transform.localScale = new Vector3(0.5f, 0.5f, 1);
                 node.transform.localPosition = new Vector3(node.transform.localPosition.x,
                     node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
-
             }
-
-            initState = false;
-        }
-
-        if (GetLockState() || _treeIsActive) return;
-
-
-        if (GetSlowDownState())
-        {
-            currentMousePos += (Input.mousePosition - currentMousePos) * 0.005f;
         }
         else
         {
-            currentMousePos += (Input.mousePosition - currentMousePos) * 0.1f;
-        }
-        
+            if (_treeIsActive && Input.GetMouseButtonDown(0) && Input.mousePosition.x < 200)
+            {
+                _treeIsActive = false;
+                Camera.main.GetComponent<NavigateCamera>().FreezeState = true;
+                currentMousePos = Input.mousePosition;
 
-        // Fetch the scroll offset from scroll view content (this)
-        var scrollOffset = transform.localPosition.y;
+                foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
+                {
+                    node.FieldObject.GetComponent<RangeFieldItem>().CustomRangeSliderUi.gameObject.SetActive(true);
+                }
+            }
 
-        // Do the apple dock layout list style
-        foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
-        {
-            //if (mousePos.x > maxDistanceX || mousePos.x <= 0)
-            //{
-            //    node.transform.localScale = new Vector3(0.5f, 0.5f, 1);
-            //    node.transform.localPosition = new Vector3(node.transform.localPosition.x, node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
-            //    continue;
-            //}
+            if (initState || Input.GetMouseButtonDown(1))
+            {
+                _treeIsActive = true;
+                Camera.main.GetComponent<NavigateCamera>().FreezeState = false || true;
+                Camera.main.GetComponent<NavigateCamera>().FreezeState = false;
 
-            // TODO: Use the real base node height here
-            var distanceY = (node.InitGlobalPositionY + scrollOffset) - 15 - currentMousePos.y;
-            //var distanceY = node.transform.position.y - node.GetComponent<RectTransform>().sizeDelta.y * 0.5f - mousePos.y;
-            distanceY = Mathf.Clamp(distanceY, -maxDistanceY, maxDistanceY);
+                // Do the apple dock layout list style
+                foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
+                {
+                    //node.FieldObject.GetComponent<RangeFieldItem>().RangeSliderUI.gameObject.SetActive(false);
+                    node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(0.5f);
+                    node.transform.localScale = new Vector3(0.5f, 0.5f, 1);
+                    node.transform.localPosition = new Vector3(node.transform.localPosition.x,
+                        node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
 
-            var x = (Math.Abs(distanceY)/maxDistanceY);
-            var scale = 1 - (Math.Abs(distanceY) / maxDistanceY);
-            scale = 0.5f + (0.25f * scale);
+                }
 
-            var alpha = Mathf.Max(1-x, 0.2f);
-            node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(alpha);
+                initState = false;
+            }
 
-            node.transform.localScale = new Vector3(scale, scale, 1);
-            node.transform.localPosition = new Vector3(node.transform.localPosition.x, node.InitLocalPositionY + distanceY, node.transform.localPosition.z);
+            if (GetLockState() || _treeIsActive) return;
+
+            if (GetSlowDownState())
+            {
+                currentMousePos += (Input.mousePosition - currentMousePos) * 0.005f;
+            }
+            else
+            {
+                currentMousePos += (Input.mousePosition - currentMousePos) * 0.1f;
+            }
+
+
+            // Fetch the scroll offset from scroll view content (this)
+            var scrollOffset = transform.localPosition.y;
+
+            // Do the apple dock layout list style
+            foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))
+            {
+                //if (mousePos.x > maxDistanceX || mousePos.x <= 0)
+                //{
+                //    node.transform.localScale = new Vector3(0.5f, 0.5f, 1);
+                //    node.transform.localPosition = new Vector3(node.transform.localPosition.x, node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
+                //    continue;
+                //}
+
+                // TODO: Use the real base node height here
+                var distanceY = (node.InitGlobalPositionY + scrollOffset) - 15 - currentMousePos.y;
+                //var distanceY = node.transform.position.y - node.GetComponent<RectTransform>().sizeDelta.y * 0.5f - mousePos.y;
+                distanceY = Mathf.Clamp(distanceY, -maxDistanceY, maxDistanceY);
+
+                var x = (Math.Abs(distanceY) / maxDistanceY);
+                var scale = 1 - (Math.Abs(distanceY) / maxDistanceY);
+                scale = 0.5f + (0.25f * scale);
+
+                var alpha = Mathf.Max(1 - x, 0.2f);
+                node.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(alpha);
+
+                node.transform.localScale = new Vector3(scale, scale, 1);
+                node.transform.localPosition = new Vector3(node.transform.localPosition.x, node.InitLocalPositionY + distanceY, node.transform.localPosition.z);
+            }
         }
     }
 

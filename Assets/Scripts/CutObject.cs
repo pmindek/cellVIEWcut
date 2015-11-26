@@ -10,7 +10,8 @@ public enum CutType
     Sphere = 1,
     Cube = 2,
     Cylinder = 3,
-    Cone = 4
+    Cone = 4,
+    None = 5
 };
 
 [System.Serializable]
@@ -369,7 +370,9 @@ public class CutObject : MonoBehaviour
 		return rect.Contains(mousepos);
 	}
 
-	public void Update ()
+    private bool previousHiddenValue;
+
+    public void Update ()
     {
 		if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
         {
@@ -389,6 +392,18 @@ public class CutObject : MonoBehaviour
         //    GetComponent<MeshRenderer>().enabled = true;
         //    GetComponent<TransformHandle>().enabled = true;
         //}
+
+	    if (Hidden != previousHiddenValue)
+	    {
+	        previousHiddenValue = Hidden;
+            SetHidden(Hidden);
+	    }
+    }
+
+    public void SetHidden(bool value)
+    {
+        gameObject.GetComponent<MeshRenderer>().enabled = !value;
+        gameObject.GetComponent<TransformHandle>().enabled = !value;
     }
 
     public void SetMesh()
@@ -399,33 +414,46 @@ public class CutObject : MonoBehaviour
                 gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Plane") as Mesh;
                 DestroyImmediate(gameObject.GetComponent<Collider>());
                 gameObject.AddComponent<BoxCollider>();
+                gameObject.GetComponent<MeshRenderer>().enabled = true;
+                gameObject.GetComponent<TransformHandle>().enabled = true;
                 break;
 
             case CutType.Sphere:
                 gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Sphere") as Mesh;
                 DestroyImmediate(gameObject.GetComponent<Collider>());
                 gameObject.AddComponent<SphereCollider>();
+                gameObject.GetComponent<MeshRenderer>().enabled = true;
+                gameObject.GetComponent<TransformHandle>().enabled = true;
                 break;
 
             case CutType.Cube:
                 gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Cube") as Mesh;
                 DestroyImmediate(gameObject.GetComponent<Collider>());
                 gameObject.AddComponent<MeshCollider>();
+                gameObject.GetComponent<MeshRenderer>().enabled = true;
+                gameObject.GetComponent<TransformHandle>().enabled = true;
                 break;
 
             case CutType.Cone:
                 gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Cone") as Mesh;
                 DestroyImmediate(gameObject.GetComponent<Collider>());
                 gameObject.AddComponent<MeshCollider>();
+                gameObject.GetComponent<MeshRenderer>().enabled = true;
+                gameObject.GetComponent<TransformHandle>().enabled = true;
                 break;
 
             case CutType.Cylinder:
                 gameObject.GetComponent<MeshFilter>().sharedMesh = Resources.Load("Meshes/Cylinder") as Mesh;
                 DestroyImmediate(gameObject.GetComponent<Collider>());
                 gameObject.AddComponent<MeshCollider>();
+                gameObject.GetComponent<MeshRenderer>().enabled = true;
+                gameObject.GetComponent<TransformHandle>().enabled = true;
                 break;
-            default:
-                throw new ArgumentOutOfRangeException();
+
+            case CutType.None:
+                gameObject.GetComponent<MeshRenderer>().enabled = false;
+                gameObject.GetComponent<TransformHandle>().enabled = false;
+                break;
         }
     }
 }
