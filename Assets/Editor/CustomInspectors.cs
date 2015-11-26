@@ -438,10 +438,17 @@ public class CutObjectCustomEditor : Editor
 
 
 
+
+
                 for (int i = 0; i < ui.selectedIngredients.Count; i++)
                 {
-                    cutObject.SetCutParametersFor(ui.selectedIngredients[i], currentParameters);
+                    //cutObject.SetCutParametersFor(ui.selectedIngredients[i], currentParameters);
                 }
+
+
+
+
+
 
 
                     /*st_cutaway = (float)SceneManager.Instance.stats[0];

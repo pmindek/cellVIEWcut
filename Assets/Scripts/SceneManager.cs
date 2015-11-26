@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -90,6 +91,7 @@ public class SceneManager : MonoBehaviour
     public List<int> ProteinAtomClusterStart = new List<int>();
 
     public List<int> HistogramsLookup = new List<int>();
+    public List<int> HistogramsReverseLookup = new List<int>();
 
     public string scene_name;
     
@@ -459,6 +461,7 @@ public class SceneManager : MonoBehaviour
         GPUBuffer.Instance.InitBuffers();
 
         HistogramsLookup.Clear();
+        HistogramsReverseLookup.Clear();
 
         //Debug.Log("Reload Unity");
         //HistogramsLookup.Add(0);
@@ -502,6 +505,8 @@ public class SceneManager : MonoBehaviour
         //Debug.Log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 
 
+        int proteinNameIndex = 0;
+
         foreach (var name in ProteinNames)
         {
             /*if (name.Contains("cytoplasme") || name.Contains("membrane") || name.Contains("surface") ||
@@ -530,11 +535,65 @@ public class SceneManager : MonoBehaviour
                     //Debug.Log("found at " + index);
 
                     HistogramsLookup.Add(index);
+
+                    /*for (int q = 0; q < index - HistogramsReverseLookup.Count; q++)
+                    {
+                        HistogramsReverseLookup.Add(-1);
+                    }
+                    HistogramsReverseLookup.Add(proteinNameIndex);*/
+
                 }
+
+                proteinNameIndex++;
             }
 
             //Debug.Log(name);
         }
+
+
+
+
+
+
+        foreach (var node in PersistantSettings.Instance.hierachy)
+        {
+            int index = 0;
+            int found = -1;
+            foreach (var name in ProteinNames)
+            {
+                string[] parts = name.Split(new char[] { '_' }, 2);
+
+                if (parts.Length > 1)
+                {
+                    if (node.name == parts[1] && !HistogramsReverseLookup.Contains(index))
+                    {
+                        found = index;
+                        break;
+                    }
+                }
+                index++;
+            }
+
+            HistogramsReverseLookup.Add(found);
+
+            //Debug.Log("RL: " + found);
+        }
+
+        /*int qw = 0;
+        Debug.Log("HIERARCHY");
+        foreach (var node in PersistantSettings.Instance.hierachy)
+        {
+            Debug.Log("#" + qw + ": " + node.name);
+            qw++;
+        }
+        qw = 0;
+        Debug.Log("PROTEIN NAMES");
+        foreach (var name in ProteinNames)
+        {
+            Debug.Log("#" + qw + ": " + name);
+            qw++;
+        }*/
+
 
         //Debug.Log("-------------------------------------------------------------");
 

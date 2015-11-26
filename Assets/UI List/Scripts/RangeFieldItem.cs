@@ -30,7 +30,16 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
 
     public void SetRangeValues(List<float> rangeValues)
     {
-        CustomRangeSliderUi.rangeValues = rangeValues;
+        /*CustomRangeSliderUi.rangeValues.Clear();
+        CustomRangeSliderUi.rangeValues.AddRange(rangeValues);*/
+        for (int i = 0; i < rangeValues.Count; i++)
+        {
+            if (CustomRangeSliderUi.rangeValues.Count > i)
+                CustomRangeSliderUi.rangeValues[i] = rangeValues[i];
+        }
+
+        if (CustomRangeSliderUi.rangeValues.Count >= 3)
+            CustomRangeSliderUi.rangeValues[2] = 1.0f - CustomRangeSliderUi.rangeValues[0] - CustomRangeSliderUi.rangeValues[1];
     }
 
     public void SetToggle1(bool value)

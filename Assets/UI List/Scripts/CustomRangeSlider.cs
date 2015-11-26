@@ -17,6 +17,10 @@ public class CustomRangeSlider : MonoBehaviour
     public bool SlowDownState = false;
     public bool DragState = false;
 
+    public bool StartedDragging = false;
+    public bool recalcOnce = false;
+    public bool disableDragging = false;
+
     [HideInInspector] public List<float> rangeValues = new List<float> {0, 0, 0};
 
     // Use this for initialization
@@ -70,6 +74,9 @@ public class CustomRangeSlider : MonoBehaviour
 
         Cursor.SetCursor(cursor, new Vector2(14, 14), CursorMode.Auto);
 
+        /*if (disableDragging)
+            return;*/
+
         var pointerEvent = (PointerEventData) eventData;
         var gameObject = pointerEvent.pointerDrag;
 
@@ -105,6 +112,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnPointerUp()
     {
+        StartedDragging = false;
         DragState = false;
         LockState = false;
         Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
@@ -112,6 +120,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnPointerDown()
     {
+        StartedDragging = true;
         DragState = true;
         LockState = true;
         Cursor.SetCursor(cursor, new Vector2(14, 14), CursorMode.Auto);
@@ -119,6 +128,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnDragExit()
     {
+        StartedDragging = false;
         DragState = false;
         LockState = false;
         Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
