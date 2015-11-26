@@ -145,11 +145,11 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
     bool cut = false;
     for (int i = 0; i < _NumCutObjects; i++)
     {
-        int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
-		int histogramFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
+        //int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+		//int histogramFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 		//int proteinCutFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 
-        if (proteinCutFilter == 1)
+        //if (proteinCutFilter == 1)
         {
             CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
             float3 position = _CutPositions[i].xyz;
@@ -223,9 +223,8 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				}
 			}
 
-            if (test && fuzzTest && adjustTest && adjustVisibilityTest) return true;
-
-			return false;
+            if (test && fuzzTest && adjustTest && adjustVisibilityTest)
+				cut = true;
         }    
 
         //	//sphere
