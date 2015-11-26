@@ -193,10 +193,6 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
                     rangeValues = Node.RangeFieldItem.GetRangeValues();
 
-                    Debug.Log("PSIKOVIA");
-                    Debug.Log(rangeValues[0]);
-                    Debug.Log(rangeValues[1]);
-
                     lastRange0 = rangeValues[0];
                     lastRange1 = rangeValues[1];
 
@@ -331,9 +327,10 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 }
 
 
-                Debug.Log("is " + rangeValues[0] + "; want " + rv[0]);
-                Debug.Log("is " + rangeValues[1] + "; want " + rv[1]);
+                //Debug.Log("is " + rangeValues[0] + "; want " + rv[0]);
+                //Debug.Log("is " + rangeValues[1] + "; want " + rv[1]);
                 Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
+                Node.FieldObject.GetComponent<RangeFieldItem>().SetFakeRangeValues(rv);
 
                 //nextRangeValues = rv;
 
@@ -506,7 +503,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         if (initState || Input.GetMouseButtonDown(1))
         {
             _treeIsActive = true;
-            Camera.main.GetComponent<NavigateCamera>().FreezeState = false || true;
+            Camera.main.GetComponent<NavigateCamera>().FreezeState = false;
 
             // Do the apple dock layout list style
             foreach (var node in RootNodes.Where(node => node.gameObject.activeInHierarchy))

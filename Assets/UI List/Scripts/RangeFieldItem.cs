@@ -42,6 +42,22 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
             CustomRangeSliderUi.rangeValues[2] = 1.0f - CustomRangeSliderUi.rangeValues[0] - CustomRangeSliderUi.rangeValues[1];
     }
 
+    public void SetFakeRangeValues(List<float> fakeRangeValues)
+    {
+        /*CustomRangeSliderUi.rangeValues.Clear();
+        CustomRangeSliderUi.rangeValues.AddRange(rangeValues);*/
+        for (int i = 0; i < fakeRangeValues.Count; i++)
+        {
+            if (CustomRangeSliderUi.fakeRangeValues.Count > i)
+                CustomRangeSliderUi.fakeRangeValues[i] = fakeRangeValues[i];
+        }
+
+        if (CustomRangeSliderUi.fakeRangeValues.Count >= 3)
+            CustomRangeSliderUi.fakeRangeValues[2] = 1.0f - CustomRangeSliderUi.fakeRangeValues[0] - CustomRangeSliderUi.fakeRangeValues[1];
+
+        CustomRangeSliderUi.useFakeRangeValues = true;
+    }
+
     public void SetToggle1(bool value)
     {
         Toggle1.isOn = value;

@@ -21,7 +21,10 @@ public class CustomRangeSlider : MonoBehaviour
     public bool recalcOnce = false;
     public bool disableDragging = false;
 
+    public bool useFakeRangeValues = false;
+
     [HideInInspector] public List<float> rangeValues = new List<float> {0, 0, 0};
+    [HideInInspector] public List<float> fakeRangeValues = new List<float> {0, 0, 0};
 
     // Use this for initialization
     private void Start()
@@ -33,6 +36,18 @@ public class CustomRangeSlider : MonoBehaviour
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
     }
 
+    private List<float> requestRangeValues()
+    {
+        if (useFakeRangeValues)
+        {
+            return fakeRangeValues;
+        }
+        else
+        {
+            return rangeValues;
+        }
+    }
+
     private int GetRangeWidth(float value)
     {
         return Mathf.RoundToInt(totalLength * value);
@@ -41,14 +56,14 @@ public class CustomRangeSlider : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        for (int i = 0; i < rangeValues.Count; i++)
+        for (int i = 0; i < requestRangeValues().Count; i++)
         {
-            var setValue = GetRangeWidth(rangeValues[i]);
+            var setValue = GetRangeWidth(requestRangeValues()[i]);
             var layout = ranges[i].GetComponent<LayoutElement>();//
             if (layout.minWidth != setValue) layout.minWidth = setValue;// = Mathf.Max(setValue, MIN_RANGE_WIDTH);
 
             var textUI = ranges[i].GetChild(0).GetComponent<Text>();
-            var newText = (textUI.gameObject.GetComponent<RectTransform>().rect.width > 5) ? Mathf.Round(rangeValues[i] * 100.0f) + " %" : "";
+            var newText = (textUI.gameObject.GetComponent<RectTransform>().rect.width > 5) ? Mathf.Round(requestRangeValues()[i] * 100.0f) + " %" : "";
             if (textUI.text != newText)
             {
                 textUI.text = newText;
@@ -112,6 +127,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnPointerUp()
     {
+        useFakeRangeValues = false;
         StartedDragging = false;
         DragState = false;
         LockState = false;
@@ -128,6 +144,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnDragExit()
     {
+        useFakeRangeValues = false;
         StartedDragging = false;
         DragState = false;
         LockState = false;
