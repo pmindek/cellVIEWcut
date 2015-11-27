@@ -30,10 +30,16 @@ public class CustomRangeSlider : MonoBehaviour
     // Use this for initialization
     private void Start()
     {
-        for (int i = 0; i < rangeValues.Count; i++)
+        /*for (int i = 0; i < rangeValues.Count; i++)
         {
             SetRangeGradientColors(i, Color.red, Color.blue);
-        }
+        }*/
+
+        SetRangeGradientColors(0, new Color(0.0f, 0.2f, 0.0f, 1.0f), new Color(0.0f, 0.2f, 0.0f, 1.0f));
+        SetRangeGradientColors(1, new Color(0.0f, 0.5f, 0.0f, 1.0f), new Color(0.0f, 0.5f, 0.0f, 1.0f));
+        SetRangeGradientColors(2, new Color(1.0f, 0.0f, 0.0f, 0.2f), new Color(0.0f, 0.0f, 1.0f, 0.2f));
+
+
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
     }
 

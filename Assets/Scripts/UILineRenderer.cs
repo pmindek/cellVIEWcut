@@ -12,7 +12,7 @@ public class UILineRenderer : Graphic
     public Vector2 Margin;
     public Vector2[] Points;
 
-    protected override void OnPopulateMesh(Mesh m)
+    /*protected override void OnPopulateMesh(Mesh m)
     {
         if (Points == null || Points.Length < 2)
             Points = new[] { new Vector2(0, 0), new Vector2(1, 1) };
@@ -73,7 +73,7 @@ public class UILineRenderer : Graphic
         }
 
         vh.FillMesh(m);
-    }
+    }*/
 
     Vector2 get_perp_vector(Vector2 a, Vector2 b)
     {

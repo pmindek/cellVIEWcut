@@ -43,10 +43,10 @@ public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
 
     public void OnAfterDeserialize()
     {
-        ArrowObject.GetComponent<ArrowScript>().DropDownToggle += DropDownToggleDelegate;
+        /*ArrowObject.GetComponent<ArrowScript>().DropDownToggle += DropDownToggleDelegate;
         ArrowObject.GetComponent<ArrowScript>().SetState(IsFolded);
         ArrowObject.GetComponent<ArrowScript>().SetState(IsVisible);
-        ArrowObject.GetComponent<ArrowScript>().SetAlpha(0.5f);
+        ArrowObject.GetComponent<ArrowScript>().SetAlpha(0.5f);*/
     }
 
     void Start()
