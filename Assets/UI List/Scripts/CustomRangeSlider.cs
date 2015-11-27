@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Deployment.Internal;
+using System.Linq;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
@@ -35,10 +36,13 @@ public class CustomRangeSlider : MonoBehaviour
             SetRangeGradientColors(i, Color.red, Color.blue);
         }*/
 
-        SetRangeGradientColors(0, new Color(0.0f, 0.0f, 1.0f, 1.0f), new Color(1.0f, 0.0f, 0.0f, 1.0f));
+        /*SetRangeGradientColors(0, new Color(0.0f, 0.0f, 1.0f, 1.0f), new Color(1.0f, 0.0f, 0.0f, 1.0f));
         SetRangeGradientColors(1, new Color(1.0f, 0.0f, 0.0f, 1.0f), new Color(0.0f, 0.0f, 1.0f, 1.0f));
-        SetRangeGradientColors(2, new Color(0.0f, 0.0f, 1.0f, 1.0f), new Color(0.0f, 1.0f, 0.0f, 1.0f));
+        SetRangeGradientColors(2, new Color(0.0f, 0.0f, 1.0f, 1.0f), new Color(0.0f, 1.0f, 0.0f, 1.0f));*/
 
+        SetRangeGradientColors(0, new Color(0.0f, 0.1f, 0.0f, 1.0f), new Color(0.0f, 0.3f, 0.0f, 1.0f));
+        SetRangeGradientColors(1, new Color(0.0f, 0.6f, 0.0f, 1.0f), new Color(0.0f, 0.9f, 0.0f, 1.0f));
+        SetRangeGradientColors(2, new Color(0.0f, 0.0f, 0.0f, 0.15f), new Color(0.0f, 0.0f, 0.0f, 0.25f));
 
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
     }

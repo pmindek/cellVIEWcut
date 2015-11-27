@@ -218,6 +218,10 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				float pFuzziness = 1.0 - info.info2.x;
 				float pSize = info.info2.y;
 				float pFuzzinessCurve = info.info2.z;
+
+				pFuzziness = 1.0;
+				pSize = 1.0;
+				pFuzzinessCurve = 1.0;
 			
 				if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
 				{
@@ -328,7 +332,7 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		else
 		{
 			InterlockedAdd(_Histograms[addWhere].occluding, pof);
-			/*InterlockedAdd(_Histograms[addWhere].visible, pvf);*/
+			InterlockedAdd(_Histograms[addWhere].visible, pvf);
 		}
 
 		addWhere = _Histograms[addWhere].parent;

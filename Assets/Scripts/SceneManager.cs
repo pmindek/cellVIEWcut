@@ -393,7 +393,7 @@ public class SceneManager : MonoBehaviour
                 }
                 else
                 {
-                    CutInfos.Add(new CutInfoStruct { info = new Vector4(0.0f, 0.5f, 0.0f, 0.0f), info2 = new Vector4(0.0f, 0.0f, 0.0f, 0.0f) });
+                    CutInfos.Add(new CutInfoStruct { info = new Vector4(0.0f, 0.5f, 0.5f, 0.0f), info2 = new Vector4(0.0f, 1.0f, 1.0f, 0.0f) });
                 }
             }
         }

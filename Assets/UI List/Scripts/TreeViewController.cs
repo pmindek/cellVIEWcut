@@ -84,7 +84,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 List<float> rangeValues = new List<float>();
                 rangeValues.Clear();
 
-                rangeValues.Add((float)hist.occluding / (float)hist.all);
+                rangeValues.Add((float)hist.visible / (float)hist.all);
                 rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
                 rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
 
@@ -297,7 +297,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
                 currentParameters.countAll = hist.all;
                 currentParameters.count0 = hist.cutaway;
-                currentParameters.count1 = hist.occluding;
+                currentParameters.count1 = hist.visible;
 
                 float st_cutaway = (float)currentParameters.count0;
                 float st_all = (float)currentParameters.countAll;
@@ -307,7 +307,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 List<float> rv = new List<float>();
                 rv.Clear();
 
-                rv.Add((float)hist.occluding / (float)hist.all);
+                rv.Add((float)hist.visible / (float)hist.all);
                 rv.Add(1.0f - (float)hist.cutaway / (float)hist.all - rv[0]);
                 rv.Add(1.0f - rv[0] - rv[1]);
 

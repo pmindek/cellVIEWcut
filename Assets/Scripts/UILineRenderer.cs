@@ -12,10 +12,50 @@ public class UILineRenderer : Graphic
     public Vector2 Margin;
     public Vector2[] Points;
 
-    /*protected override void OnPopulateMesh(Mesh m)
+    [Range(0, 1)]
+    public float Decay = 0.0f;
+
+    [Range(0.1f, 10.0f)]
+    public float Gamma = 1.0f;
+
+    protected override void OnPopulateMesh(Mesh m)
     {
-        if (Points == null || Points.Length < 2)
-            Points = new[] { new Vector2(0, 0), new Vector2(1, 1) };
+        /*if (Points == null || Points.Length < 2)
+            Points = new[] { new Vector2(0, 0), new Vector2(1, 1) };*/
+
+        /*Points = new[]
+        {
+            new Vector2(0.0f, 0.0f), 
+            new Vector2(1.0f, 0.0f), 
+            new Vector2(1.0f, 1.0f), 
+            new Vector2(0.0f, 1.0f), 
+            new Vector2(0.0f, 0.0f), 
+        };*/
+        int res = 30;
+        Points = new Vector2[res + 3];
+
+        if (Decay < 0.0f)
+            Decay = 0.0f;
+        if (Decay > 1.0f)
+            Decay = 1.0f;
+
+        if (Gamma < 0.1f)
+            Gamma = 0.1f;
+        if (Gamma > 10.0f)
+            Gamma = 10.0f;
+
+
+        for (int i = 0; i < res; i++)
+        {
+            float zeroOne = (float) i/(float) (res - 1);
+
+            float v = Mathf.Pow(zeroOne, Gamma) * Decay;
+            Points[i] = new Vector2((float) i / (float) (res - 1), 1.0f - v);
+        }
+
+        Points[res + 0] = new Vector2(1.0f, 0.0f);
+        Points[res + 1] = new Vector2(0.0f, 0.0f);
+        Points[res + 2] = new Vector2(0.0f, 1.0f);
 
         //var size = new Vector2(rectTransform.rect.width, rectTransform.rect.height);
 
@@ -34,16 +74,22 @@ public class UILineRenderer : Graphic
 
 
         var vh = new VertexHelper();
-        //{
-        //    vh.AddVert(vertices[0], color, new Vector2(0f, 0f));
-        //    vh.AddVert(vertices[1], color, new Vector2(0f, 1f));
-        //    vh.AddVert(vertices[2], color, new Vector2(1f, 1f));
-        //    vh.AddVert(vertices[3], color, new Vector2(1f, 0f));
+        /*{
+            Vector3[] vertices = new Vector3[4];
+            vertices[0] = new Vector3(0.2f, 0.2f, 0.0f);
+            vertices[1] = new Vector3(0.5f, 0.2f, 0.0f);
+            vertices[2] = new Vector3(0.5f, 0.5f, 0.0f);
+            vertices[3] = new Vector3(0.2f, 0.5f, 0.0f);
 
-        //    vh.AddTriangle(0, 1, 2);
-        //    vh.AddTriangle(2, 3, 0);
-        //    vh.FillMesh(m);
-        //}
+            vh.AddVert(vertices[0], color, new Vector2(0f, 0f));
+            vh.AddVert(vertices[1], color, new Vector2(0f, 1f));
+            vh.AddVert(vertices[2], color, new Vector2(1f, 1f));
+            vh.AddVert(vertices[3], color, new Vector2(1f, 0f));
+
+            vh.AddTriangle(0, 1, 2);
+            vh.AddTriangle(2, 3, 0);
+            vh.FillMesh(m);
+        }*/
 
         for (int i = 0; i < Points.Length-1; i++)
         {
@@ -73,7 +119,7 @@ public class UILineRenderer : Graphic
         }
 
         vh.FillMesh(m);
-    }*/
+    }
 
     Vector2 get_perp_vector(Vector2 a, Vector2 b)
     {
