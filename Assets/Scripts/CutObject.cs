@@ -95,8 +95,8 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public List<CutParameters> ProteinTypeParameters = new List<CutParameters>(); //this structure stores the cutaway parameters per protein type
 
-	private TreeViewControlEditor _tree;
-	private RecipeTreeUI _tree_ui;
+	//private TreeViewControlEditor _tree;
+	//private RecipeTreeUI _tree_ui;
 
     [HideInInspector]
     public float[] RangeValues = new float[2] { 0.2f, 0.3f };
@@ -303,54 +303,54 @@ public class CutObject : MonoBehaviour
  //       _tree.hideFlags = HideFlags.HideInInspector;
  //       _tree_ui.hideFlags = HideFlags.HideInInspector;
 
- //   }
+ ////   }
 
-	public void ToggleTree(bool value)
-    {
-		_tree.DisplayOnGame = value;
-		tree_isVisible = value;
-	}
+	//public void ToggleTree(bool value)
+ //   {
+	//	_tree.DisplayOnGame = value;
+	//	tree_isVisible = value;
+	//}
 
-	public void ShowTree(Vector3 pos,Vector2 size){
-		_tree.DisplayOnGame = true;
-		_tree.Width = (int)size.x-20;
-		_tree.Height = (int)size.y-30;
-		_tree.X = (int)pos.x+10;
-		_tree.Y = (Screen.height - (int)size.y)+10;//invert ?
-		tree_isVisible = true;
-		Debug.Log ("should show tree");
-	}
+	//public void ShowTree(Vector3 pos,Vector2 size){
+	//	_tree.DisplayOnGame = true;
+	//	_tree.Width = (int)size.x-20;
+	//	_tree.Height = (int)size.y-30;
+	//	_tree.X = (int)pos.x+10;
+	//	_tree.Y = (Screen.height - (int)size.y)+10;//invert ?
+	//	tree_isVisible = true;
+	//	Debug.Log ("should show tree");
+	//}
 
-	public void HideTree()
-    {
-		Debug.Log ("should be hided");
-		_tree.DisplayOnGame = false;
-		tree_isVisible = false;
-	}
+	//public void HideTree()
+ //   {
+	//	Debug.Log ("should be hided");
+	//	_tree.DisplayOnGame = false;
+	//	tree_isVisible = false;
+	//}
 
-	public void SetTree()
-    {
-		Debug.Log ("we are setting the tree");
-		_tree_ui.ClearTree ();
-		GameObject root = GameObject.Find (SceneManager.Instance.scene_name);
-		if (root != null) {
-			_tree_ui.populateRecipeGameObject (root);
-		}
-		//if (CellPackLoader.resultData != null)
-			//_tree_ui.populateRecipeJson (CellPackLoader.resultData);
-			//_tree_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
-		else {
-			Debug.Log ("cellPackResult not availble");
-		}
-		HideTree ();
-		tree_isVisible = false;
-	}
+	//public void SetTree()
+ //   {
+	//	Debug.Log ("we are setting the tree");
+	//	_tree_ui.ClearTree ();
+	//	GameObject root = GameObject.Find (SceneManager.Instance.scene_name);
+	//	if (root != null) {
+	//		_tree_ui.populateRecipeGameObject (root);
+	//	}
+	//	//if (CellPackLoader.resultData != null)
+	//		//_tree_ui.populateRecipeJson (CellPackLoader.resultData);
+	//		//_tree_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
+	//	else {
+	//		Debug.Log ("cellPackResult not availble");
+	//	}
+	//	HideTree ();
+	//	tree_isVisible = false;
+	//}
 
-	public bool TreeHasFocus(Vector2 mousepos)
-    {
-		Rect rect = new Rect(_tree.X-60, _tree.Y-60, _tree.Width+90, _tree.Height+90);
-		return rect.Contains(mousepos);
-	}
+	//public bool TreeHasFocus(Vector2 mousepos)
+ //   {
+	//	Rect rect = new Rect(_tree.X-60, _tree.Y-60, _tree.Width+90, _tree.Height+90);
+	//	return rect.Contains(mousepos);
+	//}
 
     private bool previousHiddenValue;
 
