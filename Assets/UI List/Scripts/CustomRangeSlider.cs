@@ -35,9 +35,9 @@ public class CustomRangeSlider : MonoBehaviour
             SetRangeGradientColors(i, Color.red, Color.blue);
         }*/
 
-        SetRangeGradientColors(0, new Color(0.0f, 0.2f, 0.0f, 1.0f), new Color(0.0f, 0.2f, 0.0f, 1.0f));
-        SetRangeGradientColors(1, new Color(0.0f, 0.5f, 0.0f, 1.0f), new Color(0.0f, 0.5f, 0.0f, 1.0f));
-        SetRangeGradientColors(2, new Color(1.0f, 0.0f, 0.0f, 0.2f), new Color(0.0f, 0.0f, 1.0f, 0.2f));
+        SetRangeGradientColors(0, new Color(0.0f, 0.0f, 1.0f, 1.0f), new Color(1.0f, 0.0f, 0.0f, 1.0f));
+        SetRangeGradientColors(1, new Color(1.0f, 0.0f, 0.0f, 1.0f), new Color(0.0f, 0.0f, 1.0f, 1.0f));
+        SetRangeGradientColors(2, new Color(0.0f, 0.0f, 1.0f, 1.0f), new Color(0.0f, 1.0f, 0.0f, 1.0f));
 
 
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
@@ -89,16 +89,16 @@ public class CustomRangeSlider : MonoBehaviour
         //if(LockState) Debug.Log("LockState");
     }
 
-    public void SetRangeColor(int rangeIndex, Color color)
-    {
-        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorLeft", color);
-        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorRight", color);
-    }
+    //public void SetRangeColor(int rangeIndex, Color color)
+    //{
+    //    ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorLeft", color);
+    //    ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorRight", color);
+    //}
 
     public void SetRangeGradientColors(int rangeIndex, Color left, Color right)
     {
-        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorLeft", left);
-        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorRight", right);
+        ranges[rangeIndex].GetComponent<UnityEngine.UI.Extensions.Gradient>().vertex1 = left;
+        ranges[rangeIndex].GetComponent<UnityEngine.UI.Extensions.Gradient>().vertex2 = right;
     }
 
     public void OnDrag(BaseEventData eventData)
