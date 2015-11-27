@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Deployment.Internal;
@@ -23,15 +24,15 @@ public class CustomRangeSlider : MonoBehaviour
 
     public bool useFakeRangeValues = false;
 
-    [HideInInspector] public List<float> rangeValues = new List<float> {0, 0, 0};
-    [HideInInspector] public List<float> fakeRangeValues = new List<float> {0, 0, 0};
-
+    [NonSerialized] public List<float> rangeValues = new List<float> {0.33333f, 0.33333f, 0.33333f };
+    [NonSerialized] public List<float> fakeRangeValues = new List<float> { 0.33333f, 0.33333f, 0.33333f };
+    
     // Use this for initialization
     private void Start()
     {
-        for(int i = 0; i < rangeValues.Count; i++)
+        for (int i = 0; i < rangeValues.Count; i++)
         {
-            rangeValues[i] = 1.0f / rangeValues.Count; ;
+            SetRangeGradientColors(i, Color.red, Color.blue);
         }
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
     }
@@ -82,6 +83,18 @@ public class CustomRangeSlider : MonoBehaviour
         //if(LockState) Debug.Log("LockState");
     }
 
+    public void SetRangeColor(int rangeIndex, Color color)
+    {
+        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorLeft", color);
+        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorRight", color);
+    }
+
+    public void SetRangeGradientColors(int rangeIndex, Color left, Color right)
+    {
+        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorLeft", left);
+        ranges[rangeIndex].GetComponent<Image>().material.SetColor("_ColorRight", right);
+    }
+
     public void OnDrag(BaseEventData eventData)
     {
         LockState = true;
@@ -101,7 +114,7 @@ public class CustomRangeSlider : MonoBehaviour
         var nextRangeValue = rangeValues[handleIndex + 1];
         var total = previousRangeValue + nextRangeValue;
 
-        var ratio = 100.0f * 3;
+        var ratio = 100.0f * 2;
         previousRangeValue += pointerEvent.delta.x / ratio;
         previousRangeValue = Mathf.Clamp(previousRangeValue, 0.0f, total);
         nextRangeValue = total - previousRangeValue;
