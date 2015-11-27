@@ -140,7 +140,7 @@ public class GPUBuffer : MonoBehaviour
 
         //*****//
         
-        if (CutInfos == null) CutInfos = new ComputeBuffer(NumCutsMax, 16);
+        if (CutInfos == null) CutInfos = new ComputeBuffer(NumCutsMax * NumProteinMax, 32);
         if (CutScales == null) CutScales = new ComputeBuffer(NumCutsMax, 16);
         if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
         if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);

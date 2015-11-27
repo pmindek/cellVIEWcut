@@ -148,6 +148,20 @@ public class SceneManager : MonoBehaviour
     
     //--------------------------------------------------------------
 
+    void OnEnable()
+    {
+        CutObject[] cuts = FindObjectsOfType(typeof(CutObject)) as CutObject[];
+
+        Debug.Log("Start. Cut objects in scene: " + cuts.Length);
+        foreach (var cut in cuts)
+        {
+            cut.InitCutParameters();
+        }
+
+        //CutObjects = cuts.ToList();
+        //UpdateCutObjects();
+    }
+
     void Update()
     {
         UpdateCutObjects();
@@ -375,7 +389,7 @@ public class SceneManager : MonoBehaviour
                 }
                 else
                 {
-                    CutInfos.Add(new CutInfoStruct { info = new Vector4(), info2 = new Vector4() });
+                    CutInfos.Add(new CutInfoStruct { info = new Vector4(0.0f, 0.5f, 0.0f, 0.0f), info2 = new Vector4(0.0f, 0.0f, 0.0f, 0.0f) });
                 }
             }
         }

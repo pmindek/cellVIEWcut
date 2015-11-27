@@ -228,6 +228,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 					test = true;
 				}
 
+
 				if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
 				{
 					adjustVisibilityTest = false;
@@ -236,6 +237,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				{
 					test = true;
 				}
+
 			}
 
             if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
