@@ -107,7 +107,7 @@ uniform float noiseTextureH;
     return cut;
 }*/
 
-float rand(in int id)
+float rand_(in int id)
 {
 	float2 uv = normalize(float2(id, id * 3543543));
 
@@ -116,6 +116,21 @@ float rand(in int id)
 	//float2 noise = noiseTexture[uvi].x;
     float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453) * noiseTexture[uvi].xy;
     return abs(noise.x + noise.y) * 0.5;
+}
+
+uint wang_hash(uint seed)
+{
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
+float rand(uint value)
+{
+ return float(wang_hash(value)) * (1.0 / 4294967296.0);
 }
 
 bool adjustDistanceTest(in int id, in float parameter, in float distance, in float pSize, in float pFuzziness, in float pFuzzinessCurve)
@@ -223,7 +238,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				}
 			}
 
-            if (test && fuzzTest && adjustTest && adjustVisibilityTest)
+            if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
 				cut = true;
         }    
 
