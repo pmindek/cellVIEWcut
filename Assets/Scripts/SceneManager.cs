@@ -109,6 +109,9 @@ public class SceneManager : MonoBehaviour
 
     // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
     // The cache will be filled automatically via the CutObject script onEnable
+
+    public int SelectedCutObject;
+
     [NonSerialized]
     public List<CutObject> CutObjects = new List<CutObject>();
 
@@ -125,6 +128,7 @@ public class SceneManager : MonoBehaviour
 
 
     public bool isUpdated = false;
+    
 
     public int NumProteinInstances
     {
@@ -353,8 +357,8 @@ public class SceneManager : MonoBehaviour
             {
                 //Debug.Log(i + " PCF " + cutObject.ProteinCutFilters.Count());
                 //Debug.Log(i + " HPT " + cutObject.HistogramProteinTypes.Count());
-                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
-                HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
+                //ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+                //HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
 
                 //Debug.Log("---" + i + " -- " + " ~ " + cutObject.HistogramProteinTypes[i].Name + " ~ " + cutObject.HistogramProteinTypes[i].State + " ... " + cutObject.ProteinCutFilters[i].State);
             }
@@ -363,7 +367,7 @@ public class SceneManager : MonoBehaviour
         // For each cut object
         foreach (var cut in CutObjects)
         {
-            if (cut == null) throw new Exception("Cut object not found");
+            if (cut == null) throw new Exception("Cut object not fofund");
 
             CutScales.Add(cut.transform.localScale);
             CutPositions.Add(cut.transform.position);

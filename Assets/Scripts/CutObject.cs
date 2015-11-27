@@ -53,6 +53,8 @@ public class CutParameters
 [ExecuteInEditMode]
 public class CutObject : MonoBehaviour
 {
+    public static int UniqueId;
+
     public bool Hidden;
     private bool tree_isVisible = true;
     
@@ -283,45 +285,25 @@ public class CutObject : MonoBehaviour
 
 
 
-	//is it awake or load ?
-    void Awake()
-    {
-        Debug.Log("Init cut object");
-        if (ProteinCutFilters.Count == 0 || HistogramProteinTypes.Count == 0 || HistogramRanges.Count == 0)
-        {
-            //ProteinCutFilters.Clear();//?maybe shouldnt clear on Awake ?
-            ProteinCutFilters.Clear();
-            HistogramProteinTypes.Clear();
-            HistogramRanges.Clear();
-            SetCutItems(SceneManager.Instance.ProteinNames);
-        }
-		_tree = GetComponent<TreeViewControlEditor> ();
-		_tree_ui = GetComponent<RecipeTreeUI> ();
+	////is it awake or load ?
+ //   void Awake()
+ //   {
+ //       Debug.Log("Init cut object");
+ //       if (ProteinCutFilters.Count == 0 || HistogramProteinTypes.Count == 0 || HistogramRanges.Count == 0)
+ //       {
+ //           //ProteinCutFilters.Clear();//?maybe shouldnt clear on Awake ?
+ //           ProteinCutFilters.Clear();
+ //           HistogramProteinTypes.Clear();
+ //           HistogramRanges.Clear();
+ //           SetCutItems(SceneManager.Instance.ProteinNames);
+ //       }
+	//	_tree = GetComponent<TreeViewControlEditor> ();
+	//	_tree_ui = GetComponent<RecipeTreeUI> ();
 
-        _tree.hideFlags = HideFlags.HideInInspector;
-        _tree_ui.hideFlags = HideFlags.HideInInspector;
+ //       _tree.hideFlags = HideFlags.HideInInspector;
+ //       _tree_ui.hideFlags = HideFlags.HideInInspector;
 
-    }
-
-    void OnEnable()
-    {
-        // Register this object in the cut object cache
-        if (!SceneManager.Instance.CutObjects.Contains(this))
-        {
-            SceneManager.Instance.CutObjects.Add(this);
-        }
-		//check the tree
-		if (_tree.enabled) SetTree ();
-    }
-
-    void OnDisable()
-    {
-        // De-register this object in the cut object cache
-        if (SceneManager.CheckInstance() && SceneManager.Instance.CutObjects.Contains(this))
-        {
-            SceneManager.Instance.CutObjects.Remove(this);
-        }
-    }
+ //   }
 
 	public void ToggleTree(bool value)
     {
@@ -380,19 +362,6 @@ public class CutObject : MonoBehaviour
             PreviousCutType = CutType;
         }
 
-        //if (Hidden || Application.isPlaying)
-        //{
-        //    GetComponent<Collider>().enabled = false;
-        //    GetComponent<MeshRenderer>().enabled = false;//why ?
-        //    GetComponent<TransformHandle>().enabled = false;
-        //}
-        //else
-        //{
-        //    GetComponent<Collider>().enabled = true;
-        //    GetComponent<MeshRenderer>().enabled = true;
-        //    GetComponent<TransformHandle>().enabled = true;
-        //}
-
 	    if (Hidden != previousHiddenValue)
 	    {
 	        previousHiddenValue = Hidden;
@@ -400,10 +369,33 @@ public class CutObject : MonoBehaviour
 	    }
     }
 
-    public void SetHidden(bool value)
+    void OnEnable()
+    {
+        UniqueId++;
+        InitCutParameters();
+
+        // Register this object in the cut object cache
+        if (!SceneManager.Instance.CutObjects.Contains(this))
+        {
+            SceneManager.Instance.CutObjects.Add(this);
+        }
+    }
+
+    void OnDisable()
+    {
+        // De-register this object in the cut object cache
+        if (SceneManager.CheckInstance() && SceneManager.Instance.CutObjects.Contains(this))
+        {
+            SceneManager.Instance.CutObjects.Remove(this);
+        }
+    }
+
+    public void SetHidden(bool value, bool highlight = false)
     {
         gameObject.GetComponent<MeshRenderer>().enabled = !value;
         gameObject.GetComponent<TransformHandle>().enabled = !value;
+        gameObject.GetComponent<Collider>().enabled = !value;
+        if (highlight) SelectionManager.Instance.SetHandleSelected(gameObject.GetComponent<TransformHandle>());
     }
 
     public void SetMesh()

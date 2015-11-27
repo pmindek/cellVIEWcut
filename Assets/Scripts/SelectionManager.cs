@@ -186,6 +186,13 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    public void SetHandleSelected(TransformHandle handle)
+    {
+        handle.Enable();
+        handle.SetSelectionState(_currentState);
+        _selectedTransformHandle = handle;
+    }
+
     private void DoCutObjectPicking()
     {
         var mousePos = Event.current.mousePosition;
