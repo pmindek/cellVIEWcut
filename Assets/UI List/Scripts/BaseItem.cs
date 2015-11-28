@@ -6,8 +6,9 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEditor.Animations;
+using UnityEngine.EventSystems;
 
-public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
+public class BaseItem : MonoBehaviour, IPointerClickHandler
 {
     public bool IsFolded = true;
     public bool IsVisible = true;
@@ -222,4 +223,22 @@ public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
 
         return allChildren;
     }
+
+    public delegate void NodeItemClick(BaseItem node);
+    public event NodeItemClick PointerClick;
+
+    public void OnPointerClick(PointerEventData ped)
+    {
+        PointerClick(this);
+    }
+
+    public void OnPointerEnter(PointerEventData ped)
+    {
+        
+    }
+
+    //public void SetSelected()
+    //{
+    //    RangeFieldItem.CustomRangeSliderUi.GetComponent<CanvasGroup>()
+    //}
 }

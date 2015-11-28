@@ -197,4 +197,10 @@ public class CustomRangeSlider : MonoBehaviour
     {
         SlowDownState = false;
     }
+
+    public void OnPointerClick(BaseEventData eventData)
+    {
+        // Handle event here AND in ancestors
+        ExecuteEvents.ExecuteHierarchy(transform.parent.gameObject, eventData, ExecuteEvents.pointerClickHandler);
+    }
 }

@@ -110,10 +110,16 @@ public class SceneManager : MonoBehaviour
     // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
     // The cache will be filled automatically via the CutObject script onEnable
 
-    public int SelectedCutObject;
+    [NonSerialized]
+    public int SelectedCutObject = 0;
 
     [NonSerialized]
     public List<CutObject> CutObjects = new List<CutObject>();
+
+    public CutObject GetSelectedCutObject()
+    {
+        return CutObjects[SelectedCutObject];
+    }
 
     public List<HistStruct> Histograms = new List<HistStruct>();
 

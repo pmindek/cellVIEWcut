@@ -13,9 +13,9 @@ public class CutObjectUIController : MonoBehaviour
     public ListView listViewUI;
     public Combobox comboBox;
 
-    public Slider fuzziness;
-    public Slider distance;
-    public Slider curve;
+    public Slider FuzzinessSlider;
+    public Slider DistanceSlider;
+    public Slider CurveSlider;
 
     private int previousSelectedIndex = -1;
 
@@ -38,7 +38,7 @@ public class CutObjectUIController : MonoBehaviour
     void Update()
     {
         if (listViewUI.SelectedIndex == -1)
-            listViewUI.SelectedIndex = SceneManager.Instance.SelectedCutObject;
+            listViewUI.SelectedIndex = 0;
 
         if (listViewUI.SelectedIndex >= listViewUI.DataSource.Count)
         {
@@ -58,47 +58,63 @@ public class CutObjectUIController : MonoBehaviour
 
         SceneManager.Instance.SelectedCutObject = listViewUI.SelectedIndex;
         //Debug.Log(listViewUI.SelectedIndex);
+
+    }
+
+    public void HideFuzzinessUIPanel(bool value)
+    {
+        FuzzinessSlider.transform.parent.parent.gameObject.SetActive(!value);
     }
 
     public void SetFuzzinessSliderValue(float value)
     {
-        fuzziness.value = value;
+        FuzzinessSlider.value = value;
     }
 
     public void SetDistanceSliderValue(float value)
     {
-        distance.value = value;
+        DistanceSlider.value = value;
     }
 
     public void SetCurveSliderValue(float value)
     {
-        curve.value = value;
+        CurveSlider.value = value;
     }
 
-    public void OnFuzzinessValueChanged(float value)
+    public void OnInvertValueChanged(bool value)
     {
-        int a = 0;
+        SceneManager.Instance.GetSelectedCutObject().Inverse = value;
     }
 
-    public void OnDistanceValueChanged(float value)
-    {
-        int a = 0;
-    }
+    //public void OnFuzzinessValueChanged(float value)
+    //{
+    //    int a = 0;
+    //}
 
-    public void OnCurveValueChanged(float value)
-    {
-        int a = 0;
-    }
+    //public void OnDistanceValueChanged(float value)
+    //{
+    //    int a = 0;
+    //}
+
+    //public void OnCurveValueChanged(float value)
+    //{
+    //    int a = 0;
+    //}
 
     public void AddCutObject()
     {
         var cutObject = Instantiate(cutObjectPrefab).GetComponent<CutObject>();
-        cutObject.name = "Cut Object " + CutObject.UniqueId; ;
+        cutObject.Update();
+        cutObject.name = "Cut Object " + (CutObject.UniqueId - 1);
         listViewUI.SelectedIndex = listViewUI.Add(cutObject.name);
+        Debug.Log(listViewUI.SelectedIndex);
+        previousSelectedIndex = -1;
+        //listViewUI.SelectedIndex = listViewUI.DataSource.Count-1;
     }
 
     public void RemoveCutObject()
     {
+        var cache = listViewUI.SelectedIndex;
         if (listViewUI.DataSource.Count > 1)
         {
             var selected = listViewUI.SelectedIndicies;
@@ -110,5 +126,8 @@ public class CutObjectUIController : MonoBehaviour
                 DestroyImmediate(go);
             }
         }
+
+        previousSelectedIndex = -1;
+        listViewUI.SelectedIndex = Mathf.Min(cache, listViewUI.DataSource.Count - 1);
     }
 }

@@ -20,7 +20,7 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     /// <value>The parameters.</value>
 
     private BaseItem baseItem;
-
+    
     public void Start()
     {
         baseItem = transform.parent.GetComponent<BaseItem>();

@@ -18,6 +18,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     public float LeftPadding;
 
     public GameObject BaseItemPrefab;
+    public CutObjectUIController cutObjectUiController;
     private List<BaseItem> RootNodes;
 
 
@@ -59,7 +60,45 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         foreach (var node in RootNodes)
         {
             node.RangeFieldItem.CustomRangeSliderUi.RangeSliderDrag += OnRangeSliderDrag;
+            node.PointerClick += OnNodePointerClick;
         }
+
+        HideFuzzinessUIPanel(false);
+        SetFuzzinessUIValues(0.1f, 0.5f, 0.9f);
+    }
+
+    public void HideFuzzinessUIPanel(bool value)
+    {
+        cutObjectUiController.HideFuzzinessUIPanel(value);
+    }
+
+    public void OnFuzzinessChanged(float value)
+    {
+        Debug.Log(value);
+    }
+
+    public void OnFuzzinessDistanceChanged(float value)
+    {
+        Debug.Log(value);
+    }
+
+    public void OnFuzzinessCurveChanged(float value)
+    {
+        Debug.Log(value);
+    }
+
+    public void SetFuzzinessUIValues(float value1, float value2, float value3)
+    {
+        cutObjectUiController.SetFuzzinessSliderValue(value1);
+        cutObjectUiController.SetDistanceSliderValue(value2);
+        cutObjectUiController.SetCurveSliderValue(value3);
+    }
+
+    [NonSerialized] public BaseItem SelectedNode;
+
+    public void OnNodePointerClick(BaseItem selectedNode)
+    {
+        SelectedNode = selectedNode;
     }
 
     public void OnRangeSliderDrag(BaseItem node, int rangeIndex, float dragDelta)
@@ -473,7 +512,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
         GetComponent<RectTransform>().sizeDelta = new Vector2(300, Mathf.Abs(currentYPos - maxDistanceY));
 
-        Update();
+        UpdateNodes();
     }
 
     private float maxDistanceX = 300;
@@ -508,8 +547,8 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     private bool initState = false;
     private bool _treeIsActive = true;
-
-    void Update()
+    
+    void UpdateNodes()
     {
         // Do list scrolling when hovering the items
         if (Input.mousePosition.x < maxDistanceX && Input.mousePosition.x != 0)
@@ -532,8 +571,6 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
         if (!enableAppleEffect)
         {
-            
-
             currentMousePos = Input.mousePosition;
        
             // Fetch the scroll offset from scroll view content (this)
@@ -562,6 +599,8 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 node.transform.localPosition = new Vector3(node.transform.localPosition.x,
                     node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
             }
+
+            if(SelectedNode != null) SelectedNode.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(1);
         }
         else
         {

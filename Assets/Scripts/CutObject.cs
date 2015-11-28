@@ -62,20 +62,20 @@ public class CutObject : MonoBehaviour
 
     public bool Inverse;
     
-    [Range(0, 1)]
-    public float Value1;
+    //[Range(0, 1)]
+    //public float Value1;
 
-    [Range(0, 1)]
-    public float Value2;
+    //[Range(0, 1)]
+    //public float Value2;
 
-    [Range(0, 1)]
-    public float Fuzziness;
+    //[Range(0, 1)]
+    //public float Fuzziness;
 
-    [Range(0, 1)]
-    public float FuzzinessDistance;
+    //[Range(0, 1)]
+    //public float FuzzinessDistance;
 
-    [Range(0.01f, 3)]
-    public float FuzzinessCurve;
+    //[Range(0.01f, 3)]
+    //public float FuzzinessCurve;
 
     public bool Optimize;
     public bool DataSensitiveSliders;
@@ -115,8 +115,7 @@ public class CutObject : MonoBehaviour
     [HideInInspector]
     public float initialRange1 = 0.0f;
 
-
-
+    [NonSerialized] public int SelectedProteinType = -1;
 
     public void InitCutParameters()
     {
@@ -158,12 +157,13 @@ public class CutObject : MonoBehaviour
 
         ProteinTypeParameters[ingredientId] = cutParameters;
     }
-
-
-
-
-
-
+    
+    public void SetFuzzinessParametersFor(int ingredientId, float value1, float value2, float value3)
+    {
+        ProteinTypeParameters[ingredientId].fuzziness = value1;
+        ProteinTypeParameters[ingredientId].fuzzinessDistance = value2;
+        ProteinTypeParameters[ingredientId].fuzzinessCurve = value3;
+    }
 
     public float[] GetRangeValues(int ingredientId)
     {
@@ -397,7 +397,7 @@ public class CutObject : MonoBehaviour
     {
         gameObject.GetComponent<MeshRenderer>().enabled = !value;
         gameObject.GetComponent<TransformHandle>().enabled = !value;
-        gameObject.GetComponent<Collider>().enabled = !value;
+        if(gameObject.GetComponent<Collider>() != null) gameObject.GetComponent<Collider>().enabled = !value;
         if (highlight) SelectionManager.Instance.SetHandleSelected(gameObject.GetComponent<TransformHandle>());
     }
 
