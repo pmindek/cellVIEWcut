@@ -93,6 +93,7 @@ public class BaseItem : MonoBehaviour, ISerializationCallbackReceiver
         FieldObject.GetComponent<IItemInterface>().SetContentAlpha(0.1f);
         FieldObject.transform.SetParent(this.transform, false);
         SetFieldObjectSize(ViewController.TextFieldSize);
+        RangeFieldItem = GetComponentInChildren<RangeFieldItem>();
     }
 
     //void Awake()

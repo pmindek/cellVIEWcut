@@ -55,6 +55,16 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             AddNodeObject(node.path, new object[] { node.name }, "Text");
         }
         Init();
+
+        foreach (var node in RootNodes)
+        {
+            node.RangeFieldItem.CustomRangeSliderUi.RangeSliderDrag += OnRangeSliderDrag;
+        }
+    }
+
+    public void OnRangeSliderDrag(BaseItem node, int rangeIndex, float dragDelta)
+    {
+        Debug.Log(node.Id + " " + rangeIndex + " " + dragDelta);
     }
 
     public void UpdateRangeValues()

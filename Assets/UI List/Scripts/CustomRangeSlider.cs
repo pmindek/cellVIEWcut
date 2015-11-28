@@ -28,7 +28,10 @@ public class CustomRangeSlider : MonoBehaviour
 
     [NonSerialized] public List<float> rangeValues = new List<float> {0.33333f, 0.33333f, 0.33333f };
     [NonSerialized] public List<float> fakeRangeValues = new List<float> { 0.33333f, 0.33333f, 0.33333f };
-    
+
+    public delegate void OnRangeSliderDrag(BaseItem node, int rangeIndex, float dragDelta);
+    public event OnRangeSliderDrag RangeSliderDrag;
+
     // Use this for initialization
     private void Start()
     {
@@ -46,6 +49,11 @@ public class CustomRangeSlider : MonoBehaviour
         SetRangeGradientColors(2, new Color(0.0f, 0.0f, 0.0f, 0.15f), new Color(0.0f, 0.0f, 0.0f, 0.25f));
 
         GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
+    }
+
+    public BaseItem GetBaseItemParent()
+    {
+        return transform.parent.parent.GetComponent<BaseItem>();
     }
 
     private List<float> requestRangeValues()
@@ -119,7 +127,6 @@ public class CustomRangeSlider : MonoBehaviour
 
         var pointerEvent = (PointerEventData) eventData;
         var gameObject = pointerEvent.pointerDrag;
-
         var handleIndex = handles.IndexOf(gameObject.GetComponent<RectTransform>());
 
         var previousRangeValue = rangeValues[handleIndex];
@@ -133,6 +140,8 @@ public class CustomRangeSlider : MonoBehaviour
 
         rangeValues[handleIndex] = previousRangeValue;
         rangeValues[handleIndex + 1] = nextRangeValue;
+
+        RangeSliderDrag(GetBaseItemParent(), handleIndex, pointerEvent.delta.x);
     }
     
     public void OnEnter()
