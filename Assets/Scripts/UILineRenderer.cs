@@ -12,11 +12,12 @@ public class UILineRenderer : Graphic
     public Vector2 Margin;
     public Vector2[] Points;
 
-    [Range(0, 1)]
+    
     public float Decay = 0.0f;
 
-    [Range(0.1f, 10.0f)]
-    public float Gamma = 1.0f;
+
+    
+    public float Gamma = 0.0f;
 
     protected override void OnPopulateMesh(Mesh m)
     {

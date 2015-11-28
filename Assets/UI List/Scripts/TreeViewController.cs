@@ -67,6 +67,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         SetFuzzinessUIValues(0.1f, 0.5f, 0.9f);
     }
 
+    public void Update()
+    {
+        UpdateNodes();
+    }
+
     public void HideFuzzinessUIPanel(bool value)
     {
         cutObjectUiController.HideFuzzinessUIPanel(value);

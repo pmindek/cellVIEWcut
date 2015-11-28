@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Schema;
 using UIWidgets;
 using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
@@ -13,6 +14,7 @@ public class CutObjectUIController : MonoBehaviour
     public ListView listViewUI;
     public Combobox comboBox;
 
+    public UILineRenderer FuzzinessPlot;
     public Slider FuzzinessSlider;
     public Slider DistanceSlider;
     public Slider CurveSlider;
@@ -59,6 +61,14 @@ public class CutObjectUIController : MonoBehaviour
         SceneManager.Instance.SelectedCutObject = listViewUI.SelectedIndex;
         //Debug.Log(listViewUI.SelectedIndex);
 
+        ComputeFuzzinessPlot();
+
+    }
+
+    public void ComputeFuzzinessPlot()
+    {
+        FuzzinessPlot.Decay = DistanceSlider.value;
+        FuzzinessPlot.Gamma = CurveSlider.value;
     }
 
     public void HideFuzzinessUIPanel(bool value)
