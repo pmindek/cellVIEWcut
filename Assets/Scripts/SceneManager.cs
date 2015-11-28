@@ -121,6 +121,13 @@ public class SceneManager : MonoBehaviour
         return CutObjects[SelectedCutObject];
     }
 
+    public List<CutObject> GetSelectedCutObjects()
+    { 
+        var selectedCutObjects = new List<CutObject>();
+        selectedCutObjects.Add(CutObjects[SelectedCutObject]);
+        return selectedCutObjects;
+    }
+
     public List<HistStruct> Histograms = new List<HistStruct>();
 
     public int[] stats = new int[] { 0, 0, 0, 0 };
