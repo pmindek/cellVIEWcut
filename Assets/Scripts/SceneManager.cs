@@ -162,6 +162,8 @@ public class SceneManager : MonoBehaviour
             cut.InitCutParameters();
         }
 
+        SetCutObjects();
+
         //CutObjects = cuts.ToList();
         //UpdateCutObjects();
     }
@@ -357,7 +359,7 @@ public class SceneManager : MonoBehaviour
             {
                 //Debug.Log(i + " PCF " + cutObject.ProteinCutFilters.Count());
                 //Debug.Log(i + " HPT " + cutObject.HistogramProteinTypes.Count());
-                //ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
                 //HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
 
                 //Debug.Log("---" + i + " -- " + " ~ " + cutObject.HistogramProteinTypes[i].Name + " ~ " + cutObject.HistogramProteinTypes[i].State + " ... " + cutObject.ProteinCutFilters[i].State);

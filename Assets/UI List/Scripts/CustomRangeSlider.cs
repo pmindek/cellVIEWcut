@@ -19,6 +19,7 @@ public class CustomRangeSlider : MonoBehaviour
     public bool SlowDownState = false;
     public bool DragState = false;
 
+    public bool StoppedDragging = false;
     public bool StartedDragging = false;
     public bool recalcOnce = false;
     public bool disableDragging = false;
@@ -109,6 +110,7 @@ public class CustomRangeSlider : MonoBehaviour
     {
         LockState = true;
         DragState = true;
+        StoppedDragging = false;
 
         Cursor.SetCursor(cursor, new Vector2(14, 14), CursorMode.Auto);
 
@@ -150,6 +152,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnPointerUp()
     {
+        StoppedDragging = true;
         useFakeRangeValues = false;
         StartedDragging = false;
         DragState = false;
@@ -159,6 +162,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnPointerDown()
     {
+        StoppedDragging = false;
         StartedDragging = true;
         DragState = true;
         LockState = true;
@@ -169,6 +173,7 @@ public class CustomRangeSlider : MonoBehaviour
     {
         useFakeRangeValues = false;
         StartedDragging = false;
+        StoppedDragging = true;
         DragState = false;
         LockState = false;
         Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);

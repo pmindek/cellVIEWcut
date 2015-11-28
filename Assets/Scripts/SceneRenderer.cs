@@ -265,6 +265,8 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_LodLevelsInfos", GPUBuffer.Instance.LodInfos);        
         ComputeShaderManager.Instance.SphereBatchCS.SetFloats("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
 
+        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_AdjustVisible", PersistantSettings.Instance.AdjustVisible);
+
         // Do protein batching
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinVisibilityFlag", GPUBuffer.Instance.ProteinToggleFlags);
@@ -375,6 +377,7 @@ public class SceneRenderer : MonoBehaviour
         //Fill the buffer with occludees
         ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_ProteinType", proteinType + 1);
         ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
+        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_AdjustVisible", PersistantSettings.Instance.AdjustVisible);
         ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_NumInstances", SceneManager.Instance.NumProteinInstances);
         ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
         ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinRadii", GPUBuffer.Instance.ProteinRadii, 1);

@@ -12,6 +12,8 @@ uniform	int _NumInstances;
 uniform float4 _CameraForward;
 uniform float4 _CameraPosition;
 
+uniform float _AdjustVisible;
+
 uniform	int _CullingFilter;
 uniform float4 _FrustrumPlanes[6]; 
 
@@ -24,7 +26,7 @@ uniform	StructuredBuffer<int> _ProteinClusterCount;
 uniform	StructuredBuffer<int> _ProteinClusterStart;
 	
 uniform StructuredBuffer<float4> _LodLevelsInfos;	
-uniform	StructuredBuffer<float4> _ProteinInstanceInfo;
+uniform	RWStructuredBuffer<float4> _ProteinInstanceInfo;
 uniform StructuredBuffer<int> _ProteinInstanceCullFlags;
 uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
 uniform AppendStructuredBuffer<int4> _ProteinSphereBatchInfos;
@@ -164,6 +166,13 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 		//int histogramFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 		//int proteinCutFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
 
+		/*if (proteinType != 3)
+			return true;*/
+		/*if (_ProteinCutFilters[proteinType * _NumCutObjects + i] != 1)
+		{
+			return true;
+		}*/
+
         //if (proteinCutFilter == 1)
         {
             CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
@@ -219,9 +228,9 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				float pSize = info.info2.y;
 				float pFuzzinessCurve = info.info2.z;
 
-				pFuzziness = 1.0;
-				pSize = 1.0;
-				pFuzzinessCurve = 1.0;
+				//pFuzziness = 1.0;
+				//pSize = 1.0;
+				//pFuzzinessCurve = 1.0;
 			
 				if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
 				{
@@ -233,19 +242,24 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				}
 
 
-				if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
-				{
-					adjustVisibilityTest = false;
-				}
-				if (_ProteinInstanceOcclusionFlags[id] != 0 && !test && adjustOcl < 0 && /*pow(rand(id), 0.5) < -adjustOcl*/ !adjustDistanceTest(id, -adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
-				{
-					test = true;
-				}
+				//if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
+				//{
+				//	adjustVisibilityTest = false;
+				//}
+				//if (_ProteinInstanceOcclusionFlags[id] != 0 && !test && adjustOcl < 0 && /*pow(rand(id), 0.5) < -adjustOcl*/ !adjustDistanceTest(id, -adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
+				//{
+				//	test = true;
+				//}
 
 			}
 
             if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
 				cut = true;
+
+			if (_ProteinInstanceInfo[id].w == 1)
+			{
+				cut = true;
+			}
         }    
 
         //	//sphere
@@ -338,6 +352,25 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 		addWhere = _Histograms[addWhere].parent;
 	}
 	
+
+
+	float adjustVisible = -1.0 + _AdjustVisible * 2.0;
+	if (_ProteinInstanceOcclusionFlags[id.x]
+		&&
+		adjustVisible > 0.0
+		&&
+		rand(id * 256) < adjustVisible
+	)
+		_ProteinInstanceInfo[id.x].w = 1;
+
+	if (_ProteinInstanceOcclusionFlags[id.x]
+		&&
+		adjustVisible < 0.0
+		&&
+		rand(id * 256) < -adjustVisible
+	)
+		_ProteinInstanceInfo[id.x].w = 0;
+
 
     // if instance is culled return
     //if(_CullingFilter == -1 && cullFlag == 0) return;

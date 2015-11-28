@@ -69,7 +69,17 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
 
 
+            //on mouse up
+            if (range.CustomRangeSliderUi.StoppedDragging)
+            {
+                range.CustomRangeSliderUi.StoppedDragging = false;
+                Debug.Log("mouse up up up");
 
+                foreach (var cut in SceneManager.Instance.CutObjects)
+                {
+                    cut.ToggleAllCutItem(true);
+                }
+            }
 
 
 
@@ -125,6 +135,24 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                             selectedIngredients.Add(SceneManager.Instance.HistogramsReverseLookup[child.Id]);
                         }
                     }
+
+
+
+
+                    //calculate occlusion queries where selectedIngredients (those whose histograms are we dragging) are ocludees
+                    Debug.Log("DO TOGGLE");
+                    foreach (var cut in SceneManager.Instance.CutObjects)
+                    {
+                        cut.ToggleAllCutItem(true);
+                        foreach (var si in selectedIngredients)
+                        {
+                            cut.ToggleCutItem(SceneManager.Instance.ProteinNames[si], false);
+                        }
+                    }
+
+
+
+
 
 
 
@@ -303,7 +331,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 float st_all = (float)currentParameters.countAll;
                 float st_occluding = (float)currentParameters.count1;
 
-
+                
                 List<float> rv = new List<float>();
                 rv.Clear();
 
@@ -333,6 +361,8 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 //Debug.Log("is " + rangeValues[1] + "; want " + rv[1]);
                 Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
                 Node.FieldObject.GetComponent<RangeFieldItem>().SetFakeRangeValues(rv);
+
+                PersistantSettings.Instance.AdjustVisible = v2;
 
                 //nextRangeValues = rv;
 

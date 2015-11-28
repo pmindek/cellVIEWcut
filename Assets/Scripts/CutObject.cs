@@ -249,6 +249,9 @@ public class CutObject : MonoBehaviour
     {
 		foreach(CutItem cu in ProteinCutFilters){
 			if (string.Equals(cu.Name,name)){
+
+                Debug.Log("toggling " + name);
+
 				cu.State = toggle;
 				break;
 			}

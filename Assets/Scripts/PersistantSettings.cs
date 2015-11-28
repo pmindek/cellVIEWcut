@@ -25,6 +25,9 @@ public class PersistantSettings : MonoBehaviour
     
     public string LastSceneLoaded;
 
+    // Value2
+    public float AdjustVisible = 0.5f;
+
     // Base settings
     public float Scale = 0.065f;
     public int ContourOptions;
