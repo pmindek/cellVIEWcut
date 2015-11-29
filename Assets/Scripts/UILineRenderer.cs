@@ -10,30 +10,14 @@ public class UILineRenderer : Graphic
     public float LineThikness = 2;
     public bool UseMargins;
     public Vector2 Margin;
-    public Vector2[] Points;
-
     
-    public float Decay = 0.0f;
-
-
-    
-    public float Gamma = 0.0f;
+    public float Decay;
+    public float Gamma;
+    public int CurveResolution;
 
     protected override void OnPopulateMesh(Mesh m)
     {
-        /*if (Points == null || Points.Length < 2)
-            Points = new[] { new Vector2(0, 0), new Vector2(1, 1) };*/
-
-        /*Points = new[]
-        {
-            new Vector2(0.0f, 0.0f), 
-            new Vector2(1.0f, 0.0f), 
-            new Vector2(1.0f, 1.0f), 
-            new Vector2(0.0f, 1.0f), 
-            new Vector2(0.0f, 0.0f), 
-        };*/
-        int res = 30;
-        Points = new Vector2[res + 3];
+        var Points = new List<Vector2>();
 
         if (Decay < 0.0f)
             Decay = 0.0f;
@@ -44,22 +28,14 @@ public class UILineRenderer : Graphic
             Gamma = 0.1f;
         if (Gamma > 10.0f)
             Gamma = 10.0f;
-
-
-        for (int i = 0; i < res; i++)
+        
+        for (int i = 0; i < CurveResolution; i++)
         {
-            float zeroOne = (float) i/(float) (res - 1);
-
+            float zeroOne = (float) i/(float) (CurveResolution - 1);
             float v = Mathf.Pow(zeroOne, Gamma) * Decay;
-            Points[i] = new Vector2((float) i / (float) (res - 1), 1.0f - v);
+            Points.Add(new Vector2((float) i / (float) (CurveResolution - 1), 1.0f - v));
         }
-
-        Points[res + 0] = new Vector2(1.0f, 0.0f);
-        Points[res + 1] = new Vector2(0.0f, 0.0f);
-        Points[res + 2] = new Vector2(0.0f, 1.0f);
-
-        //var size = new Vector2(rectTransform.rect.width, rectTransform.rect.height);
-
+        
         var sizeX = rectTransform.rect.width;
         var sizeY = rectTransform.rect.height;
         var offsetX = -rectTransform.pivot.x * rectTransform.rect.width;
@@ -73,26 +49,9 @@ public class UILineRenderer : Graphic
             offsetY += Margin.y / 2f;
         }
 
-
         var vh = new VertexHelper();
-        /*{
-            Vector3[] vertices = new Vector3[4];
-            vertices[0] = new Vector3(0.2f, 0.2f, 0.0f);
-            vertices[1] = new Vector3(0.5f, 0.2f, 0.0f);
-            vertices[2] = new Vector3(0.5f, 0.5f, 0.0f);
-            vertices[3] = new Vector3(0.2f, 0.5f, 0.0f);
 
-            vh.AddVert(vertices[0], color, new Vector2(0f, 0f));
-            vh.AddVert(vertices[1], color, new Vector2(0f, 1f));
-            vh.AddVert(vertices[2], color, new Vector2(1f, 1f));
-            vh.AddVert(vertices[3], color, new Vector2(1f, 0f));
-
-            vh.AddTriangle(0, 1, 2);
-            vh.AddTriangle(2, 3, 0);
-            vh.FillMesh(m);
-        }*/
-
-        for (int i = 0; i < Points.Length-1; i++)
+        for (int i = 0; i < Points.Count-1; i++)
         {
             var prev = Points[i];
             var cur = Points[i+1];
@@ -121,23 +80,4 @@ public class UILineRenderer : Graphic
 
         vh.FillMesh(m);
     }
-
-    Vector2 get_perp_vector(Vector2 a, Vector2 b)
-    {
-        Vector2 v;
-        v.x = a.x - b.x;
-        v.y = a.y - b.y;
-
-        float angle = Mathf.Atan2(-v.y, v.x);
-        return new Vector2(Mathf.Cos(angle), -Mathf.Sin(angle)).normalized;
-
-    }
-
-    //public Vector3 RotatePointAroundPivot(Vector3 point, Vector3 pivot, Vector3 angles)
-    //{
-    //    Vector3 dir = point - pivot; // get point direction relative to pivot
-    //    dir = Quaternion.Euler(angles) * dir; // rotate it
-    //    point = dir + pivot; // calculate rotated point
-    //    return point; // return it
-    //}
 }

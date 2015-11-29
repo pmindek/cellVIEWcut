@@ -15,6 +15,8 @@ public class CustomRangeSlider : MonoBehaviour
     public List<RectTransform> ranges;
     public List<RectTransform> handles;
 
+    public int HandleWidth = 5;
+
     public bool LockState = false;
     public bool SlowDownState = false;
     public bool DragState = false;
@@ -32,6 +34,8 @@ public class CustomRangeSlider : MonoBehaviour
     public delegate void OnRangeSliderDrag(BaseItem node, int rangeIndex, float dragDelta);
     public event OnRangeSliderDrag RangeSliderDrag;
 
+    
+
     // Use this for initialization
     private void Start()
     {
@@ -48,7 +52,7 @@ public class CustomRangeSlider : MonoBehaviour
         SetRangeGradientColors(1, new Color(0.0f, 0.6f, 0.0f, 1.0f), new Color(0.0f, 0.9f, 0.0f, 1.0f));
         SetRangeGradientColors(2, new Color(0.0f, 0.0f, 0.0f, 0.15f), new Color(0.0f, 0.0f, 0.0f, 0.25f));
 
-        GetComponent<LayoutElement>().preferredWidth = totalLength + 10;
+        GetComponent<LayoutElement>().preferredWidth = totalLength + HandleWidth * 2;
     }
 
     public BaseItem GetBaseItemParent()
@@ -76,11 +80,26 @@ public class CustomRangeSlider : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        var parentRectTransform = gameObject.transform.parent.GetComponent<RectTransform>();
+        GetComponent<LayoutElement>().preferredWidth = totalLength + HandleWidth * 2;
+
+        float widthInc = 0;
         for (int i = 0; i < requestRangeValues().Count; i++)
         {
-            var setValue = GetRangeWidth(requestRangeValues()[i]);
-            var layout = ranges[i].GetComponent<LayoutElement>();//
-            if (layout.minWidth != setValue) layout.minWidth = setValue;// = Mathf.Max(setValue, MIN_RANGE_WIDTH);
+            var rangeWidth = GetRangeWidth(requestRangeValues()[i]);
+
+            var rangeRectTransform = ranges[i].GetComponent<RectTransform>();
+            rangeRectTransform.sizeDelta = new Vector2(rangeWidth, parentRectTransform.sizeDelta.y);
+            rangeRectTransform.localPosition = new Vector3(widthInc, 0,0);
+            widthInc += rangeWidth;
+
+            if (i < handles.Count)
+            {
+                var handleRectTransform = handles[i].GetComponent<RectTransform>();
+                handleRectTransform.sizeDelta = new Vector2(HandleWidth, parentRectTransform.sizeDelta.y);
+                handleRectTransform.localPosition = new Vector3(widthInc, 0, 0);
+                widthInc += HandleWidth;
+            }
 
             var textUI = ranges[i].GetChild(0).GetComponent<Text>();
             var newText = (textUI.gameObject.GetComponent<RectTransform>().rect.width > 5) ? Mathf.Round(requestRangeValues()[i] * 100.0f) + " %" : "";
@@ -89,6 +108,8 @@ public class CustomRangeSlider : MonoBehaviour
                 textUI.text = newText;
             }
         }
+
+        
 
         if (GetComponent<CanvasGroup>().alpha < 0.9f)
         {

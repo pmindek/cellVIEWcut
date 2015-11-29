@@ -359,7 +359,7 @@ public class CutObject : MonoBehaviour
 
     public void Update ()
     {
-		if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
+        if (CutType != PreviousCutType || gameObject.GetComponent<MeshFilter>().sharedMesh == null)
         {
             SetMesh();
             PreviousCutType = CutType;
@@ -411,6 +411,7 @@ public class CutObject : MonoBehaviour
                 gameObject.AddComponent<BoxCollider>();
                 gameObject.GetComponent<MeshRenderer>().enabled = true;
                 gameObject.GetComponent<TransformHandle>().enabled = true;
+                gameObject.transform.localScale = new Vector3(10,10,10);
                 break;
 
             case CutType.Sphere:
@@ -419,6 +420,7 @@ public class CutObject : MonoBehaviour
                 gameObject.AddComponent<SphereCollider>();
                 gameObject.GetComponent<MeshRenderer>().enabled = true;
                 gameObject.GetComponent<TransformHandle>().enabled = true;
+                gameObject.transform.localScale = new Vector3(50, 50, 50);
                 break;
 
             case CutType.Cube:
@@ -427,6 +429,7 @@ public class CutObject : MonoBehaviour
                 gameObject.AddComponent<MeshCollider>();
                 gameObject.GetComponent<MeshRenderer>().enabled = true;
                 gameObject.GetComponent<TransformHandle>().enabled = true;
+                gameObject.transform.localScale = new Vector3(50, 50, 50);
                 break;
 
             case CutType.Cone:

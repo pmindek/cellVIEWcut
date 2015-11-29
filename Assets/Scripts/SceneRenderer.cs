@@ -494,7 +494,7 @@ public class SceneRenderer : MonoBehaviour
         GL.Clear(true, true, new Color(-1, 0, 0, 0));
 
         Graphics.SetRenderTarget(colorBuffer.colorBuffer, depthBuffer.depthBuffer);
-        GL.Clear(true, false, Color.white);
+        GL.Clear(true, true, Color.white);
 
         // Draw proteins
         if (SceneManager.Instance.NumProteinInstances > 0)
