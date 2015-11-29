@@ -35,6 +35,8 @@ public class CutItemRanges //i will maybe use this later?
 
 public class CutParameters
 {
+    public bool IgnorePriorityDraw;
+
     public float range0;
     public float range1;
 
@@ -126,6 +128,7 @@ public class CutObject : MonoBehaviour
             ProteinTypeParameters.Add(
                 new CutParameters()
                 {
+                    IgnorePriorityDraw = false,
                     range0 = 0.0f,
                     range1 = 0.0f,
 
@@ -134,7 +137,7 @@ public class CutObject : MonoBehaviour
                     count1 = 0,
 
                     value1 = 0.5f,
-                    value2 = 0.5f,
+                    value2 = 0.0f,
                     fuzziness = 0.0f,
                     fuzzinessDistance = 1.0f,
                     fuzzinessCurve = 1.0f
@@ -178,6 +181,11 @@ public class CutObject : MonoBehaviour
         }
 
         ProteinTypeParameters[ingredientId] = cutParameters;
+    }
+
+    public void SetIgnorePriorityDrawFor(int ingredientId, bool value)
+    {
+        ProteinTypeParameters[ingredientId].IgnorePriorityDraw = value;
     }
 
     public void SetValue1For(int ingredientId, float value1)

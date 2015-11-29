@@ -25,7 +25,7 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     {
         baseItem = transform.parent.GetComponent<BaseItem>();
         Toggle1.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem1(baseItem); });
-        Toggle2.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem2(baseItem); });
+        //Toggle2.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem2(baseItem); });
     }
 
     public void SetRangeValues(List<float> rangeValues)

@@ -150,17 +150,17 @@ public class CustomRangeSlider : MonoBehaviour
         var gameObject = pointerEvent.pointerDrag;
         var handleIndex = handles.IndexOf(gameObject.GetComponent<RectTransform>());
 
-        var previousRangeValue = rangeValues[handleIndex];
-        var nextRangeValue = rangeValues[handleIndex + 1];
-        var total = previousRangeValue + nextRangeValue;
+        //var previousRangeValue = rangeValues[handleIndex];
+        //var nextRangeValue = rangeValues[handleIndex + 1];
+        //var total = previousRangeValue + nextRangeValue;
 
-        var ratio = 100.0f * 2;
-        previousRangeValue += pointerEvent.delta.x / ratio;
-        previousRangeValue = Mathf.Clamp(previousRangeValue, 0.0f, total);
-        nextRangeValue = total - previousRangeValue;
+        //var ratio = 100.0f * 2;
+        //previousRangeValue += pointerEvent.delta.x / ratio;
+        //previousRangeValue = Mathf.Clamp(previousRangeValue, 0.0f, total);
+        //nextRangeValue = total - previousRangeValue;
 
-        rangeValues[handleIndex] = previousRangeValue;
-        rangeValues[handleIndex + 1] = nextRangeValue;
+        //rangeValues[handleIndex] = previousRangeValue;
+        //rangeValues[handleIndex + 1] = nextRangeValue;
 
         RangeSliderDrag(GetBaseItemParent(), handleIndex, pointerEvent.delta.x);
     }

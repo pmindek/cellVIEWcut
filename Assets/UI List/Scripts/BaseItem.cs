@@ -224,6 +224,16 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
         return allChildren;
     }
 
+    public List<BaseItem> GetAllLeafChildren()
+    {
+        return GetAllChildren().Where(child => child.Children.Count == 0).ToList();
+    }
+
+    public bool IsLeafNode()
+    {
+        return Children.Count == 0;
+    }
+
     public delegate void NodeItemClick(BaseItem node);
     public event NodeItemClick PointerClick;
 

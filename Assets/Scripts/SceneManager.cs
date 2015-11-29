@@ -91,7 +91,7 @@ public class SceneManager : MonoBehaviour
     public List<int> ProteinAtomClusterStart = new List<int>();
 
     public List<int> HistogramsLookup = new List<int>();
-    public List<int> HistogramsReverseLookup = new List<int>();
+    public List<int> NodeToProteinLookup = new List<int>();
 
     public string scene_name;
     
@@ -352,9 +352,51 @@ public class SceneManager : MonoBehaviour
         var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
     }
 
+    public class PriorityRelationship
+    {
+        public List<int> Occludees = new List<int>();
+        public List<int> Occluders = new List<int>();
+    }
+
+    List<PriorityRelationship> prioritylist = new List<PriorityRelationship>();
+
+    void ComputeRelationShips()
+    {
+        prioritylist.Clear();
+
+        foreach (var cutObject in SceneManager.Instance.CutObjects)
+        {
+            bool HasPriorityDraws = false;
+            foreach (var proteinCutInfo in cutObject.ProteinTypeParameters)
+            {
+                HasPriorityDraws |= proteinCutInfo.value2 > 0;
+            }
+
+            if (HasPriorityDraws)
+            {
+                var relationship = new PriorityRelationship();
+                for(int i = 0; i < cutObject.ProteinTypeParameters.Count; i++)// (var proteinCutInfo in cutObject.ProteinTypeParameters)
+                {
+                    var proteinCutParameter = cutObject.ProteinTypeParameters[i];
+
+                    if (proteinCutParameter.value2 > 0)
+                    {
+                        relationship.Occludees.Add(i);
+                    }
+                    else if (!proteinCutParameter.IgnorePriorityDraw)
+                    {
+                        relationship.Occluders.Add(i);
+                    }
+                }
+            }
+        }
+    }
+
     // Todo: proceed only if changes are made 
     public void UpdateCutObjects()
     {
+        ComputeRelationShips();
+
         var CutInfos = new List<CutInfoStruct>();
         var CutScales = new List<Vector4>();
         var CutPositions = new List<Vector4>();
@@ -494,7 +536,7 @@ public class SceneManager : MonoBehaviour
         GPUBuffer.Instance.InitBuffers();
 
         HistogramsLookup.Clear();
-        HistogramsReverseLookup.Clear();
+        NodeToProteinLookup.Clear();
 
         //Debug.Log("Reload Unity");
         //HistogramsLookup.Add(0);
@@ -598,7 +640,7 @@ public class SceneManager : MonoBehaviour
 
                 if (parts.Length > 1)
                 {
-                    if (node.name == parts[1] && !HistogramsReverseLookup.Contains(index))
+                    if (node.name == parts[1] && !NodeToProteinLookup.Contains(index))
                     {
                         found = index;
                         break;
@@ -607,7 +649,7 @@ public class SceneManager : MonoBehaviour
                 index++;
             }
 
-            HistogramsReverseLookup.Add(found);
+            NodeToProteinLookup.Add(found);
 
             //Debug.Log("RL: " + found);
         }

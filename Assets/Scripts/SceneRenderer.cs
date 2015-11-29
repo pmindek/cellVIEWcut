@@ -308,12 +308,11 @@ public class SceneRenderer : MonoBehaviour
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 
-        var stats = new int[4];
-        GPUBuffer.Instance.HistogramStatistics.GetData(stats);
-        ///*Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
-        //Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
-
-        SceneManager.Instance.stats = stats;
+        //var stats = new int[4];
+        //GPUBuffer.Instance.HistogramStatistics.GetData(stats);
+        /////*Debug.Log("STATSa: " + stats[0] + " " + stats[1] + " " + stats[2] + " " + stats[3]);
+        ////Debug.Log("all:" + SceneManager.Instance.NumProteinInstances);*/
+        //SceneManager.Instance.stats = stats;
 
 
         //all histograms
@@ -323,7 +322,6 @@ public class SceneRenderer : MonoBehaviour
         var histograms = new HistStruct[PersistantSettings.Instance.hierachy.Count];
         GPUBuffer.Instance.Histograms.GetData(histograms);
         SceneManager.Instance.histograms = histograms;
-        TreeViewController.UpdateRangeValues();
 
         /*Debug.Log("--------------------------------------------------hsl");
         foreach (var hl0 in histogramsLk)
@@ -363,99 +361,103 @@ public class SceneRenderer : MonoBehaviour
 
     public Material OcclusionQueriesMaterial;
 
-    void DoOcclusionQueries( int proteinType )
+    void ComputeOcclusionQueries()
     {
         // Clear occlusion before hand
         ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffer.Instance.ProteinInstanceOcclusionFlags);
         ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
-        // Clear occludees buffer
-        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+        // Clear histograms
+        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(2, "_Histograms", GPUBuffer.Instance.Histograms);
+        ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(2, Mathf.CeilToInt(SceneManager.Instance.Histograms.Count / 64.0f), 1, 1);
+        
+        //// Clear occludees buffer
+        //GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
 
-        ////***** Do Depth-Stencil mask *****//
+        //////***** Do Depth-Stencil mask *****//
 
-        //Fill the buffer with occludees
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_ProteinType", proteinType + 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_AdjustVisible", PersistantSettings.Instance.AdjustVisible);
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_NumInstances", SceneManager.Instance.NumProteinInstances);
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinRadii", GPUBuffer.Instance.ProteinRadii, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);        
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_Histograms", GPUBuffer.Instance.Histograms, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
+        ////Fill the buffer with occludees
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_ProteinType", 4 + 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_AdjustVisible", PersistantSettings.Instance.AdjustVisible);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_NumInstances", SceneManager.Instance.NumProteinInstances);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinRadii", GPUBuffer.Instance.ProteinRadii, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);        
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_Histograms", GPUBuffer.Instance.Histograms, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
-        // Count occludees instances
-        ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
+        //// Count occludees instances
+        //ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
 
-        // Prepare and set the render target
-        var tempBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.ARGB32);
-        Graphics.SetRenderTarget(tempBuffer);
-        GL.Clear(true, true, Color.white);
+        //// Prepare and set the render target
+        //var tempBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.ARGB32);
+        //Graphics.SetRenderTarget(tempBuffer);
+        //GL.Clear(true, true, Color.white);
 
-        // Prepare draw call
-        OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
-        OcclusionQueriesMaterial.SetBuffer("_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
-        OcclusionQueriesMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
-        OcclusionQueriesMaterial.SetBuffer("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions);
-        OcclusionQueriesMaterial.SetBuffer("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer);
-        OcclusionQueriesMaterial.SetPass(0);
+        //// Prepare draw call
+        //OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+        //OcclusionQueriesMaterial.SetBuffer("_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
+        //OcclusionQueriesMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
+        //OcclusionQueriesMaterial.SetBuffer("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions);
+        //OcclusionQueriesMaterial.SetBuffer("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer);
+        //OcclusionQueriesMaterial.SetPass(0);
 
-        // Draw occludees - bounding sphere only - write to depth and stencil buffer
-        Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
+        //// Draw occludees - bounding sphere only - write to depth and stencil buffer
+        //Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
 
-        // Clear occludees buffer
-        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+        //// Clear occludees buffer
+        //GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
 
-        //***** Do Queries *****//
+        ////***** Do Queries *****//
 
-        //Fill the buffer with occluders
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_ProteinType", -(proteinType + 1));
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_NumInstances", SceneManager.Instance.NumProteinInstances);
-        ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinRadii", GPUBuffer.Instance.ProteinRadii, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.SetResource("_Histograms", GPUBuffer.Instance.Histograms, 1);
-        ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
+        ////Fill the buffer with occluders
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_ProteinType", -(4 + 1));
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_NumInstances", SceneManager.Instance.NumProteinInstances);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetUniform("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinRadii", GPUBuffer.Instance.ProteinRadii, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.SetResource("_Histograms", GPUBuffer.Instance.Histograms, 1);
+        //ComputeShaderManager.Instance.SphereBatchCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
 
-        // Count occluder instances
-        ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
+        //// Count occluder instances
+        //ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
 
-        // Bind the read/write occlusion buffer to the shader
-        // After this draw call the occlusion buffer will be filled with ones if an instance occluded and occludee, zero otherwise
-        Graphics.SetRandomWriteTarget(1, GPUBuffer.Instance.ProteinInstanceOcclusionFlags);
-        MyUtility.DummyBlit();   // Dunny why yet, but without this I cannot write to the buffer from the shader, go figure
+        //// Bind the read/write occlusion buffer to the shader
+        //// After this draw call the occlusion buffer will be filled with ones if an instance occluded and occludee, zero otherwise
+        //Graphics.SetRandomWriteTarget(1, GPUBuffer.Instance.ProteinInstanceOcclusionFlags);
+        //MyUtility.DummyBlit();   // Dunny why yet, but without this I cannot write to the buffer from the shader, go figure
 
-        // Set the render target
-        Graphics.SetRenderTarget(tempBuffer);
+        //// Set the render target
+        //Graphics.SetRenderTarget(tempBuffer);
 
-        // Prepare draw call
-        OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
-        OcclusionQueriesMaterial.SetBuffer("_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
-        OcclusionQueriesMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
-        OcclusionQueriesMaterial.SetBuffer("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions);
-        OcclusionQueriesMaterial.SetBuffer("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer);
-        OcclusionQueriesMaterial.SetPass(1);
+        //// Prepare draw call
+        //OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+        //OcclusionQueriesMaterial.SetBuffer("_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
+        //OcclusionQueriesMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
+        //OcclusionQueriesMaterial.SetBuffer("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions);
+        //OcclusionQueriesMaterial.SetBuffer("_OcclusionQueriesBatchSpheres", GPUBuffer.Instance.SphereBatchBuffer);
+        //OcclusionQueriesMaterial.SetPass(1);
 
-        // Issue draw call for occluders - bounding quads only - depth/stencil test enabled - no write to color/depth/stencil
-        Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
-        Graphics.ClearRandomWriteTargets();
+        //// Issue draw call for occluders - bounding quads only - depth/stencil test enabled - no write to color/depth/stencil
+        //Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
+        //Graphics.ClearRandomWriteTargets();
 
-        // Release render target
-        RenderTexture.ReleaseTemporary(tempBuffer);
+        //// Release render target
+        //RenderTexture.ReleaseTemporary(tempBuffer);
     }
   
 
@@ -477,7 +479,7 @@ public class SceneRenderer : MonoBehaviour
             _itemBuffer= new RenderTexture(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
         }
         
-        DoOcclusionQueries(4);
+        ComputeOcclusionQueries();
         ComputeVisibility();
 
         ///**** Start rendering routine ****/
