@@ -175,20 +175,23 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         } //end of initialization
 
         value += dragDelta / 200;
-        value = Mathf.Min(1.0f, Mathf.Max(-1.0f, value));
+        value = Mathf.Min(1.0f, Mathf.Max(0.0f, value));
 
         //now we set these values to every cut object's record for the manipulated protein types
-        Debug.Log(selectedIngredients.Count);
         foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
         {
             for (int i = 0; i < selectedIngredients.Count; i++)
             {
                 if (rangeIndex == 0)
-                    //cut.SetValue2For(selectedIngredients[i], value);
+                {
+                    cut.SetValue2For(selectedIngredients[i], value);
                     PersistantSettings.Instance.AdjustVisible = value;
+                }
 
                 if (rangeIndex == 1)
+                {
                     cut.SetValue1For(selectedIngredients[i], value);
+                }
 
             }
         }

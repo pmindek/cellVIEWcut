@@ -120,7 +120,29 @@ public class CutObject : MonoBehaviour
     public void InitCutParameters()
     {
         ProteinTypeParameters.Clear();
-        ProteinTypeParameters.AddRange(Enumerable.Repeat(new CutParameters()
+
+        for (int i = 0; i < SceneManager.Instance.ProteinNames.Count; i++)
+        {
+            ProteinTypeParameters.Add(
+                new CutParameters()
+                {
+                    range0 = 0.0f,
+                    range1 = 0.0f,
+
+                    countAll = 0,
+                    count0 = 0,
+                    count1 = 0,
+
+                    value1 = 0.5f,
+                    value2 = 0.5f,
+                    fuzziness = 0.0f,
+                    fuzzinessDistance = 1.0f,
+                    fuzzinessCurve = 1.0f
+                }
+                );   
+        }
+
+        /*ProteinTypeParameters.AddRange(Enumerable.Repeat(new CutParameters()
         {
             range0 = 0.0f,
             range1 = 0.0f,
@@ -135,7 +157,7 @@ public class CutObject : MonoBehaviour
             fuzzinessDistance = 1.0f,
             fuzzinessCurve = 1.0f
         }, SceneManager.Instance.ProteinNames.Count
-        ));
+        ));*/
     }
 
     public CutParameters GetCutParametersFor(int ingredientId)
@@ -160,16 +182,12 @@ public class CutObject : MonoBehaviour
 
     public void SetValue1For(int ingredientId, float value1)
     {
-        CutParameters param = GetCutParametersFor(ingredientId);
-
-        param.value1 = value1;
+        ProteinTypeParameters[ingredientId].value1 = value1;
     }
 
     public void SetValue2For(int ingredientId, float value2)
     {
-        CutParameters param = GetCutParametersFor(ingredientId);
-
-        param.value2 = value2;
+        ProteinTypeParameters[ingredientId].value2 = value2;
     }
     
     public void SetFuzzinessParametersFor(int ingredientId, float value1, float value2, float value3)
