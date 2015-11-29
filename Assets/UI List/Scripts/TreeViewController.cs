@@ -44,6 +44,8 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     private List<float> rangeValues = new List<float>();
     private List<float> nextRangeValues = new List<float>();
 
+    private float value = 0.0f;
+
 
     public bool enableAppleEffect = false;
 
@@ -109,10 +111,109 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     public void OnRangeSliderDrag(BaseItem node, int rangeIndex, float dragDelta)
     {
         //Debug.Log(node.Id + " " + rangeIndex + " " + dragDelta);
+
+
+        RangeFieldItem range = node.FieldObject.GetComponent<RangeFieldItem>();
+
+
+
+
+        //initialize the dragging - average values for all dragged sliders and all selected cut objects
+        if (range.CustomRangeSliderUi.StartedDragging)
+        {
+            range.CustomRangeSliderUi.StartedDragging = false;
+
+            BaseItem baseItem = FindBaseItem(node.Path);
+            List<BaseItem> children = baseItem.GetAllChildren();
+
+            children.Add(baseItem);
+
+            selectedIngredients.Clear();
+
+            foreach (var child in children)
+            {
+                if (child.Children.Count == 0)
+                {
+                    Debug.Log("|~!!~ " + SceneManager.Instance.HistogramsReverseLookup[child.Id]);
+                    selectedIngredients.Add(SceneManager.Instance.HistogramsReverseLookup[child.Id]);
+                }
+            }
+
+
+            //calculate occlusion queries where selectedIngredients (those whose histograms are we dragging) are ocludees
+            Debug.Log("DO TOGGLE");
+            foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
+            {
+                cut.ToggleAllCutItem(true);
+                foreach (var si in selectedIngredients)
+                {
+                    cut.ToggleCutItem(SceneManager.Instance.ProteinNames[si], false);
+                }
+            }
+
+
+            float fc = 0;
+
+            float averageValue = 0.0f;
+
+            foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
+            {
+                for (int i = 0; i < selectedIngredients.Count; i++)
+                {
+                    CutParameters param = cut.GetCutParametersFor(selectedIngredients[i]);
+
+                    averageValue += (rangeIndex == 0 ? param.value2 : param.value1);
+                }
+            }
+
+            fc = (float)(selectedIngredients.Count * SceneManager.Instance.GetSelectedCutObjects().Count);
+
+            averageValue /= fc;
+
+            value = averageValue;
+
+        } //end of initialization
+
+        value += dragDelta / 200;
+        value = Mathf.Min(1.0f, Mathf.Max(-1.0f, value));
+
+        //now we set these values to every cut object's record for the manipulated protein types
+        Debug.Log(selectedIngredients.Count);
+        foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
+        {
+            for (int i = 0; i < selectedIngredients.Count; i++)
+            {
+                if (rangeIndex == 0)
+                    //cut.SetValue2For(selectedIngredients[i], value);
+                    PersistantSettings.Instance.AdjustVisible = value;
+
+                if (rangeIndex == 1)
+                    cut.SetValue1For(selectedIngredients[i], value);
+
+            }
+        }
     }
 
     public void UpdateRangeValues()
     {
+
+        if (RootNodes != null)
+            foreach (var Node in RootNodes)
+            {
+                HistStruct hist = SceneManager.Instance.histograms[Node.Id];
+
+                List<float> rangeValues = new List<float>();
+                rangeValues.Clear();
+
+                rangeValues.Add((float)hist.visible / (float)hist.all);
+                rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
+                rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
+
+                Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
+            }
+
+        return;
+
         if(RootNodes != null)
         foreach (var Node in RootNodes)
         {

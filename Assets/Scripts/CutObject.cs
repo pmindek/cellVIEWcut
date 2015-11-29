@@ -157,6 +157,20 @@ public class CutObject : MonoBehaviour
 
         ProteinTypeParameters[ingredientId] = cutParameters;
     }
+
+    public void SetValue1For(int ingredientId, float value1)
+    {
+        CutParameters param = GetCutParametersFor(ingredientId);
+
+        param.value1 = value1;
+    }
+
+    public void SetValue2For(int ingredientId, float value2)
+    {
+        CutParameters param = GetCutParametersFor(ingredientId);
+
+        param.value2 = value2;
+    }
     
     public void SetFuzzinessParametersFor(int ingredientId, float value1, float value2, float value3)
     {
