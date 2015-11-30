@@ -186,9 +186,13 @@ float SpherePlaneSD(float4 plane, float4 sphere)
 	return -(dot(plane.xyz, sphere.xyz - plane.xyz * -plane.w) + sphere.w);
 }
 
-float SphereSphereSD(float4 sphere, float4 atom)
+float SphereSphereSD(float3 position, float4 rotation, float3 size, float4 sphere)
 {
-	return length(sphere.xyz - atom.xyz) - sphere.w;
+	return (length( QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz) / size ) - 1.0) * min(min(size.x,size.y),size.z);
+
+	//return (length( (sphere.xyz - atom.xyz) / size ) - 1.0) * min(min(size.x,size.y),size.z);
+
+	//return length(sphere.xyz - atom.xyz * size.xyz) - sphere.w;
 }
 
 float SphereCubeSD(float3 position, float4 rotation, float3 size, float4 sphere)

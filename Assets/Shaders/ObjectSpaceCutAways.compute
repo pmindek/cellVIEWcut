@@ -151,7 +151,7 @@ float d(float3 sphere, int type, float3 position, float4 rotation, float3 scale)
     }
 	else if (type == 1)
 	{
-		distance = SphereSphereSD(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+		distance = SphereSphereSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
 	}
 	else if (type == 2)
 	{
@@ -258,7 +258,12 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 
 
 
-			if (abs(distance) < 20.0)
+if (abs(distance) < 20.0 && distance >= 0.0 &&
+						(	_ProteinInstanceInfo[id.x].x < 31 ||
+							(info.info.x == 1 && scale.x > 40.0) ||
+							(_ProteinInstanceInfo[id.x].x > 36 && _ProteinInstanceInfo[id.x].x < 45)
+						)
+				)
 			{
 				float shading = 0.0;
 
