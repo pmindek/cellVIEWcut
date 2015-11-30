@@ -256,7 +256,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 
 
 
-			if (distance < 20.0)
+			if (abs(distance) < 20.0)
 			{
 				float shading = 0.0;
 
@@ -277,7 +277,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			
 				shading = max(ndotl,0.5);
 
-				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, distance / 20.0);
+				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
 			}
 
         }    
