@@ -78,24 +78,24 @@ public class CustomRangeSlider : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         var parentRectTransform = gameObject.transform.parent.GetComponent<RectTransform>();
         GetComponent<LayoutElement>().preferredWidth = totalLength + HandleWidth * 2;
 
         float widthInc = 0;
-        for (int i = 0; i < requestRangeValues().Count; i++)
+        for (int i = 0; i < rangeValues.Count; i++)
         {
-            var rangeWidth = GetRangeWidth(requestRangeValues()[i]);
+            var rangeWidth = GetRangeWidth(rangeValues[i]);
 
-            var rangeRectTransform = ranges[i].GetComponent<RectTransform>();
+            var rangeRectTransform = ranges[i];
             rangeRectTransform.sizeDelta = new Vector2(rangeWidth, parentRectTransform.sizeDelta.y);
-            rangeRectTransform.localPosition = new Vector3(widthInc, 0,0);
+            rangeRectTransform.localPosition = new Vector3(widthInc, 0, 0);
             widthInc += rangeWidth;
 
             if (i < handles.Count)
             {
-                var handleRectTransform = handles[i].GetComponent<RectTransform>();
+                var handleRectTransform = handles[i];
                 handleRectTransform.sizeDelta = new Vector2(HandleWidth, parentRectTransform.sizeDelta.y);
                 handleRectTransform.localPosition = new Vector3(widthInc, 0, 0);
                 widthInc += HandleWidth;
@@ -108,8 +108,6 @@ public class CustomRangeSlider : MonoBehaviour
                 textUI.text = newText;
             }
         }
-
-        
 
         if (GetComponent<CanvasGroup>().alpha < 0.9f)
         {
@@ -164,11 +162,11 @@ public class CustomRangeSlider : MonoBehaviour
 
         RangeSliderDrag(GetBaseItemParent(), handleIndex, pointerEvent.delta.x);
     }
-    
+
     public void OnEnter()
     {
         LockState = true;
-        Cursor.SetCursor(cursor, new Vector2(14,14), CursorMode.Auto);
+        Cursor.SetCursor(cursor, new Vector2(14, 14), CursorMode.Auto);
     }
 
     public void OnExit()

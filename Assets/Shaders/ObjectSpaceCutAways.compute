@@ -1,6 +1,7 @@
 ﻿#include "Helper.cginc"
 
 #pragma kernel ComputeObjectSpaceCutAways
+#pragma kernel ComputeLipidObjectSpaceCutAways
 
 // Cutaways
 struct CutInfoStruct
@@ -341,43 +342,37 @@ void ComputeObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
 	{
 		InterlockedAdd(_Histograms[addWhere].visible, 1);
 	}
+}
+	
+uniform int _TypeId;
+uniform StructuredBuffer<float4> _LipidInstanceInfos;	
+uniform StructuredBuffer<float4> _LipidInstancePositions;
+uniform RWStructuredBuffer<int> _LipidInstanceCullFlags;	
 
+[numthreads(64,1,1)]
+void ComputeLipidObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
+{
+	if(id.x >= (uint)_NumInstances) return;    
+		
+	float4 info = _LipidInstanceInfos[id.x];	
+	float4 sphere = _LipidInstancePositions[id.x] * _Scale;	
+		
+	bool cutAway = CutAwayTest(sphere, _TypeId, id.x);
+	cutAway = cutAway | info.w > 0;
+	_LipidInstanceCullFlags[id.x] = (cutAway) ? 1 : 0;
+		
+	//int isVisible = _ProteinInstanceVisibilityFlags[id.x];
 
-	//int pof = _ProteinInstanceOcclusionFlags[id.x];
-	//int pvf = _ProteinInstanceVisibilityFlags[id.x];
+	int addWhere = _HistogramsLookup[_TypeId];
+	InterlockedAdd(_Histograms[addWhere].all, 1);
 
-	//int addWhere = _HistogramsLookup[infos.x];
+	if (cutAway)
+	{
+		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+	}	
 
-	//while (addWhere >= 0)
+	//if(isVisible)
 	//{
-	//	InterlockedAdd(_Histograms[addWhere].all, 1);
-	//	if (cutAwayTest)
-	//	{
-	//		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
-	//	}
-	//	else
-	//	{
-	//		InterlockedAdd(_Histograms[addWhere].occluding, pof);
-	//		InterlockedAdd(_Histograms[addWhere].visible, pvf);
-	//	}
-
-	//	addWhere = _Histograms[addWhere].parent;
+	//	InterlockedAdd(_Histograms[addWhere].visible, 1);
 	//}
-
-	//float adjustVisible = -1.0 + _AdjustVisible * 2.0;
-	//if (_ProteinInstanceOcclusionFlags[id.x]
-	//	&&
-	//	adjustVisible > 0.0
-	//	&&
-	//	rand(id * 256) < adjustVisible
-	//)
-	//	_ProteinInstanceInfo[id.x].w = 1;
-
-	//if (_ProteinInstanceOcclusionFlags[id.x]
-	//	&&
-	//	adjustVisible < 0.0
-	//	&&
-	//	rand(id * 256) < -adjustVisible
-	//)
-	//	_ProteinInstanceInfo[id.x].w = 0;
 }

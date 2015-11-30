@@ -74,6 +74,12 @@ public class SceneManager : MonoBehaviour
     public List<Vector4> ProteinInstancePositions = new List<Vector4>();
     public List<Vector4> ProteinInstanceRotations = new List<Vector4>();
 
+    // Lipid data 
+    public List<string> LipidIngredientNames = new List<string>();
+    public List<Vector4> LipidAtomPositions = new List<Vector4>();
+    public List<Vector4> LipidInstanceInfos = new List<Vector4>();
+    public List<Vector4> LipidInstancePositions = new List<Vector4>();
+
     public List<Vector4> CurveControlPointsInfos = new List<Vector4>();
     public List<Vector4> CurveControlPointsNormals = new List<Vector4>();
     public List<Vector4> CurveControlPointsPositions = new List<Vector4>();
@@ -141,6 +147,10 @@ public class SceneManager : MonoBehaviour
 
     public bool isUpdated = false;
 
+    public int NumLipidInstances
+    {
+        get { return LipidInstancePositions.Count; }
+    }
 
     public int NumProteinInstances
     {
@@ -189,6 +199,74 @@ public class SceneManager : MonoBehaviour
     {
         Debug.Log("Reload Scene");
         UploadAllData();
+    }
+
+    //--------------------------------------------------------------
+    // Membrane stuffs
+
+    public void LoadMembrane(string filePath, Vector3 position, Quaternion rotation)
+    {
+        LipidAtomPositions.Clear();
+        LipidInstanceInfos.Clear();
+        LipidInstancePositions.Clear();
+        LipidIngredientNames.Clear();
+        LipidIngredientNames.Add("HIV Membrane");
+
+        var currentLipidAtoms = new List<Vector4>();
+        var membraneData = MyUtility.ReadBytesAsFloats(filePath);
+
+        var step = 5;
+        var dataIndex = 0;
+        var lipidAtomStart = 0;
+        var previousLipidId = -1;
+
+        while (true)
+        {
+            var flushCurrentBatch = false;
+            var breakAfterFlushing = false;
+
+            if (dataIndex >= membraneData.Count())
+            {
+                flushCurrentBatch = true;
+                breakAfterFlushing = true;
+            }
+            else
+            {
+                var lipidId = (int)membraneData[dataIndex + 4] ;
+                if (previousLipidId < 0) previousLipidId = lipidId;
+                if (lipidId != previousLipidId)
+                {
+                    flushCurrentBatch = true;
+                    previousLipidId = lipidId;
+                }
+            }
+
+            if (flushCurrentBatch)
+            {
+                var bounds = AtomHelper.ComputeBounds(currentLipidAtoms);
+                var center = new Vector4(bounds.center.x, bounds.center.y, bounds.center.z, 0);
+                for (var j = 0; j < currentLipidAtoms.Count; j++) currentLipidAtoms[j] -= center;
+
+                Vector4 batchPosition = position + bounds.center;
+                batchPosition.w = Vector3.Magnitude(bounds.extents);
+
+                LipidInstancePositions.Add(batchPosition);
+                LipidInstanceInfos.Add(new Vector4(currentLipidAtoms.Count, lipidAtomStart, 0, 0));
+                
+                lipidAtomStart += currentLipidAtoms.Count;
+                LipidAtomPositions.AddRange(currentLipidAtoms);
+                currentLipidAtoms.Clear();
+
+                if(breakAfterFlushing) break;
+            }
+
+            
+            var currentAtom = new Vector4(membraneData[dataIndex], membraneData[dataIndex + 1], membraneData[dataIndex + 2], AtomHelper.AtomRadii[(int)membraneData[dataIndex + 3]]);
+            currentLipidAtoms.Add(currentAtom);
+            dataIndex += step;
+        }
+
+        int a = 0;
     }
 
     //--------------------------------------------------------------
@@ -359,78 +437,9 @@ public class SceneManager : MonoBehaviour
         var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
     }
 
-    //public class PriorityRelationship
-    //{
-    //    public float value2;
-    //    public List<int> Occludees = new List<int>();
-    //    public List<int> Occluders = new List<int>();
-    //}
-
-    //List<PriorityRelationship> PriorityRelationships = new List<PriorityRelationship>();
-
-    //void ComputeRelationships()
-    //{
-    //    PriorityRelationships.Clear();
-
-    //    foreach (var cutObject in SceneManager.Instance.CutObjects)
-    //    {
-    //        bool HasPriorityDraws = false;
-    //        foreach (var proteinCutInfo in cutObject.ProteinTypeParameters)
-    //        {
-    //            HasPriorityDraws |= proteinCutInfo.value2 > 0;
-    //        }
-
-    //        if (HasPriorityDraws)
-    //        {
-    //            var distinctValues2 = cutObject.GetDistinctValue2();
-
-    //            foreach (var value2 in distinctValues2)
-    //            {
-    //                var relationship = new PriorityRelationship();
-    //                relationship.value2 = value2;
-    //                relationship.Occludees.AddRange(cutObject.GetAllWithValue2(value2));
-    //                relationship.Occluders.AddRange(cutObject.GetAllNonIgnorePriorityDraw());
-
-    //                int a = 0;
-    //            }
-    //        }
-
-    //        //if (HasPriorityDraws)
-    //        //{
-    //        //    var relationship = new PriorityRelationship();
-    //        //    for(int i = 0; i < cutObject.ProteinTypeParameters.Count; i++)// (var proteinCutInfo in cutObject.ProteinTypeParameters)
-    //        //    {
-    //        //        var proteinCutParameter = cutObject.ProteinTypeParameters[i];
-    //        //        relationship.Occludees.Add((proteinCutParameter.value2 > 0) ? 1 : 0);
-    //        //        relationship.Occluders.Add((proteinCutParameter.IgnorePriorityDraw ) ? 0 : 1);
-    //        //    }
-    //        //}
-    //    }
-    //}
-    
-    //public List<List<KeyValuePair<bool, CutParameters>>> OcclusionMasks = new List<List<KeyValuePair<int, CutParameters>>>();
-
-    //void ComputeOcclusionMasks()
-    //{
-    //    OcclusionMasks.Clear();
-
-    //    foreach (var cutObject in CutObjects)
-    //    {
-    //        var occlusionMask = new List<KeyValuePair<int, float>>();
-    //        foreach (var cutParam in cutObject.ProteinTypeParameters)
-    //        {
-    //            occlusionMask.Add(new KeyValuePair<int, float>(cutParam.IsFocus ? 1 : 0, cutParam.IsFocus ? 0 : cutParam.value2));
-    //        }
-    //        OcclusionMasks.Add(occlusionMask);
-    //    }
-    //}
-
     // Todo: proceed only if changes are made 
     public void UpdateCutObjects()
     {
-        //ComputeOcclusionMasks();
-            
-
         var CutInfos = new List<CutInfoStruct>();
         var CutScales = new List<Vector4>();
         var CutPositions = new List<Vector4>();
@@ -468,25 +477,15 @@ public class SceneManager : MonoBehaviour
             //CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f));
         }
 
-        for (int i = 0; i < ProteinNames.Count; i++)
+        foreach (var cut in CutObjects)
         {
-            foreach (var cut in CutObjects)
+            foreach (var cutParam in cut.ProteinTypeParameters)
             {
-                if (i < cut.ProteinTypeParameters.Count)
+                CutInfos.Add(new CutInfoStruct
                 {
-                    CutInfos.Add(new CutInfoStruct
-                    {
-                        info = new Vector4((float)cut.CutType, cut.ProteinTypeParameters[i].value1, cut.ProteinTypeParameters[i].value2, cut.Inverse ? 1.0f : 0.0f),
-                        info2 = new Vector4((float)cut.ProteinTypeParameters[i].fuzziness, (float)cut.ProteinTypeParameters[i].fuzzinessDistance, (float)cut.ProteinTypeParameters[i].fuzzinessCurve, 0.0f)
-
-                        /*info = new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f),
-                        info2 = new Vector4((float)cut.Fuzziness, (float)cut.FuzzinessDistance, (float)cut.FuzzinessCurve, 0.0f)*/
-                    });
-                }
-                else
-                {
-                    CutInfos.Add(new CutInfoStruct { info = new Vector4(0.0f, 0.5f, 0.5f, 0.0f), info2 = new Vector4(0.0f, 1.0f, 1.0f, 0.0f) });
-                }
+                    info = new Vector4((float) cut.CutType, cutParam.value1, cutParam.value2, cut.Inverse ? 1.0f : 0.0f),
+                    info2 = new Vector4(cutParam.fuzziness, cutParam.fuzzinessDistance, cutParam.fuzzinessCurve, 0.0f)
+                });
             }
         }
 
@@ -512,6 +511,12 @@ public class SceneManager : MonoBehaviour
 
         NumLodLevels = 0;
         TotalNumProteinAtoms = 0;
+
+        // Clear lipid data
+        LipidIngredientNames.Clear();
+        LipidAtomPositions.Clear();
+        LipidInstanceInfos.Clear();
+        LipidInstancePositions.Clear();
 
         // Clear scene data
         ProteinInstanceInfos.Clear();
@@ -660,7 +665,13 @@ public class SceneManager : MonoBehaviour
             //Debug.Log(name);
         }
 
+        if (LipidIngredientNames.Count > 0)
+        {
+            // Register membrane to histograms
+            HistogramsLookup.Add(PersistantSettings.Instance.hierachy.Count - 1);
+        }
 
+        
 
 
 
@@ -689,6 +700,14 @@ public class SceneManager : MonoBehaviour
             //Debug.Log("RL: " + found);
         }
 
+        if (LipidIngredientNames.Count > 0)
+        {
+            // Register membrane to histograms
+            NodeToProteinLookup[NodeToProteinLookup.Count - 1] = ProteinNames.Count;
+        }
+
+        
+
         /*int qw = 0;
         Debug.Log("HIERARCHY");
         foreach (var node in PersistantSettings.Instance.hierachy)
@@ -712,7 +731,7 @@ public class SceneManager : MonoBehaviour
         //    Debug.Log(lk);
         //}
 
-
+        int a = 0;
         GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 0, 0, 4 });
 
         //todo - fill histograms lookup
@@ -750,6 +769,11 @@ public class SceneManager : MonoBehaviour
         GPUBuffer.Instance.CurveControlPointsInfos.SetData(CurveControlPointsInfos.ToArray());
         GPUBuffer.Instance.CurveControlPointsNormals.SetData(CurveControlPointsNormals.ToArray());
         GPUBuffer.Instance.CurveControlPointsPositions.SetData(CurveControlPointsPositions.ToArray());
+
+        //
+        GPUBuffer.Instance.LipidAtomPositions.SetData(LipidAtomPositions.ToArray());
+        GPUBuffer.Instance.LipidInstanceInfos.SetData(LipidInstanceInfos.ToArray());
+        GPUBuffer.Instance.LipidInstancePositions.SetData(LipidInstancePositions.ToArray());
     }
 
     public void UploadIngredientToggleData()

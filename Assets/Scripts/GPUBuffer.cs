@@ -4,6 +4,9 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class GPUBuffer : MonoBehaviour
 {
+    public static int NumLipidAtomMax = 10000000;
+    public static int NumLipidInstancesMax = 1000000;
+
     //cutaways
     public static int NumCutsMax = 100;
 
@@ -40,6 +43,12 @@ public class GPUBuffer : MonoBehaviour
     public ComputeBuffer ProteinInstanceCullFlags;
     public ComputeBuffer ProteinInstanceOcclusionFlags;
     public ComputeBuffer ProteinInstanceVisibilityFlags;
+
+    // lipid buffers
+    public ComputeBuffer LipidAtomPositions;
+    public ComputeBuffer LipidInstanceInfos;
+    public ComputeBuffer LipidInstancePositions;
+    public ComputeBuffer LipidInstanceCullFlags;
 
     // Curve ingredients buffers
     public ComputeBuffer CurveIngredientsInfos;
@@ -128,6 +137,13 @@ public class GPUBuffer : MonoBehaviour
 
         //*****//
 
+        if (LipidAtomPositions == null) LipidAtomPositions = new ComputeBuffer(NumLipidAtomMax, 16);
+        if (LipidInstanceInfos == null) LipidInstanceInfos = new ComputeBuffer(NumLipidInstancesMax, 16);
+        if (LipidInstancePositions == null) LipidInstancePositions = new ComputeBuffer(NumLipidInstancesMax, 16);
+        if (LipidInstanceCullFlags == null) LipidInstanceCullFlags = new ComputeBuffer(NumLipidInstancesMax, 4);
+
+        //*****//
+
         if (CurveIngredientsInfos == null) CurveIngredientsInfos = new ComputeBuffer(NumCurveIngredientMax, 16);
         if (CurveIngredientsColors == null) CurveIngredientsColors = new ComputeBuffer(NumCurveIngredientMax, 16);
         if (CurveIngredientsToggleFlags == null) CurveIngredientsToggleFlags = new ComputeBuffer(NumCurveIngredientMax, 4);
@@ -206,5 +222,12 @@ public class GPUBuffer : MonoBehaviour
         if (CurveControlPointsInfos != null) { CurveControlPointsInfos.Release(); CurveControlPointsInfos = null; }
         if (CurveControlPointsNormals != null) { CurveControlPointsNormals.Release(); CurveControlPointsNormals = null; }
         if (CurveControlPointsPositions != null) { CurveControlPointsPositions.Release(); CurveControlPointsPositions = null; }
-	}
+
+        //*****//
+
+        if (LipidAtomPositions != null) { LipidAtomPositions.Release(); LipidAtomPositions = null; }
+        if (LipidInstanceInfos != null) { LipidInstanceInfos.Release(); LipidInstanceInfos = null; }
+        if (LipidInstancePositions != null) { LipidInstancePositions.Release(); LipidInstancePositions = null; }
+        if (LipidInstanceCullFlags != null) { LipidInstanceCullFlags.Release(); LipidInstanceCullFlags = null; }
+    }
 }

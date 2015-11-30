@@ -114,15 +114,22 @@
 				//{
 				//	color = float4(1,240.0/255.0,114.0/255.0,0);
 				//}				
-
+				
 				if(id >= 0)
 				{
-					float4 proteinInfo = _ProteinInstanceInfo[id];
-					float4 proteinColor = _ProteinColors[proteinInfo.x];
-					
-					float diffuse = proteinInfo.z;
+					// if is lipid
+					if(id >= 100000)
+					{						
+						color = float4(ColorCorrection(float3(1,1,0)), 1);	
+					}
+					else
+					{
+						float4 proteinInfo = _ProteinInstanceInfo[id];
+						float4 proteinColor = _ProteinColors[proteinInfo.x];
 
-					color = float4(ColorCorrection(proteinColor.xyz) * diffuse, 1);	
+						float diffuse = proteinInfo.z;
+						color = float4(ColorCorrection(proteinColor.xyz) * diffuse, 1);	
+					}						
 				}
 				else
 				{

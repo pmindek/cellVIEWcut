@@ -154,6 +154,31 @@ public class CutObject : MonoBehaviour
                 );   
         }
 
+        if (SceneManager.Instance.LipidIngredientNames.Count > 0)
+        {
+            // Add an extra one for the membrane
+            ProteinTypeParameters.Add(
+                    new CutParameters()
+                    {
+                        IsFocus = false,
+                        range0 = 0.0f,
+                        range1 = 0.0f,
+
+                        countAll = 0,
+                        count0 = 0,
+                        count1 = 0,
+
+                        value1 = 0.5f,
+                        value2 = 0.0f,
+                        fuzziness = 0.0f,
+                        fuzzinessDistance = 1.0f,
+                        fuzzinessCurve = 1.0f
+                    }
+                    );
+        }
+
+        
+
         /*ProteinTypeParameters.AddRange(Enumerable.Repeat(new CutParameters()
         {
             range0 = 0.0f,

@@ -2,6 +2,7 @@
 
 #pragma kernel ComputeProteinSphereBatches
 #pragma kernel ComputeOcclusionMaskSphereBatches
+#pragma kernel ComputeLipidSphereBatches
 
 #define MAX_SPHERE_COUNT_PER_BATCH 100
 
@@ -95,4 +96,29 @@ void ComputeOcclusionMaskSphereBatches (uint3 id : SV_DispatchThreadID)
 	{
 		_OcclusionMaskSphereBatches.Append(int4(id.x, 0, 0, 0));
 	}
+}
+
+////*****//
+
+uniform StructuredBuffer<float4> _LipidInstanceInfos;	
+uniform StructuredBuffer<float4> _LipidInstancePositions;
+uniform StructuredBuffer<int> _LipidInstanceCullFlags;
+
+uniform AppendStructuredBuffer<int4> _LipidSphereBatches;
+
+[numthreads(64,1,1)]
+void ComputeLipidSphereBatches (uint3 id : SV_DispatchThreadID)
+{	
+	if(id.x >= (uint)_NumInstances) return;
+
+	float4 info = _LipidInstanceInfos[id.x];	
+	float4 sphere = _LipidInstancePositions[id.x] * _Scale;	
+
+	int cullFlag = _LipidInstanceCullFlags[id.x];
+	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);	
+
+	if(cullFlag != 1 && !frustrumTest)
+	{
+		_LipidSphereBatches.Append(int4(id.x, 0, info.x, info.y));
+	}	
 }

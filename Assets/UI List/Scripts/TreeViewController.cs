@@ -397,7 +397,9 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             List<float> newRangeValues = new List<float>();
 
             var newRange0 = (float) hist.visible/(float) hist.all;
-            var newRange0Smooth = oldRangeValues[0] + ((newRange0 - oldRangeValues[0])*0.1f);
+            var delta = newRange0 - oldRangeValues[0];
+            if (Mathf.Abs(delta) < 0.01f) delta = 0;
+            var newRange0Smooth = oldRangeValues[0] + delta * 0.1f;
 
             newRangeValues.Add(newRange0Smooth);
             newRangeValues.Add(1.0f - (float) hist.cutaway/(float) hist.all - newRangeValues[0]);

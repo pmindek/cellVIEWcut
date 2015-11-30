@@ -13,28 +13,19 @@ using UnityEditor;
 [RequireComponent(typeof(Camera))]
 public class SceneRenderer : MonoBehaviour
 {
-    public int occludeeType = 0;
-
-    public Shader RenderProteinShader;
-
-    public Material _contourMaterial;
-    public Material _compositeMaterial;
+    public Material ContourMaterial;
+    public Material CompositeMaterial;
     public Material OcclusionQueriesMaterial;
-    private Material _renderProteinsMaterial;
-    public Material _renderCurveIngredientsMaterial;
+
+    public Material RenderLipidsMaterial;
+    public Material RenderProteinsMaterial;
+    public Material RenderCurveIngredientsMaterial;
 
     /*****/
     
-    private RenderTexture _HiZMap;
     private ComputeBuffer _argBuffer;
-    private ComputeBuffer _proteinInstanceCullFlags;
-
 
     /*****/
-    
-    public Material guiMaterial;
-    public Texture2D noiseTexture = null;
-    public TreeViewController TreeViewController;
 
     void OnEnable()
     {
@@ -45,70 +36,41 @@ public class SceneRenderer : MonoBehaviour
             _argBuffer = new ComputeBuffer(4, sizeof(int), ComputeBufferType.DrawIndirect);
             _argBuffer.SetData(new[] { 0, 1, 0, 0 });            
         }
-
-        if (_proteinInstanceCullFlags == null) _proteinInstanceCullFlags = new ComputeBuffer(GPUBuffer.NumProteinInstancesMax, 4);
-
-
-        if (_renderProteinsMaterial == null)
-        {
-            _renderProteinsMaterial = new Material(RenderProteinShader);
-            _renderProteinsMaterial.hideFlags = HideFlags.HideAndDontSave;
-        }
     }
 
     void OnDisable()
     {
-        
-        if (_HiZMap != null)
-        {
-            _HiZMap.Release();
-            DestroyImmediate(_HiZMap);
-            _HiZMap = null;
-        }
-
         if (_argBuffer != null)
         {
             _argBuffer.Release();
             _argBuffer = null;
-        }
-
-        if (_proteinInstanceCullFlags != null)
-        {
-            _proteinInstanceCullFlags.Release();
-            _proteinInstanceCullFlags = null;
-        }
-
-        if (_renderProteinsMaterial != null)
-        {
-            DestroyImmediate(_renderProteinsMaterial);
-            _renderProteinsMaterial = null;
         }
     }
 
     void SetContourShaderParams()
     {
         // Contour params
-        _contourMaterial.SetInt("_ContourOptions", PersistantSettings.Instance.ContourOptions);
-        _contourMaterial.SetFloat("_ContourStrength", PersistantSettings.Instance.ContourStrength);
+        ContourMaterial.SetInt("_ContourOptions", PersistantSettings.Instance.ContourOptions);
+        ContourMaterial.SetFloat("_ContourStrength", PersistantSettings.Instance.ContourStrength);
     }
 
     private void SetProteinShaderParams()
     {
         // Protein params
-        _renderProteinsMaterial.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
-        _renderProteinsMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
-        _renderProteinsMaterial.SetFloat("_FirstLevelBeingRange", PersistantSettings.Instance.FirstLevelOffset);
-        _renderProteinsMaterial.SetVector("_CameraForward", GetComponent<Camera>().transform.forward);
+        RenderProteinsMaterial.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
+        RenderProteinsMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+        RenderProteinsMaterial.SetFloat("_FirstLevelBeingRange", PersistantSettings.Instance.FirstLevelOffset);
+        RenderProteinsMaterial.SetVector("_CameraForward", GetComponent<Camera>().transform.forward);
 
-        _renderProteinsMaterial.SetBuffer("_LodLevelsInfos", GPUBuffer.Instance.LodInfos);
-        _renderProteinsMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
-        _renderProteinsMaterial.SetBuffer("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions);
-        _renderProteinsMaterial.SetBuffer("_ProteinInstanceRotations", GPUBuffer.Instance.ProteinInstanceRotations);
+        RenderProteinsMaterial.SetBuffer("_LodLevelsInfos", GPUBuffer.Instance.LodInfos);
+        RenderProteinsMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
+        RenderProteinsMaterial.SetBuffer("_ProteinInstancePositions", GPUBuffer.Instance.ProteinInstancePositions);
+        RenderProteinsMaterial.SetBuffer("_ProteinInstanceRotations", GPUBuffer.Instance.ProteinInstanceRotations);
 
-        _renderProteinsMaterial.SetBuffer("_ProteinColors", GPUBuffer.Instance.ProteinColors);
-        _renderProteinsMaterial.SetBuffer("_ProteinAtomPositions", GPUBuffer.Instance.ProteinAtoms);
-        _renderProteinsMaterial.SetBuffer("_ProteinClusterPositions", GPUBuffer.Instance.ProteinAtomClusters);
-        _renderProteinsMaterial.SetBuffer("_ProteinSphereBatchInfos", GPUBuffer.Instance.SphereBatchBuffer);
+        RenderProteinsMaterial.SetBuffer("_ProteinColors", GPUBuffer.Instance.ProteinColors);
+        RenderProteinsMaterial.SetBuffer("_ProteinAtomPositions", GPUBuffer.Instance.ProteinAtoms);
+        RenderProteinsMaterial.SetBuffer("_ProteinClusterPositions", GPUBuffer.Instance.ProteinAtomClusters);
+        RenderProteinsMaterial.SetBuffer("_ProteinSphereBatchInfos", GPUBuffer.Instance.SphereBatchBuffer);
     }
 
     //void SetCurveShaderParams()
@@ -247,11 +209,11 @@ public class SceneRenderer : MonoBehaviour
     //    }
     //}
 
-    int GetBatchCount()
+    void DebugBatchCount()
     {
         var batchCount = new int[1];
         _argBuffer.GetData(batchCount);
-        return batchCount[0];
+        Debug.Log(batchCount[0]);
     }
 
     void ComputeVisibility(RenderTexture itemBuffer)
@@ -316,7 +278,6 @@ public class SceneRenderer : MonoBehaviour
         // Other params
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetUniform("_NumInstances", SceneManager.Instance.NumProteinInstances);
-        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetUniform("_AdjustVisible", PersistantSettings.Instance.AdjustVisible);
 
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_ProteinRadii", GPUBuffer.Instance.ProteinRadii);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
@@ -327,6 +288,38 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_ProteinInstanceVisibilityFlags", GPUBuffer.Instance.ProteinInstanceVisibilityFlags);
 
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
+    }
+
+    void ComputeLipidObjectSpaceCutAways()
+    {
+        if (SceneManager.Instance.NumProteinInstances <= 0) return;
+
+        // Cutaways params
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetInt("_NumCutObjects", SceneManager.Instance.NumCutObjects);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutInfos", GPUBuffer.Instance.CutInfos);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutScales", GPUBuffer.Instance.CutScales);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutPositions", GPUBuffer.Instance.CutPositions);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutRotations", GPUBuffer.Instance.CutRotations);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_Histograms", GPUBuffer.Instance.Histograms);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup);
+
+        //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetTexture(0, "noiseTexture", noiseTexture);
+        //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetFloat("noiseTextureW", noiseTexture.width);
+        //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetFloat("noiseTextureH", noiseTexture.height);
+
+        //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_ProteinCutFilters", GPUBuffer.Instance.ProteinCutFilters);
+        //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_HistogramStatistics", GPUBuffer.Instance.HistogramStatistics);
+        //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_HistogramProteinTypes", GPUBuffer.Instance.HistogramProteinTypes);
+
+        // Other params
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetUniform("_Scale", PersistantSettings.Instance.Scale);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetUniform("_TypeId", SceneManager.Instance.ProteinNames.Count);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetUniform("_NumInstances", SceneManager.Instance.NumLipidInstances);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstanceInfo", GPUBuffer.Instance.LipidInstanceInfos);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstancePositions", GPUBuffer.Instance.LipidInstancePositions);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstanceCullFlags", GPUBuffer.Instance.LipidInstanceCullFlags);
+
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumLipidInstances / 64.0f), 1, 1);
     }
 
     //[ImageEffectOpaque]
@@ -504,11 +497,35 @@ public class SceneRenderer : MonoBehaviour
         ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
     }
 
+    void ComputeLipidSphereBatches()
+    {
+        if (SceneManager.Instance.NumLipidInstances <= 0) return;
+
+        // Always clear append buffer before usage
+        GPUBuffer.Instance.SphereBatchBuffer.ClearAppendBuffer();
+
+        ComputeShaderManager.Instance.SphereBatchCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumLevels", SceneManager.Instance.NumLodLevels);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumInstances", SceneManager.Instance.NumLipidInstances);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
+        ComputeShaderManager.Instance.SphereBatchCS.SetVector("_CameraForward", GetComponent<Camera>().transform.forward);
+        ComputeShaderManager.Instance.SphereBatchCS.SetVector("_CameraPosition", GetComponent<Camera>().transform.position);
+        ComputeShaderManager.Instance.SphereBatchCS.SetFloats("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(GetComponent<Camera>()));
+
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(2, "_LipidInstanceInfos", GPUBuffer.Instance.LipidInstanceInfos);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(2, "_LipidInstancePositions", GPUBuffer.Instance.LipidInstancePositions);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(2, "_LipidInstanceCullFlags", GPUBuffer.Instance.LipidInstanceCullFlags);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(2, "_LipidSphereBatches", GPUBuffer.Instance.SphereBatchBuffer);
+        ComputeShaderManager.Instance.SphereBatchCS.Dispatch(2, Mathf.CeilToInt(SceneManager.Instance.NumLipidInstances / 64.0f), 1, 1);
+        ComputeBuffer.CopyCount(GPUBuffer.Instance.SphereBatchBuffer, _argBuffer, 0);
+
+    }
+
     void DrawSphereBatches(RenderTexture colorBuffer, RenderTexture depthBuffer)
     {
         SetProteinShaderParams();
         Graphics.SetRenderTarget(colorBuffer.colorBuffer, depthBuffer.depthBuffer);
-        _renderProteinsMaterial.SetPass(0);
+        RenderProteinsMaterial.SetPass(0);
         Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
     }
 
@@ -517,11 +534,11 @@ public class SceneRenderer : MonoBehaviour
     {
         if (GetComponent<Camera>().pixelWidth == 0 || GetComponent<Camera>().pixelHeight == 0) return;
 
-        if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumDnaSegments == 0)
-        {
-            Graphics.Blit(src, dst);
-            return;
-        }
+        //if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumDnaSegments == 0)
+        //{
+        //    Graphics.Blit(src, dst);
+        //    return;
+        //}
 
         ///**** Start rendering routine ****/
 
@@ -538,7 +555,7 @@ public class SceneRenderer : MonoBehaviour
         GL.Clear(true, true, new Color(-1, 0, 0, 0));
 
         Graphics.SetRenderTarget(colorBuffer.colorBuffer, depthBuffer.depthBuffer);
-        GL.Clear(true, true, Color.white);
+        GL.Clear(true, true, Color.black);
 
         // Draw proteins
         if (SceneManager.Instance.NumProteinInstances > 0)
@@ -548,7 +565,7 @@ public class SceneRenderer : MonoBehaviour
             ComputeSphereBatches();
             DrawSphereBatches(itemBuffer, depthBuffer);
             ComputeVisibility(itemBuffer);
-            FetchHistogramValues();
+
         }
 
         //// Draw curve ingredients
@@ -560,28 +577,52 @@ public class SceneRenderer : MonoBehaviour
         //    Graphics.DrawProcedural(MeshTopology.Points, Mathf.Max(SceneManager.Instance.NumDnaSegments - 2, 0)); // Do not draw first and last segments
         //}
 
-        /////*** Post processing ***/
+        // Draw Lipids
+        if (SceneManager.Instance.LipidInstanceInfos.Count > 0)
+        {
+            ComputeLipidObjectSpaceCutAways();
+            ComputeLipidSphereBatches();
+
+            //DebugBatchCount();
+
+            RenderLipidsMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+            RenderLipidsMaterial.SetBuffer("_LipidSphereBatches", GPUBuffer.Instance.SphereBatchBuffer);
+            RenderLipidsMaterial.SetBuffer("_LipidAtomPositions", GPUBuffer.Instance.LipidAtomPositions);
+            //RenderLipidsMaterial.SetBuffer("_LipidInstanceInfos", GPUBuffer.Instance.LipidInstanceInfos);
+            RenderLipidsMaterial.SetBuffer("_LipidInstancePositions", GPUBuffer.Instance.LipidInstancePositions);
+            RenderLipidsMaterial.SetPass(0);
+
+            Graphics.SetRenderTarget(itemBuffer.colorBuffer, depthBuffer.depthBuffer);
+            Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
+            //Graphics.DrawProcedural(MeshTopology.Points, SceneManager.Instance.LipidInstanceInfos.Count);
+        }
+
+        FetchHistogramValues();
+
+        ///////*** Post processing ***/
 
         // Get color from id buffer
-        _compositeMaterial.SetTexture("_IdTexture", itemBuffer);
-        _compositeMaterial.SetBuffer("_ProteinColors", GPUBuffer.Instance.ProteinColors);
-        _compositeMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
-        Graphics.Blit(null, colorBuffer, _compositeMaterial, 3);
+        CompositeMaterial.SetTexture("_IdTexture", itemBuffer);
+        CompositeMaterial.SetBuffer("_ProteinColors", GPUBuffer.Instance.ProteinColors);
+        CompositeMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffer.Instance.ProteinInstanceInfos);
+        Graphics.Blit(null, colorBuffer, CompositeMaterial, 3);
 
         // Compute contours detection
         SetContourShaderParams();
-        _contourMaterial.SetTexture("_IdTexture", itemBuffer);
-        Graphics.Blit(colorBuffer, compositeColorBuffer, _contourMaterial, 0);
+        ContourMaterial.SetTexture("_IdTexture", itemBuffer);
+        Graphics.Blit(colorBuffer, compositeColorBuffer, ContourMaterial, 0);
+
+        Graphics.Blit(compositeColorBuffer, dst);
 
         // Composite with scene color
-        _compositeMaterial.SetTexture("_ColorTexture", compositeColorBuffer);
-        _compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
-        Graphics.Blit(null, src, _compositeMaterial, 0);
+        CompositeMaterial.SetTexture("_ColorTexture", compositeColorBuffer);
+        CompositeMaterial.SetTexture("_DepthTexture", depthBuffer);
+        Graphics.Blit(null, src, CompositeMaterial, 0);
         Graphics.Blit(src, dst);
 
         //Composite with scene depth
-        _compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
-        Graphics.Blit(null, compositeDepthBuffer, _compositeMaterial, 1);
+        CompositeMaterial.SetTexture("_DepthTexture", depthBuffer);
+        Graphics.Blit(null, compositeDepthBuffer, CompositeMaterial, 1);
 
         ////Composite with scene depth normals
         ////_compositeMaterial.SetTexture("_DepthTexture", depthBuffer);

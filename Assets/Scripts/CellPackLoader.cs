@@ -18,79 +18,7 @@ public static class CellPackLoader
 	public static Dictionary<int,List<int>> usedColors;
 	private static bool use_rigid_body = true;
 
-	public static void AddRecipeIngredientsGameObject(JSONNode recipeData,GameObject parent){
-		for (int j = 0; j < recipeData["ingredients"].Count; j++)
-		{
-			string iname = recipeData["ingredients"][j]["name"];
-			/*if (iname.StartsWith("HIV")) 
-				if (iname.Contains("NC")){
-					iname = "HIV_"+iname.Split('_')[1]+"_"+iname.Split('_')[2];
-				}
-				else if (iname.Contains("P6_VPR"))
-					iname = "HIV_"+iname.Split('_')[1]+"_"+iname.Split('_')[2];
-				else 
-					iname = "HIV_"+iname.Split('_')[1];
-			*/
-			if (!SceneManager.Instance.ProteinNames.Contains(parent.name+"_"+iname))
-			{
-				Debug.Log (parent.name+"_"+iname);
-				continue;
-			}
-			Debug.Log ("create "+iname);
-			var jitem = new GameObject(iname);
-			jitem.transform.parent=parent.transform;
-			if ((recipeData["ingredients"][j]["radii"] != null )&&(use_rigid_body)){
-				//build child as rigid body
-				var atomSpheres = MyUtility.gatherSphereTree(recipeData["ingredients"][j])[0];
-				//build the prefab
-				GameObject prefab = GameObject.CreatePrimitive(PrimitiveType.Sphere);// new GameObject(iname+"_0");
-				//prefab.transform.localScale = new Vector3()
-				//add sphere collision compoinent
-				Rigidbody rb = prefab.AddComponent<Rigidbody>();
-				rb.useGravity = false;
-				rb.velocity = Vector3.zero;
-				rb.drag = 100;
-				rb.angularDrag =100;
-				foreach (Vector4 sph in atomSpheres) {
-					SphereCollider sc = prefab.AddComponent<SphereCollider>();
-					sc.radius = sph.w;
-					sc.center = new Vector3(sph.x,sph.y,sph.z);
-					//sc.attachedRigidbody = rb;
-				}
-				GameObject rbroot = GameObject.Find (SceneManager.Instance.scene_name);
-				prefab.transform.parent = rbroot.transform;
-				prefab.hideFlags = HideFlags.HideInHierarchy;
-				//add rigid body component
-				//instantiate
-				for (int k = 0; k < recipeData["ingredients"][j]["results"].Count; k++)
-				{
-					var p = recipeData["ingredients"][j]["results"][k][0];
-					var r = recipeData["ingredients"][j]["results"][k][1];
-					
-					var position = new Vector3(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat);
-					var rotation = new Quaternion(r[0].AsFloat, r[1].AsFloat, r[2].AsFloat, r[3].AsFloat);
-					
-					var mat = MyUtility.quaternion_matrix(rotation);
-					var euler = MyUtility.euler_from_matrix(mat);
-					rotation = MyUtility.MayaRotationToUnity(euler);
-					//instantiate
-					if (k==0){
-						prefab.transform.position = position;
-						prefab.transform.rotation = rotation;
-					}
-					else {
-						GameObject inst = GameObject.Instantiate(prefab, position, rotation) as GameObject;
-						inst.transform.parent = rbroot.transform;
-						inst.hideFlags = HideFlags.HideInHierarchy;
-						inst.name = iname+"_"+k.ToString();
-					}
-					//SceneManager.Instance.AddIngredientInstance(name, position, rotation);
-				}
-			}
-			//add children invisible instance with collider and rigidBody with no gravity
-			//collider should be the primitive from cellPACK
-		}
-	}
+	
 
     public static string GetPath(List<string> path)
     {
@@ -204,32 +132,6 @@ public static class CellPackLoader
         //}
     }
 
-    public static void buildHierarchy(JSONNode resultData){
-		SceneManager.Instance.scene_name = resultData ["recipe"] ["name"];
-		var root = new GameObject(resultData["recipe"]["name"]);//in case we want to have more than one recipe loaded
-		//create empty null object or sphere ?
-		if (use_rigid_body) {
-			GameObject rb_root = new GameObject (resultData ["recipe"] ["name"] + "_rigidbody");
-		}
-		if (resultData["cytoplasme"] != null)
-		{
-			var cyto = new GameObject("cytoplasme");
-			cyto.transform.parent = root.transform;
-			AddRecipeIngredientsGameObject(resultData["cytoplasme"], cyto);
-		}
-		
-		for (int i = 0; i < resultData["compartments"].Count; i++)
-		{
-			var comp = new GameObject(resultData["compartments"].GetKey(i));
-			comp.transform.parent = root.transform;
-			var surface = new GameObject("surface"+ i.ToString());
-			surface.transform.parent = comp.transform;
-			AddRecipeIngredientsGameObject(resultData["compartments"][i]["surface"],surface);
-			var interior = new GameObject("interior"+ i.ToString());
-			interior.transform.parent = comp.transform;
-			AddRecipeIngredientsGameObject(resultData["compartments"][i]["interior"], interior);
-		}
-	}
     public static void LoadCellPackResults(bool load=true)
     {
             #if UNITY_EDITOR
@@ -323,7 +225,7 @@ public static class CellPackLoader
             AddRecipeIngredients(resultData["compartments"][i]["surface"]["ingredients"], baseColor, "surface" + i.ToString());
             current_color += 1;
         }
-		buildHierarchy (resultData);
+
         BuildHierachy2(resultData);
     }
 
@@ -516,5 +418,38 @@ public static class CellPackLoader
     public static void DebugMethod()
     {
         Debug.Log("Hello World");
+    }
+
+
+    public static void LoadMembrane()
+    {
+#if UNITY_EDITOR
+        Debug.Log("Loading");
+        var directory = "";
+
+        if (string.IsNullOrEmpty(PersistantSettings.Instance.LastSceneLoaded) || !Directory.Exists(Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded)))
+        {
+            directory = Application.dataPath;
+        }
+        else
+        {
+            directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
+        }
+
+        var path = EditorUtility.OpenFilePanel("Select .mbr", directory, "mbr");
+        if (string.IsNullOrEmpty(path)) return;
+
+        SceneManager.Instance.LoadMembrane(path, Vector3.zero, Quaternion.identity);
+
+        var newNode = new PersistantSettings.Node("membrane", "membrane");
+        if (!PersistantSettings.Instance.hierachy.Contains(newNode))
+        {
+            PersistantSettings.Instance.hierachy.Add(newNode);
+        }
+
+
+        // Upload scene data to the GPU
+        SceneManager.Instance.UploadAllData();
+#endif
     }
 }

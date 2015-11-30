@@ -65,7 +65,8 @@
 
 				float3 finalColor;
 
-				if(_ContourOptions == 0) finalColor = OffsetHSV(color, float3(0,0,-contour.x * _ContourStrength)); //color - contour;
+				//if(_ContourOptions == 0) finalColor = OffsetHSV(color, float3(0,0,-contour.x * _ContourStrength)); //color - contour;
+				if(_ContourOptions == 0) finalColor = color - contour;
 				else if(_ContourOptions == 1) finalColor = color;
 				else if(_ContourOptions == 2) finalColor = float3(1,1,1) - contour;
 
