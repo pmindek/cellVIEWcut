@@ -462,6 +462,8 @@ public class CutObject : MonoBehaviour
         {
             SceneManager.Instance.CutObjects.Add(this);
         }
+
+        SetMesh();
     }
 
     void OnDisable()
