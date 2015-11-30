@@ -3,6 +3,7 @@ using System.Collections;
 using System.Xml.Serialization;
 using System.IO;
 using System.Collections.Generic;
+using System;
 
 public class tmp_util : MonoBehaviour {
 
@@ -13,49 +14,71 @@ public class tmp_util : MonoBehaviour {
 	// Use this for initialization
 	void Start ()
     {
-        ////read
-        //serializer = new XmlSerializer(typeof(CutParametersContainer));
-        //stream = new FileStream(path, FileMode.Open);
-        //var container = serializer.Deserialize(stream) as MonsterContainer;
-        //stream.Close();
-
-
-        ////write
-        // serializer = new XmlSerializer(typeof(CutParametersContainer));
-        // stream = new FileStream(path, FileMode.Create);
-        // serializer.Serialize(stream, this);
-        // stream.Close();
 	}
 	
 
     public void ExportProteinSettings()
     {
-        CutParametersContainer exportParams = new CutParametersContainer();
-
-        foreach (CutObject cuto in SceneManager.Instance.CutObjects)
+        try
         {
-            exportParams.ProteinTypeParameters.Add(cuto.ProteinTypeParameters);
+            CutParametersContainer exportParams = new CutParametersContainer();
+
+            foreach (CutObject cuto in SceneManager.Instance.CutObjects)
+            {
+                CutObjectProperties props = new CutObjectProperties();
+                props.ProteinTypeParameters = cuto.ProteinTypeParameters;
+                props.Inverse = cuto.Inverse;
+                props.CutType = (int)cuto.CutType;
+                props.rotation = cuto.transform.rotation;
+                props.position = cuto.transform.position;
+                props.scale = cuto.transform.localScale;
+                exportParams.CutObjectProps.Add(props);            
+            }
+
+            ////write
+            serializer = new XmlSerializer(typeof(CutParametersContainer));
+            stream = new FileStream(path, FileMode.Create);
+            serializer.Serialize(stream, exportParams);
+            stream.Close();
+        }
+        catch(Exception e)
+        {
+            Debug.Log("export failed: " + e.ToString());
+            return;
         }
 
-        ////write
-        serializer = new XmlSerializer(typeof(CutParametersContainer));
-        stream = new FileStream(path, FileMode.Create);
-        serializer.Serialize(stream, exportParams);
-        stream.Close();
+        Debug.Log("exported cutobject settings to " + path);
     }
 
     public void ImportProteinSettings()
     {
-        ////read
-        serializer = new XmlSerializer(typeof(CutParametersContainer));
-        stream = new FileStream(path, FileMode.Open);
-        CutParametersContainer importParams = serializer.Deserialize(stream) as CutParametersContainer;
-        stream.Close();
-
-        for (int i = 0; i < importParams.ProteinTypeParameters.Count && i < SceneManager.Instance.CutObjects.Count; i++)
+        try
         {
-            SceneManager.Instance.CutObjects[i].ProteinTypeParameters = importParams.ProteinTypeParameters[i]; 
+            ////read
+            serializer = new XmlSerializer(typeof(CutParametersContainer));
+            stream = new FileStream(path, FileMode.Open);
+            CutParametersContainer importParams = serializer.Deserialize(stream) as CutParametersContainer;
+            stream.Close();
+
+            for (int i = 0; i < importParams.CutObjectProps.Count && i < SceneManager.Instance.CutObjects.Count; i++)
+            {
+                SceneManager.Instance.CutObjects[i].ProteinTypeParameters = importParams.CutObjectProps[i].ProteinTypeParameters;
+                SceneManager.Instance.CutObjects[i].Inverse = importParams.CutObjectProps[i].Inverse;
+                SceneManager.Instance.CutObjects[i].CutType = (CutType) importParams.CutObjectProps[i].CutType;
+
+                //restore transform info
+                SceneManager.Instance.CutObjects[i].transform.rotation = importParams.CutObjectProps[i].rotation;
+                SceneManager.Instance.CutObjects[i].transform.position = importParams.CutObjectProps[i].position;
+                SceneManager.Instance.CutObjects[i].transform.localScale = importParams.CutObjectProps[i].scale;
+            }
         }
+        catch(Exception e)
+        {
+            Debug.Log("import failed: " + e.ToString());
+            return;
+        }
+
+        Debug.Log("imported cutobject settings from " + path);
     }
 
     [XmlRoot("CutParametersContainer")]
@@ -63,6 +86,18 @@ public class tmp_util : MonoBehaviour {
     {
         [XmlArray("List of ParamSets")]
         [XmlArrayItem("ParamSet")]
-        public List<List<CutParameters>> ProteinTypeParameters = new List<List<CutParameters>>();
+        public List<CutObjectProperties> CutObjectProps = new List<CutObjectProperties>();
+        //public List<List<CutParameters>> ProteinTypeParameters = new List<List<CutParameters>>();
+    }
+
+    public class CutObjectProperties
+    {
+        public List<CutParameters> ProteinTypeParameters = new List<CutParameters>();
+        public bool Inverse;
+        public int CutType;
+        public Quaternion rotation;
+        public Vector3 position;
+        public Vector3 scale;
+
     }
 }
