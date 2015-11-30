@@ -119,7 +119,10 @@
 				{
 					float4 proteinInfo = _ProteinInstanceInfo[id];
 					float4 proteinColor = _ProteinColors[proteinInfo.x];
-					color = float4(ColorCorrection(proteinColor.xyz), 1);	
+					
+					float diffuse = proteinInfo.z;
+
+					color = float4(ColorCorrection(proteinColor.xyz) * diffuse, 1);	
 				}
 				else
 				{

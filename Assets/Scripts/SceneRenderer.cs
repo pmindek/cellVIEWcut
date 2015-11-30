@@ -303,6 +303,8 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_Histograms", GPUBuffer.Instance.Histograms);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_HistogramsLookup", GPUBuffer.Instance.HistogramsLookup);
 
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetVector("_CameraForward", Camera.main.transform.forward);
+
         //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetTexture(0, "noiseTexture", noiseTexture);
         //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetFloat("noiseTextureW", noiseTexture.width);
         //ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetFloat("noiseTextureH", noiseTexture.height);

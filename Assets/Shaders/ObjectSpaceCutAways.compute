@@ -50,6 +50,8 @@ uniform StructuredBuffer<int> _ProteinInstanceOcclusionFlags;
 uniform StructuredBuffer<int> _ProteinInstanceVisibilityFlags;
 uniform RWStructuredBuffer<int> _ProteinInstanceCullFlags;
 
+uniform float3 _CameraForward;
+
 /*float CutAwayTest(float4 sphere, int proteinType)
 {
     bool cut = false;
@@ -135,8 +137,44 @@ bool adjustDistanceTest(in int id, in float parameter, in float distance, in flo
 
 }
 
+float d(float3 sphere, int type, float3 position, float4 rotation, float3 scale)
+{
+	float distance = 0.0;
+
+    if (type == 0)
+    {
+	    float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+        float4 plane = ComputePlane(normal, position);
+        distance = SpherePlaneSD(plane, float4(sphere.xyz, 0));
+    }
+	else if (type == 1)
+	{
+		distance = SphereSphereSD(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+	}
+	else if (type == 2)
+	{
+		distance = SphereCubeSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+	}
+	else if (type == 3)
+	{
+		distance = SphereCylinderSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+	}
+	else if (type == 4)
+	{
+		distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+	}
+	else if (type == 5)
+	{
+		distance = 0.1;
+	}
+
+	return distance;
+}
+
 float CutAwayTest(float4 sphere, int proteinType, int id)
 {
+	_ProteinInstanceInfo[id.x].z = 1.0;
+
     bool cut = false;
     for (int i = 0; i < _NumCutObjects; i++)
     {
@@ -158,35 +196,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
             float4 rotation = _CutRotations[i];
 			float3 scale = _CutScales[i].xyz;
 
-			float distance = 0.0;
-
-            if (info.info.x == 0)
-            {
-                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
-                float4 plane = ComputePlane(normal, position);
-                distance = SpherePlaneSD(plane, float4(sphere.xyz, 0));
-            }
-			else if (info.info.x == 1)
-			{
-				distance = SphereSphereSD(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
-			}
-			else if (info.info.x == 2)
-			{
-				distance = SphereCubeSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
-			}
-			else if (info.info.x == 3)
-			{
-				distance = SphereCylinderSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
-			}
-			else if (info.info.x == 4)
-			{
-				distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
-			}
-			else if (info.info.x == 5)
-			{
-				distance = 0.1;
-			}
-
+			float distance = d(sphere.xyz, info.info.x, position, rotation, scale);
 
 			
 			//inverse
@@ -243,6 +253,33 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			{
 				cut = true;
 			}
+
+
+
+			if (distance < 20.0)
+			{
+				float shading = 0.0;
+
+				float3 no;
+
+				float e = 0.1;
+
+				no.x = d(sphere.xyz + float3(e,0.0,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(e,0.0,0.0), info.info.x, position, rotation, scale);
+				no.y = d(sphere.xyz + float3(0.0,e,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,e,0.0), info.info.x, position, rotation, scale);
+				no.z = d(sphere.xyz + float3(0.0,0.0,e), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,0.0,e), info.info.x, position, rotation, scale);
+
+				no=normalize(no);
+
+				float3 light = normalize(_CameraForward); //float3(0.0, 0.0, 1.0);
+		
+				float3 halfv=normalize(normalize(_CameraForward)+light);
+				float ndotl=max(dot(no,halfv),0.0);
+			
+				shading = max(ndotl,0.5);
+
+				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, distance / 20.0);
+			}
+
         }    
 
         //	//sphere
