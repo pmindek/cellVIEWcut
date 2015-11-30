@@ -141,6 +141,8 @@ public class SelectionManager : MonoBehaviour
     {
         Debug.Log("Selected element id: " + instanceID);
 
+        Debug.Log("Selected element type: " + SceneManager.Instance.ProteinInstanceInfos[instanceID].x);
+
         if (instanceID >= SceneManager.Instance.ProteinInstancePositions.Count) return;
 
         // If element id is different than the currently selected element
