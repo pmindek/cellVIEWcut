@@ -21,31 +21,14 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     public GameObject BaseItemPrefab;
     public CutObjectUIController cutObjectUiController;
-
-    //*******//
-
-    private float lastRange0;
-    private float lastRange1;
-    private float lastValue1;
-    private float lastValue2;
-    private float rangeAdjust0;
-    private float rangeAdjust1;
-    private float lastValueChange0;
-    private float lastValueChange1;
-    private float lastRangeChange0;
-    private float lastRangeChange1;
-    private CutParameters currentParameters;
-
-    private bool once = false;
-    private BaseItem onceItem = null;
-
+    
     //*******//
 
     private BaseItem _selectedNode;
     private List<BaseItem> _rootNodes;
 
-    private float _currentDragValue = 0.0f;
-    private bool _setHistogramsDirty = true;
+    private float _currentDragValue;
+    private CutParameters _currentCutParameters;
 
     // Use this for initialization
     void Start()
@@ -60,51 +43,108 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         // Register event callbacks
         foreach (var node in _rootNodes)
         {
-            node.RangeFieldItem.CustomRangeSliderUi.RangeSliderDrag += OnRangeSliderDrag;
             node.PointerClick += OnNodePointerClick;
+            node.RangeFieldItem.CustomRangeSliderUi.RangeSliderDrag += OnRangeSliderDrag;
         }
 
-        HideFuzzinessUIPanel(false);
-        SetFuzzinessUIValues(0.1f, 0.5f, 0.9f);
-
+        SetSelectedNode(_rootNodes[0]);
         cutObjectUiController.OnSelectedCutObjectChange += OnSelectedCutObjectChange;
-
-        _selectedNode = _rootNodes[0];
-    }
-    
-    public void HideFuzzinessUIPanel(bool value)
-    {
-        cutObjectUiController.HideFuzzinessUIPanel(value);
     }
 
-    public void OnFuzzinessChanged(float value)
+    public void FixedUpdate()
     {
-        Debug.Log(value);
+        UpdateNodeItems();
+        UpdateHistograms();
     }
 
-    public void OnFuzzinessDistanceChanged(float value)
+    //*** Selection ****//
+
+    public void OnNodePointerClick(BaseItem selectedNode)
     {
-        Debug.Log(value);
+        SetSelectedNode(selectedNode);
     }
 
-    public void OnFuzzinessCurveChanged(float value)
+    public void SetSelectedNode(BaseItem selectedNode)
     {
-        Debug.Log(value);
+        _selectedNode = selectedNode;
+        UpdateSelectedNodeFuzziValue();
+        UpdateSelectedNodeOcclusionValue();
     }
 
     public void OnSelectedCutObjectChange()
     {
-        UpdateSelectedNodeOcclusionValue();
         UpdateAllToggles();
+        UpdateSelectedNodeFuzziValue();
+        UpdateSelectedNodeOcclusionValue();
+        
         if (_rootNodes == null || SceneManager.Instance.histograms == null) return;
     }
 
-    
-    
-    public
-        void SetOcclusionUIValue(float value)
+    //*** Fuzzi ****//
+
+    private bool _ignoreFuzzinessUIChangeFlag;
+    private bool _ignoreDistanceUIChangesFlag;
+    private bool _ignoreCurveUIChangesFlag;
+
+    public void UpdateSelectedNodeFuzziValue()
     {
-        cutObjectUiController.SetOcclusionUIValue(value);
+        _ignoreFuzzinessUIChangeFlag = _ignoreDistanceUIChangesFlag = _ignoreCurveUIChangesFlag = true;
+        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));
+        SetFuzzinessUIValues(averageValues.fuzziness, averageValues.fuzzinessDistance, averageValues.fuzzinessCurve);
+    }
+
+    public void OnFuzzinessChanged(float value)
+    {
+        if (!_ignoreFuzzinessUIChangeFlag)
+        {
+            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            {
+                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                {
+                    cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzziness = value;
+                }
+            }
+        }
+        else
+        {
+            _ignoreFuzzinessUIChangeFlag = false;
+        }
+    }
+
+    public void OnFuzzinessDistanceChanged(float value)
+    {
+        if (!_ignoreDistanceUIChangesFlag)
+        {
+            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            {
+                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                {
+                    cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzzinessDistance = value;
+                }
+            }
+        }
+        else
+        {
+            _ignoreDistanceUIChangesFlag = false;
+        }
+    }
+
+    public void OnFuzzinessCurveChanged(float value)
+    {
+        if (!_ignoreCurveUIChangesFlag)
+        {
+            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            {
+                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                {
+                    cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzzinessCurve = value;
+                }
+            }
+        }
+        else
+        {
+            _ignoreCurveUIChangesFlag = false;
+        }
     }
 
     public void SetFuzzinessUIValues(float value1, float value2, float value3)
@@ -114,50 +154,53 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         cutObjectUiController.SetCurveSliderValue(value3);
     }
 
-    public void OnNodePointerClick(BaseItem selectedNode)
+    public void HideFuzzinessUIPanel(bool value)
     {
-        _selectedNode = selectedNode;
-        UpdateSelectedNodeOcclusionValue();
+        cutObjectUiController.HideFuzzinessUIPanel(value);
     }
 
-    private List<BaseItem> GetAllLeaves(BaseItem baseItem)
-    {
-        var selectedLeafNodes = new List<BaseItem>();
-        if (_selectedNode.IsLeafNode()) selectedLeafNodes.Add(_selectedNode);
-        else selectedLeafNodes.AddRange(_selectedNode.GetAllLeafChildren());
-        return selectedLeafNodes;
-    }
+    //*** Occlusion ****//
 
-    private bool _ignoreUIChangesFlag;
-    private float _currentOcclusionValue;
+    private bool _ignoreOcclusionUIChangeFlag;
 
     public void UpdateSelectedNodeOcclusionValue()
     {
-        _ignoreUIChangesFlag = true;
+        _ignoreOcclusionUIChangeFlag = true;
         var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));
-        _currentOcclusionValue = averageValues.value2;
-        SetOcclusionUIValue(_currentOcclusionValue);
+        SetOcclusionUIValue(averageValues.value2);
     }
-    
+
     public void OnOcclusionUIValueChanged(float value)
     {
-        _currentOcclusionValue = value;
-
-        if (!_ignoreUIChangesFlag)
+        if (!_ignoreOcclusionUIChangeFlag)
         {
             foreach (var leafNodes in GetAllLeaves(_selectedNode))
             {
                 foreach (var cutObject in SceneManager.Instance.CutObjects)
                 {
-                    cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].value2 = _currentOcclusionValue;
+                    cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].value2 = value;
                 }
             }
         }
         else
         {
-            _ignoreUIChangesFlag = false;
+            _ignoreOcclusionUIChangeFlag = false;
         }
     }
+
+    public void SetOcclusionUIValue(float value)
+    {
+        cutObjectUiController.SetOcclusionUIValue(value);
+    }
+
+    
+
+    public void HideOcclusionUIPanel(bool value)
+    {
+        //cutObjectUiController.HideFuzzinessUIPanel(value);
+    }
+
+    //*** Toggles ****//
 
     void UpdateAllToggles()
     {
@@ -234,7 +277,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         foreach (var node in _rootNodes)
         {
-            if(node.RangeFieldItem.Toggle.isOn)
+            if (node.RangeFieldItem.Toggle.isOn)
                 node.RangeFieldItem.LockToggle.SetState(value);
         }
 
@@ -249,70 +292,15 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         }
     }
 
-    
+    //*** Utils ****//
 
-    //public void OnLockToggle(BaseItem baseItem)
-    //{
-    //    bool lockValue = baseItem.RangeFieldItem.LockToggle.Locked;
-    //    SetAllFocusNodeLockState(lockValue);
-    //}
-
-    //public void OnToggleItem1(BaseItem baseItem)
-    //{
-    //    var value = baseItem.RangeFieldItem.Toggle.isOn;
-
-    //    foreach (var child in baseItem.Children)
-    //    {
-    //        child.RangeFieldItem.Toggle.isOn = value;
-    //    }
-
-    //    if (baseItem.IsLeafNode())
-    //    {
-    //        foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
-    //        {
-    //            cutObject.SetFocusFor(SceneManager.Instance.NodeToProteinLookup[baseItem.Id], value);
-    //        }
-    //    }
-
-    //    SetAllFocusNodeLockState(false);
-    //}
-
-    //public void SetAllFocusNodeLockState(bool locked)
-    //{
-    //    foreach (var node in _rootNodes)
-    //    {
-    //        node.RangeFieldItem.LockToggle.SetState(locked);
-    //    }
-
-    //    if (SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Unlocked && locked)
-    //    {
-    //        SceneManager.Instance.GetSelectedCutObject().CurrentLockState = LockState.Locked;
-    //    }
-    //    else if (SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Consumed && !locked)
-    //    {
-    //        SceneManager.Instance.GetSelectedCutObject().CurrentLockState = LockState.Restore;
-    //    }
-    //}
-
-    //public void OnToggleItem2(BaseItem baseItem)
-    //{
-    //    var value = baseItem.RangeFieldItem.Toggle2.isOn;
-
-    //    foreach (var child in baseItem.Children)
-    //    {
-    //        child.RangeFieldItem.SetToggle2(value);
-    //    }
-    //}
-
-    //public List<bool> GetAllToggleItems1()
-    //{
-    //    return _rootNodes.Select(node => node.RangeFieldItem.Toggle1.isOn).ToList();
-    //}
-
-    //public List<bool> GetAllToggleItems2()
-    //{
-    //    return _rootNodes.Select(node => node.RangeFieldItem.Toggle2.isOn).ToList();
-    //}
+    private List<BaseItem> GetAllLeaves(BaseItem baseItem)
+    {
+        var selectedLeafNodes = new List<BaseItem>();
+        if (_selectedNode.IsLeafNode()) selectedLeafNodes.Add(_selectedNode);
+        else selectedLeafNodes.AddRange(_selectedNode.GetAllLeafChildren());
+        return selectedLeafNodes;
+    }
 
     public CutParameters GetAverageCutParamsFromLeafNodes(List<BaseItem> leafNodes)
     {
@@ -328,15 +316,37 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 var cutParam = cutObject.GetCutParametersFor(index);
                 cutParams.value1 += cutParam.value1;
                 cutParams.value2 += cutParam.value2;
+                cutParams.fuzziness += cutParam.fuzziness;
+                cutParams.fuzzinessDistance += cutParam.fuzzinessDistance;
+                cutParams.fuzzinessCurve += cutParam.fuzzinessCurve;
             }
         }
 
         var averageTotalCount = (float)(leafNodes.Count * SceneManager.Instance.GetSelectedCutObjects().Count);
         cutParams.value1 /= averageTotalCount;
         cutParams.value2 /= averageTotalCount;
+        cutParams.fuzziness /= averageTotalCount;
+        cutParams.fuzzinessDistance /= averageTotalCount;
+        cutParams.fuzzinessCurve /= averageTotalCount;
         return cutParams;
     }
-    
+
+    public BaseItem FindBaseItem(string path)
+    {
+        return _rootNodes.FirstOrDefault(n => n.Path == path);
+    }
+
+    public void LogRangeValues()
+    {
+        foreach (var Node in _rootNodes)
+        {
+            Node.FieldObject.GetComponent<RangeFieldItem>().GetRangeValues();
+            //Node.Name
+        }
+    }
+
+    //*** Routines ****//
+
     public void OnRangeSliderDrag(BaseItem targetNode, int rangeIndex, float dragDelta)
     {
         var selectedLeafNodes = new List<BaseItem>();
@@ -374,14 +384,6 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 }
             }
         }
-
-        _setHistogramsDirty = true;
-    }
-
-    public void FixedUpdate()
-    {
-        UpdateNodeItems();
-        UpdateHistograms();
     }
 
     public void UpdateHistograms()
@@ -401,439 +403,13 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             newRangeValues.Add(1.0f - (float) hist.cutaway/(float) hist.all - newRangeValues[0]);
             newRangeValues.Add(1.0f - newRangeValues[0] - newRangeValues[1]);
             node.RangeFieldItem.SetRangeValues(newRangeValues);
-
-            
         }
     }
-
-    //public void OnRangeSliderDrag(BaseItem node, int rangeIndex, float dragDelta)
-    //{
-    //    //Debug.Log(node.Id + " " + rangeIndex + " " + dragDelta);
-
-
-    //    RangeFieldItem range = node.FieldObject.GetComponent<RangeFieldItem>();
-
-
-
-
-    //    //initialize the dragging - average values for all dragged sliders and all selected cut objects
-    //    if (range.CustomRangeSliderUi.StartedDragging)
-    //    {
-    //        range.CustomRangeSliderUi.StartedDragging = false;
-
-    //        BaseItem baseItem = FindBaseItem(node.Path);
-    //        List<BaseItem> children = baseItem.GetAllChildren();
-
-    //        children.Add(baseItem);
-
-    //        selectedIngredients.Clear();
-
-    //        foreach (var child in children)
-    //        {
-    //            if (child.Children.Count == 0)
-    //            {
-    //                Debug.Log("|~!!~ " + SceneManager.Instance.HistogramsReverseLookup[child.Id]);
-    //                selectedIngredients.Add(SceneManager.Instance.HistogramsReverseLookup[child.Id]);
-    //            }
-    //        }
-
-
-    //        //calculate occlusion queries where selectedIngredients (those whose histograms are we dragging) are ocludees
-    //        Debug.Log("DO TOGGLE");
-    //        foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
-    //        {
-    //            cut.ToggleAllCutItem(true);
-    //            foreach (var si in selectedIngredients)
-    //            {
-    //                cut.ToggleCutItem(SceneManager.Instance.ProteinNames[si], false);
-    //            }
-    //        }
-
-
-    //        float fc = 0;
-
-    //        float averageValue = 0.0f;
-
-    //        foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
-    //        {
-    //            for (int i = 0; i < selectedIngredients.Count; i++)
-    //            {
-    //                CutParameters param = cut.GetCutParametersFor(selectedIngredients[i]);
-
-    //                averageValue += (rangeIndex == 0 ? param.value2 : param.value1);
-    //            }
-    //        }
-
-    //        fc = (float)(selectedIngredients.Count * SceneManager.Instance.GetSelectedCutObjects().Count);
-
-    //        averageValue /= fc;
-
-    //        value = averageValue;
-
-    //    } //end of initialization
-
-    //    value += dragDelta / 200;
-    //    value = Mathf.Min(1.0f, Mathf.Max(0.0f, value));
-
-    //    //now we set these values to every cut object's record for the manipulated protein types
-    //    foreach (var cut in SceneManager.Instance.GetSelectedCutObjects())
-    //    {
-    //        for (int i = 0; i < selectedIngredients.Count; i++)
-    //        {
-    //            if (rangeIndex == 0)
-    //            {
-    //                cut.SetValue2For(selectedIngredients[i], value);
-    //                PersistantSettings.Instance.AdjustVisible = value;
-    //            }
-
-    //            if (rangeIndex == 1)
-    //            {
-    //                cut.SetValue1For(selectedIngredients[i], value);
-    //            }
-
-    //        }
-    //    }
-    //}
-
-    //public void UpdateRangeValues()
-    //{
-
-    //    if (RootNodes != null)
-    //        foreach (var Node in RootNodes)
-    //        {
-    //            HistStruct hist = SceneManager.Instance.histograms[Node.Id];
-
-    //            List<float> rangeValues = new List<float>();
-    //            rangeValues.Clear();
-
-    //            rangeValues.Add((float)hist.visible / (float)hist.all);
-    //            rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
-    //            rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
-
-    //            Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
-    //        }
-
-    //    return;
-
-    //    if(RootNodes != null)
-    //    foreach (var Node in RootNodes)
-    //    {
-    //        RangeFieldItem range = Node.FieldObject.GetComponent<RangeFieldItem>();
-
-
-
-
-
-
-    //        //on mouse up
-    //        if (range.CustomRangeSliderUi.StoppedDragging)
-    //        {
-    //            range.CustomRangeSliderUi.StoppedDragging = false;
-    //            Debug.Log("mouse up up up");
-
-    //            foreach (var cut in SceneManager.Instance.CutObjects)
-    //            {
-    //                cut.ToggleAllCutItem(true);
-    //            }
-    //        }
-
-
-
-
-
-    //        //not dragging it
-    //        //else
-    //        if (!range.CustomRangeSliderUi.DragState || range.CustomRangeSliderUi.recalcOnce)
-    //        {
-    //            HistStruct hist = SceneManager.Instance.histograms[Node.Id];
-
-    //            List<float> rangeValues = new List<float>();
-    //            rangeValues.Clear();
-
-    //            rangeValues.Add((float)hist.visible / (float)hist.all);
-    //            rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
-    //            rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);
-
-    //            Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
-
-
-
-    //            range.CustomRangeSliderUi.recalcOnce = false;
-    //            range.CustomRangeSliderUi.disableDragging = false;
-    //            range.CustomRangeSliderUi.StartedDragging = true;
-    //        }
-
-
-
-
-
-
-    //        //if dragging the RangeSlider
-    //        if (range.CustomRangeSliderUi.DragState)
-    //        {
-    //            //initialize the dragging - average all the parameters for all dragged sliders and all selected cut objects
-    //            if (range.CustomRangeSliderUi.StartedDragging)
-    //            {
-    //                range.CustomRangeSliderUi.StartedDragging = false;
-
-    //                BaseItem baseItem = FindBaseItem(Node.Path);
-    //                List<BaseItem> children = baseItem.GetAllChildren();
-
-    //                children.Add(baseItem);
-
-    //                selectedIngredients.Clear();
-
-    //                foreach (var child in children)
-    //                {
-    //                    if (child.Children.Count == 0)
-    //                    {
-    //                        Debug.Log("|~!!~ " + SceneManager.Instance.HistogramsReverseLookup[child.Id]);
-    //                        selectedIngredients.Add(SceneManager.Instance.HistogramsReverseLookup[child.Id]);
-    //                    }
-    //                }
-
-
-
-
-    //                //calculate occlusion queries where selectedIngredients (those whose histograms are we dragging) are ocludees
-    //                Debug.Log("DO TOGGLE");
-    //                foreach (var cut in SceneManager.Instance.CutObjects)
-    //                {
-    //                    cut.ToggleAllCutItem(true);
-    //                    foreach (var si in selectedIngredients)
-    //                    {
-    //                        cut.ToggleCutItem(SceneManager.Instance.ProteinNames[si], false);
-    //                    }
-    //                }
-
-
-
-
-
-
-
-    //                currentParameters = new CutParameters()
-    //                {
-    //                    range0 = 0.0f,
-    //                    range1 = 0.0f,
-
-    //                    countAll = 0,
-    //                    count0 = 0,
-    //                    count1 = 0,
-
-    //                    value1 = 0.0f,
-    //                    value2 = 0.0f,
-    //                    fuzziness = 0.0f,
-    //                    fuzzinessDistance = 0.0f,
-    //                    fuzzinessCurve = 0.0f
-    //                };
-
-    //                CutParameters param = null;
-
-    //                float fc = 0;
-
-    //                foreach (var cut in SceneManager.Instance.CutObjects)
-    //                {
-    //                    for (int i = 0; i < selectedIngredients.Count; i++)
-    //                    {
-    //                        param = cut.GetCutParametersFor(selectedIngredients[i]);
-
-    //                        currentParameters.range0 += param.range0;
-    //                        currentParameters.range1 += param.range1;
-
-    //                        currentParameters.countAll += param.countAll;
-    //                        currentParameters.count0 += param.count0;
-    //                        currentParameters.count1 += param.count1;
-
-    //                        currentParameters.value1 += param.value1;
-    //                        currentParameters.value2 += param.value2;
-    //                        currentParameters.fuzziness += param.fuzziness;
-    //                        currentParameters.fuzzinessDistance += param.fuzzinessDistance;
-    //                        currentParameters.fuzzinessCurve += param.fuzzinessCurve;
-    //                    }
-    //                }
-
-    //                fc = (float)(selectedIngredients.Count * SceneManager.Instance.CutObjects.Count);
-
-    //                currentParameters.range0 /= fc;
-    //                currentParameters.range1 /= fc;
-
-    //                currentParameters.value1 /= fc;
-    //                currentParameters.value2 /= fc;
-    //                currentParameters.fuzziness /= fc;
-    //                currentParameters.fuzzinessDistance /= fc;
-    //                currentParameters.fuzzinessCurve /= fc;
-
-    //                Debug.Log("value1 = " + currentParameters.value1);
-    //                Debug.Log("value2 = " + currentParameters.value2);
-    //                Debug.Log("fuzziness = " + currentParameters.fuzziness);
-    //                Debug.Log("distance = " + currentParameters.fuzzinessDistance);
-    //                Debug.Log("curve = " + currentParameters.fuzzinessCurve);
-
-
-    //                /* lastValueChange0 = Mathf.Abs(lastValue1 - currentParameters.value1);
-    //                 lastValueChange1 = Mathf.Abs(lastValue2 - currentParameters.value2);
-
-    //                 lastRangeChange0 = Mathf.Abs(lastRange0 - rangeValues[0]);
-    //                 lastRangeChange1 = Mathf.Abs(lastRange1 - rangeValues[1]);*/
-
-    //                rangeValues = Node.RangeFieldItem.GetRangeValues();
-
-    //                lastRange0 = rangeValues[0];
-    //                lastRange1 = rangeValues[1];
-
-    //                lastValue1 = currentParameters.value1;
-    //                lastValue2 = currentParameters.value2;
-    //            } //end of initialization
-
-
-    //            //rangeValues = Node.RangeFieldItem.GetRangeValues();
-
-    //            /*rangeValues.Clear();
-    //            rangeValues.Add(currentParameters.range0);
-    //            rangeValues.Add(currentParameters.range1);
-    //            rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);*/
-
-
-
-
-    //            //this happens on every frame while dragging
-
-
-
-
-    //            //HistStruct hist = SceneManager.Instance.histograms[Node.Id];
-
-    //            /*rangeValues.Clear();
-
-    //            rangeValues.Add((float)hist.occluding / (float)hist.all);
-    //            rangeValues.Add(1.0f - (float)hist.cutaway / (float)hist.all - rangeValues[0]);
-    //            rangeValues.Add(1.0f - rangeValues[0] - rangeValues[1]);*/
-
-    //            //Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
-
-    //            float d0 = 0.0f;
-    //            float d1 = 0.0f;
-
-    //            if (lastRange0 > rangeValues[0])
-    //            {
-    //                d0 = -1.0f + rangeValues[0] / lastRange0;
-    //            }
-    //            else if (lastRange0 < rangeValues[0])
-    //            {
-    //                d0 = (rangeValues[0] - lastRange0) / (lastRange1 - lastRange0);
-    //            }
-
-    //            if (lastRange1 > rangeValues[1])
-    //            {
-    //                d1 = -1.0f + rangeValues[1] / lastRange1;
-    //            }
-    //            else if (lastRange1 < rangeValues[1])
-    //            {
-    //                d1 = (rangeValues[1] - lastRange1) / (1 - lastRange1 - lastRange0);
-    //            }
-
-    //            if (d0 < -1.0f)
-    //                d0 = -1.0f;
-    //            if (d0 > 1.0f)
-    //                d0 = 1.0f;
-    //            if (d1 < -1.0f)
-    //                d1 = -1.0f;
-    //            if (d1 > 1.0f)
-    //                d1 = 1.0f;
-
-    //            if (Mathf.Abs(d0) > 0.001f)
-    //                d1 = 0.0f;
-
-    //            float adjust0 = 1.0f;
-    //            float adjust1 = 1.0f;
-
-    //            float v1 = lastValue1 + d1 * adjust1;
-    //            float v2 = lastValue2 + d0 * adjust0;
-
-    //            if (v1 < 0.0f)
-    //                v1 = 0.0f;
-    //            if (v1 > 1.0f)
-    //                v1 = 1.0f;
-    //            if (v2 < 0.0f)
-    //                v2 = 0.0f;
-    //            if (v2 > 1.0f)
-    //                v2 = 1.0f;
-
-
-    //            currentParameters.value1 = v1;
-    //            currentParameters.value2 = v2;
-
-
-
-
-    //            HistStruct hist = SceneManager.Instance.histograms[Node.Id];
-
-    //            currentParameters.countAll = hist.all;
-    //            currentParameters.count0 = hist.cutaway;
-    //            currentParameters.count1 = hist.visible;
-
-    //            float st_cutaway = (float)currentParameters.count0;
-    //            float st_all = (float)currentParameters.countAll;
-    //            float st_occluding = (float)currentParameters.count1;
-
-
-    //            List<float> rv = new List<float>();
-    //            rv.Clear();
-
-    //            rv.Add((float)hist.visible / (float)hist.all);
-    //            rv.Add(1.0f - (float)hist.cutaway / (float)hist.all - rv[0]);
-    //            rv.Add(1.0f - rv[0] - rv[1]);
-
-
-
-
-
-    //            currentParameters.range0 = rangeValues[0];
-    //            currentParameters.range1 = rangeValues[1];
-
-
-    //            //now we set these values to every cut object's record for the manipulated protein types
-    //            foreach (var cut in SceneManager.Instance.CutObjects)
-    //            {
-    //                for (int i = 0; i < selectedIngredients.Count; i++)
-    //                {
-    //                    cut.SetCutParametersFor(selectedIngredients[i], currentParameters);
-    //                }
-    //            }
-
-
-    //            //Debug.Log("is " + rangeValues[0] + "; want " + rv[0]);
-    //            //Debug.Log("is " + rangeValues[1] + "; want " + rv[1]);
-    //            Node.FieldObject.GetComponent<RangeFieldItem>().SetRangeValues(rangeValues);
-    //            Node.FieldObject.GetComponent<RangeFieldItem>().SetFakeRangeValues(rv);
-
-    //            PersistantSettings.Instance.AdjustVisible = v2;
-
-    //            //nextRangeValues = rv;
-
-    //            //range.CustomRangeSliderUi.disableDragging = true;
-    //            //range.CustomRangeSliderUi.recalcOnce = true;
-    //        }
-    //    }        
-    //}
-
-    public void LogRangeValues()
-    {
-        foreach (var Node in _rootNodes)
-        {
-            Node.FieldObject.GetComponent<RangeFieldItem>().GetRangeValues();
-            //Node.Name
-        }
-    }
-
-    public BaseItem FindBaseItem(string path)
-    {
-        return _rootNodes.FirstOrDefault(n => n.Path == path);
-    }
+    
+    //*** Nodes stuffs ****//
 
     // Add a new object to the tree
-	public void AddNodeObject(string fullPath, object[] args, string type)
+    public void AddNodeObject(string fullPath, object[] args, string type)
 	{
         var name = TreeUtility.GetNodeName(fullPath);
 	    var parentPath = TreeUtility.GetNodeParentPath(fullPath);
@@ -874,17 +450,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         return node;
     }
 
-    public void InitNodeItems()
-    {
-        initState = true;
-        UpdateLayout();
-    }
-
     // Reorder the tree elements
     public void UpdateLayout()
     {
         // TODO: Use the real base node height here
-        float currentYPos = - (maxDistanceY + 10); 
+        float currentYPos = -(maxDistanceY + 10);
 
         foreach (var node in _rootNodes)
         {
@@ -894,7 +464,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             rt.localPosition = new Vector3(treeLevel * Indent + LeftPadding, currentYPos);
             //rt.localPosition = new Vector3(Indent + LeftPadding, currentYPos);
             node.SaveInitPositionY();
-            
+
             if (node.gameObject.activeInHierarchy)
             {
                 currentYPos -= rt.rect.height + Spacing;
@@ -937,9 +507,15 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         return slowDown;
     }
 
+    public void InitNodeItems()
+    {
+        initState = true;
+        UpdateLayout();
+    }
+
     private bool initState = false;
     private bool _treeIsActive = true;
-    
+
     void UpdateNodeItems()
     {
         // Do list scrolling when hovering the items
@@ -964,7 +540,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         if (!EnableLensEffect)
         {
             currentMousePos = Input.mousePosition;
-       
+
             // Fetch the scroll offset from scroll view content (this)
             var scrollOffset = transform.localPosition.y;
 
@@ -992,7 +568,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                     node.InitLocalPositionY + maxDistanceY, node.transform.localPosition.z);
             }
 
-            if(_selectedNode != null) _selectedNode.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(1);
+            if (_selectedNode != null) _selectedNode.FieldObject.GetComponent<IItemInterface>().SetContentAlpha(1);
         }
         else
         {
@@ -1071,5 +647,5 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         }
     }
 
-    
+
 }

@@ -7,12 +7,14 @@ using System.Xml.Schema;
 using UIWidgets;
 using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
+using UnityEngine.UI.Extensions;
 
 public class CutObjectUIController : MonoBehaviour
 {
     public GameObject cutObjectPrefab;
     public ListView listViewUI;
     public Combobox comboBox;
+    public Combobox comboBox2;
 
     public UILineRenderer FuzzinessPlot;
     public Slider FuzzinessSlider;
@@ -29,6 +31,8 @@ public class CutObjectUIController : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        var t = GameObject.FindObjectsOfType<ComboBox>();
+
         foreach (var cutObject in SceneManager.Instance.CutObjects)
         {
             listViewUI.Add(cutObject.name);
@@ -42,6 +46,16 @@ public class CutObjectUIController : MonoBehaviour
                 comboBox.ListView.Add(value2);
             }
         }
+
+        if (comboBox2.ListView.DataSource.Count == 0)
+        {
+            comboBox2.ListView.Add("Show Current");
+            comboBox2.ListView.Add("Show All");
+            comboBox2.ListView.Add("Hide All");
+        }
+
+        comboBox2.Set("Show Current", false);
+
         //comboBox.OnSelect.AddListener(OnComboBoxSelect);
     }
 
