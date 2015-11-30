@@ -44,6 +44,7 @@ uniform RWStructuredBuffer<HistStruct> _Histograms;
 
 uniform float _Scale;
 uniform	int _NumInstances;
+uniform	int _NumIngredientTypes;
 uniform	StructuredBuffer<float> _ProteinRadii;	
 uniform	RWStructuredBuffer<float4> _ProteinInstanceInfo;
 uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
@@ -192,7 +193,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 
         //if (proteinCutFilter == 1)
         {
-            CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
+            CutInfoStruct info = _CutInfos[proteinType + _NumIngredientTypes * i];
             float3 position = _CutPositions[i].xyz;
             float4 rotation = _CutRotations[i];
 			float3 scale = _CutScales[i].xyz;

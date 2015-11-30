@@ -258,6 +258,7 @@ public class SceneRenderer : MonoBehaviour
 
         // Cutaways params
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetInt("_NumCutObjects", SceneManager.Instance.NumCutObjects);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetInt("_NumIngredientTypes", SceneManager.Instance.NumIngredientTypes);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_CutInfos", GPUBuffer.Instance.CutInfos);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_CutScales", GPUBuffer.Instance.CutScales);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(0, "_CutPositions", GPUBuffer.Instance.CutPositions);
@@ -296,6 +297,7 @@ public class SceneRenderer : MonoBehaviour
 
         // Cutaways params
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetInt("_NumCutObjects", SceneManager.Instance.NumCutObjects);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetInt("_NumIngredientTypes", SceneManager.Instance.NumIngredientTypes);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutInfos", GPUBuffer.Instance.CutInfos);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutScales", GPUBuffer.Instance.CutScales);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_CutPositions", GPUBuffer.Instance.CutPositions);

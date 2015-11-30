@@ -147,6 +147,11 @@ public class SceneManager : MonoBehaviour
 
     public bool isUpdated = false;
 
+    public int NumIngredientTypes
+    {
+        get { return LipidIngredientNames.Count + ProteinNames.Count; }
+    }
+
     public int NumLipidInstances
     {
         get { return LipidInstancePositions.Count; }
