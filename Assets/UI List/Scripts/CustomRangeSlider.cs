@@ -52,7 +52,7 @@ public class CustomRangeSlider : MonoBehaviour
         SetRangeGradientColors(1, new Color(0.0f, 0.6f, 0.0f, 1.0f), new Color(0.0f, 0.9f, 0.0f, 1.0f));
         SetRangeGradientColors(2, new Color(0.0f, 0.0f, 0.0f, 0.15f), new Color(0.0f, 0.0f, 0.0f, 0.25f));
 
-        GetComponent<LayoutElement>().preferredWidth = totalLength + HandleWidth * 2;
+        GetComponent<LayoutElement>().minWidth = totalLength + HandleWidth * 2;
     }
 
     public BaseItem GetBaseItemParent()

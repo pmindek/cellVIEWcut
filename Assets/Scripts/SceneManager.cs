@@ -40,6 +40,7 @@ public class SceneManager : MonoBehaviour
 {
     // Declare the scene manager as a singleton
     private static SceneManager _instance = null;
+
     public static SceneManager Instance
     {
         get
@@ -52,7 +53,7 @@ public class SceneManager : MonoBehaviour
                 var go = GameObject.Find("_SceneManager");
                 if (go != null) DestroyImmediate(go);
 
-                go = new GameObject("_SceneManager") { hideFlags = HideFlags.HideInInspector };
+                go = new GameObject("_SceneManager") {hideFlags = HideFlags.HideInInspector};
                 _instance = go.AddComponent<SceneManager>();
             }
 
@@ -67,7 +68,7 @@ public class SceneManager : MonoBehaviour
     }
 
     //--------------------------------------------------------------
-    
+
     // Scene data
     public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
     public List<Vector4> ProteinInstancePositions = new List<Vector4>();
@@ -94,13 +95,13 @@ public class SceneManager : MonoBehaviour
     public List<int> NodeToProteinLookup = new List<int>();
 
     public string scene_name;
-    
+
     // Curve ingredients data
-    
+
     public List<int> CurveIngredientsAtomStart = new List<int>();
     public List<int> CurveIngredientsAtomCount = new List<int>();
     public List<int> CurveIngredientToggleFlags = new List<int>();
-    public List<string> CurveIngredientsNames = new List<string>(); 
+    public List<string> CurveIngredientsNames = new List<string>();
     public List<Vector4> CurveIngredientsAtoms = new List<Vector4>();
     public List<Vector4> CurveIngredientsInfos = new List<Vector4>();
     public List<Vector4> CurveIngredientsColors = new List<Vector4>();
@@ -110,11 +111,9 @@ public class SceneManager : MonoBehaviour
     // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
     // The cache will be filled automatically via the CutObject script onEnable
 
-    [NonSerialized]
-    public int SelectedCutObject = 0;
+    [NonSerialized] public int SelectedCutObject = 0;
 
-    [NonSerialized]
-    public List<CutObject> CutObjects = new List<CutObject>();
+    [NonSerialized] public List<CutObject> CutObjects = new List<CutObject>();
 
     public CutObject GetSelectedCutObject()
     {
@@ -122,7 +121,7 @@ public class SceneManager : MonoBehaviour
     }
 
     public List<CutObject> GetSelectedCutObjects()
-    { 
+    {
         var selectedCutObjects = new List<CutObject>();
         selectedCutObjects.Add(CutObjects[SelectedCutObject]);
         return selectedCutObjects;
@@ -130,7 +129,7 @@ public class SceneManager : MonoBehaviour
 
     public List<HistStruct> Histograms = new List<HistStruct>();
 
-    public int[] stats = new int[] { 0, 0, 0, 0 };
+    public int[] stats = new int[] {0, 0, 0, 0};
 
     public HistStruct[] histograms;
 
@@ -141,7 +140,7 @@ public class SceneManager : MonoBehaviour
 
 
     public bool isUpdated = false;
-    
+
 
     public int NumProteinInstances
     {
@@ -162,12 +161,12 @@ public class SceneManager : MonoBehaviour
     {
         get { return Math.Max(CurveControlPointsPositions.Count - 1, 0); }
     }
-    
+
     //--------------------------------------------------------------
 
-    void OnEnable()
+    private void OnEnable()
     {
-        CutObject[] cuts = FindObjectsOfType(typeof(CutObject)) as CutObject[];
+        CutObject[] cuts = FindObjectsOfType(typeof (CutObject)) as CutObject[];
 
         Debug.Log("Start. Cut objects in scene: " + cuts.Length);
         foreach (var cut in cuts)
@@ -181,12 +180,12 @@ public class SceneManager : MonoBehaviour
         //UpdateCutObjects();
     }
 
-    void Update()
+    private void Update()
     {
         UpdateCutObjects();
     }
 
-    void OnUnityReload()
+    private void OnUnityReload()
     {
         Debug.Log("Reload Scene");
         UploadAllData();
@@ -196,16 +195,21 @@ public class SceneManager : MonoBehaviour
 
     #region Ingredients
 
-    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null,
-	                          bool nolod = false)
+    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color,
+        List<float> clusterLevels = null,
+        bool nolod = false)
     {
         if (ProteinNames.Contains(ingredientName)) return;
-		if (clusterLevels != null) {
-			if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
-				throw new Exception ("Uneven cluster levels number: " + ingredientName);
-		}
-        if (color == null) { color = MyUtility.GetRandomColor(); }
-        
+        if (clusterLevels != null)
+        {
+            if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
+                throw new Exception("Uneven cluster levels number: " + ingredientName);
+        }
+        if (color == null)
+        {
+            color = MyUtility.GetRandomColor();
+        }
+
         ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
         ProteinNames.Add(ingredientName);
@@ -215,20 +219,22 @@ public class SceneManager : MonoBehaviour
         ProteinAtomStart.Add(ProteinAtoms.Count);
         ProteinAtoms.AddRange(atomSpheres);
 
-        if (clusterLevels != null) {
-			NumLodLevels = clusterLevels.Count;
-			foreach (var level in clusterLevels) {
-				var numClusters = Math.Max (atomSpheres.Count * level, 5);
-				List<Vector4> clusterSpheres;
-				if (!nolod)
-					clusterSpheres = KMeansClustering.GetClusters (atomSpheres, (int)numClusters);
-				else
-					clusterSpheres = new List<Vector4>(atomSpheres);
-				ProteinAtomClusterCount.Add (clusterSpheres.Count);
-				ProteinAtomClusterStart.Add (ProteinAtomClusters.Count);
-				ProteinAtomClusters.AddRange (clusterSpheres);
-			}
-		}
+        if (clusterLevels != null)
+        {
+            NumLodLevels = clusterLevels.Count;
+            foreach (var level in clusterLevels)
+            {
+                var numClusters = Math.Max(atomSpheres.Count*level, 5);
+                List<Vector4> clusterSpheres;
+                if (!nolod)
+                    clusterSpheres = KMeansClustering.GetClusters(atomSpheres, (int) numClusters);
+                else
+                    clusterSpheres = new List<Vector4>(atomSpheres);
+                ProteinAtomClusterCount.Add(clusterSpheres.Count);
+                ProteinAtomClusterStart.Add(ProteinAtomClusters.Count);
+                ProteinAtomClusters.AddRange(clusterSpheres);
+            }
+        }
     }
 
     public void AddIngredientInstance(string ingredientName, Vector3 position, Quaternion rotation, int unitId = 0)
@@ -240,7 +246,7 @@ public class SceneManager : MonoBehaviour
 
         var ingredientId = ProteinNames.IndexOf(ingredientName);
 
-        ProteinInstanceInfos.Add(new Vector4(ingredientId, (int)InstanceState.Normal, 0));
+        ProteinInstanceInfos.Add(new Vector4(ingredientId, (int) InstanceState.Normal, 0));
         ProteinInstancePositions.Add(position);
         ProteinInstanceRotations.Add(MyUtility.QuanternionToVector4(rotation));
 
@@ -250,7 +256,7 @@ public class SceneManager : MonoBehaviour
     public void AddCurveIngredient(string name, string pdbName)
     {
         if (ProteinNames.Contains(name)) return;
-        
+
         int numSteps = 1;
         float twistAngle = 0;
         float segmentLength = 34.0f;
@@ -275,7 +281,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 34.0f;
             color = Color.red;
 
-			var atomSpheres = PdbLoader.LoadAtomSpheresBiomt(pdbName);
+            var atomSpheres = PdbLoader.LoadAtomSpheresBiomt(pdbName);
             CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
@@ -287,7 +293,7 @@ public class SceneManager : MonoBehaviour
             segmentLength = 20.0f;
             color = Color.magenta;
 
-            var atomSphere = new Vector4(0,0,0,3);
+            var atomSphere = new Vector4(0, 0, 0, 3);
             CurveIngredientsAtomCount.Add(1);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.Add(atomSphere);
@@ -341,85 +347,114 @@ public class SceneManager : MonoBehaviour
     }
 
     #endregion
-    
+
     //--------------------------------------------------------------
 
     #region Cut Objects
 
     public void AddCutObject(CutType type)
     {
-        var gameObject = Instantiate(Resources.Load("Prefabs/CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
+        var gameObject =
+            Instantiate(Resources.Load("Prefabs/CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
         var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
     }
 
-    public class PriorityRelationship
-    {
-        public List<int> Occludees = new List<int>();
-        public List<int> Occluders = new List<int>();
-    }
+    //public class PriorityRelationship
+    //{
+    //    public float value2;
+    //    public List<int> Occludees = new List<int>();
+    //    public List<int> Occluders = new List<int>();
+    //}
 
-    List<PriorityRelationship> prioritylist = new List<PriorityRelationship>();
+    //List<PriorityRelationship> PriorityRelationships = new List<PriorityRelationship>();
 
-    void ComputeRelationShips()
-    {
-        prioritylist.Clear();
+    //void ComputeRelationships()
+    //{
+    //    PriorityRelationships.Clear();
 
-        foreach (var cutObject in SceneManager.Instance.CutObjects)
-        {
-            bool HasPriorityDraws = false;
-            foreach (var proteinCutInfo in cutObject.ProteinTypeParameters)
-            {
-                HasPriorityDraws |= proteinCutInfo.value2 > 0;
-            }
+    //    foreach (var cutObject in SceneManager.Instance.CutObjects)
+    //    {
+    //        bool HasPriorityDraws = false;
+    //        foreach (var proteinCutInfo in cutObject.ProteinTypeParameters)
+    //        {
+    //            HasPriorityDraws |= proteinCutInfo.value2 > 0;
+    //        }
 
-            if (HasPriorityDraws)
-            {
-                var relationship = new PriorityRelationship();
-                for(int i = 0; i < cutObject.ProteinTypeParameters.Count; i++)// (var proteinCutInfo in cutObject.ProteinTypeParameters)
-                {
-                    var proteinCutParameter = cutObject.ProteinTypeParameters[i];
+    //        if (HasPriorityDraws)
+    //        {
+    //            var distinctValues2 = cutObject.GetDistinctValue2();
 
-                    if (proteinCutParameter.value2 > 0)
-                    {
-                        relationship.Occludees.Add(i);
-                    }
-                    else if (!proteinCutParameter.IgnorePriorityDraw)
-                    {
-                        relationship.Occluders.Add(i);
-                    }
-                }
-            }
-        }
-    }
+    //            foreach (var value2 in distinctValues2)
+    //            {
+    //                var relationship = new PriorityRelationship();
+    //                relationship.value2 = value2;
+    //                relationship.Occludees.AddRange(cutObject.GetAllWithValue2(value2));
+    //                relationship.Occluders.AddRange(cutObject.GetAllNonIgnorePriorityDraw());
+
+    //                int a = 0;
+    //            }
+    //        }
+
+    //        //if (HasPriorityDraws)
+    //        //{
+    //        //    var relationship = new PriorityRelationship();
+    //        //    for(int i = 0; i < cutObject.ProteinTypeParameters.Count; i++)// (var proteinCutInfo in cutObject.ProteinTypeParameters)
+    //        //    {
+    //        //        var proteinCutParameter = cutObject.ProteinTypeParameters[i];
+    //        //        relationship.Occludees.Add((proteinCutParameter.value2 > 0) ? 1 : 0);
+    //        //        relationship.Occluders.Add((proteinCutParameter.IgnorePriorityDraw ) ? 0 : 1);
+    //        //    }
+    //        //}
+    //    }
+    //}
+    
+    //public List<List<KeyValuePair<bool, CutParameters>>> OcclusionMasks = new List<List<KeyValuePair<int, CutParameters>>>();
+
+    //void ComputeOcclusionMasks()
+    //{
+    //    OcclusionMasks.Clear();
+
+    //    foreach (var cutObject in CutObjects)
+    //    {
+    //        var occlusionMask = new List<KeyValuePair<int, float>>();
+    //        foreach (var cutParam in cutObject.ProteinTypeParameters)
+    //        {
+    //            occlusionMask.Add(new KeyValuePair<int, float>(cutParam.IsFocus ? 1 : 0, cutParam.IsFocus ? 0 : cutParam.value2));
+    //        }
+    //        OcclusionMasks.Add(occlusionMask);
+    //    }
+    //}
 
     // Todo: proceed only if changes are made 
     public void UpdateCutObjects()
     {
-        ComputeRelationShips();
+        //ComputeOcclusionMasks();
+            
 
         var CutInfos = new List<CutInfoStruct>();
         var CutScales = new List<Vector4>();
         var CutPositions = new List<Vector4>();
         var CutRotations = new List<Vector4>();
-        var ProteinCutFilters = new List<int>();
-        var HistogramProteinTypes = new List<int>();
 
-        //Debug.Log(CutObjects.Count);
+        //var ProteinCutFilters = new List<int>();
+        //var HistogramProteinTypes = new List<int>();
 
-        // Fill the protein cut filter buffer
+        ////Debug.Log(CutObjects.Count);
 
-        for (var i = 0; i < ProteinNames.Count; i++)
-        {
-            foreach (var cutObject in CutObjects)
-            {
-                //Debug.Log(i + " PCF " + cutObject.ProteinCutFilters.Count());
-                //Debug.Log(i + " HPT " + cutObject.HistogramProteinTypes.Count());
-                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
-                //HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
+        //// Fill the protein cut filter buffer
 
-                //Debug.Log("---" + i + " -- " + " ~ " + cutObject.HistogramProteinTypes[i].Name + " ~ " + cutObject.HistogramProteinTypes[i].State + " ... " + cutObject.ProteinCutFilters[i].State);
-            }
-        }
+        //for (var i = 0; i < ProteinNames.Count; i++)
+        //{
+        //    foreach (var cutObject in CutObjects)
+        //    {
+        //        //Debug.Log(i + " PCF " + cutObject.ProteinCutFilters.Count());
+        //        //Debug.Log(i + " HPT " + cutObject.HistogramProteinTypes.Count());
+        //        ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+        //        //HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
+
+        //        //Debug.Log("---" + i + " -- " + " ~ " + cutObject.HistogramProteinTypes[i].Name + " ~ " + cutObject.HistogramProteinTypes[i].State + " ... " + cutObject.ProteinCutFilters[i].State);
+        //    }
+        //}
 
         // For each cut object
         foreach (var cut in CutObjects)
@@ -459,8 +494,8 @@ public class SceneManager : MonoBehaviour
         GPUBuffer.Instance.CutScales.SetData(CutScales.ToArray());
         GPUBuffer.Instance.CutPositions.SetData(CutPositions.ToArray());
         GPUBuffer.Instance.CutRotations.SetData(CutRotations.ToArray());
-        GPUBuffer.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
-        GPUBuffer.Instance.HistogramProteinTypes.SetData(HistogramProteinTypes.ToArray());
+        //GPUBuffer.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
+        //GPUBuffer.Instance.HistogramProteinTypes.SetData(HistogramProteinTypes.ToArray());
         //GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 1, 2, 3 });
     }
 
@@ -739,20 +774,20 @@ public class SceneManager : MonoBehaviour
     
     #endregion
 
-    public int GetProteinId(String name)
-    {
-        int index = 0;
+    //public int GetProteinId(String name)
+    //{
+    //    int index = 0;
 
-        foreach (var node in PersistantSettings.Instance.hierachy)
-        {
-            if (node.name == name)
-            {
-                return index;
-            }
+    //    foreach (var node in PersistantSettings.Instance.hierachy)
+    //    {
+    //        if (node.name == name)
+    //        {
+    //            return index;
+    //        }
 
-            index++;
-        }
+    //        index++;
+    //    }
 
-        return -1;
-    }
+    //    return -1;
+    //}
 }

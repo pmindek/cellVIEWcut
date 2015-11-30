@@ -33,10 +33,17 @@ public class CutItemRanges //i will maybe use this later?
     public float d1; // delta 1
 }
 
+public enum LockState
+{
+    Unlocked = 0,
+    Locked = 1,
+    Consumed = 2,
+    Restore = 3
+};
+
 public class CutParameters
 {
-    public bool IgnorePriorityDraw;
-
+    public bool IsFocus;
     public float range0;
     public float range1;
 
@@ -56,13 +63,15 @@ public class CutParameters
 public class CutObject : MonoBehaviour
 {
     public static int UniqueId;
-
+    
+    public LockState CurrentLockState = LockState.Unlocked;
     public bool Hidden;
     private bool tree_isVisible = true;
     
     public CutType CutType;
 
     public bool Inverse;
+    public int Id;
     
     //[Range(0, 1)]
     //public float Value1;
@@ -128,7 +137,7 @@ public class CutObject : MonoBehaviour
             ProteinTypeParameters.Add(
                 new CutParameters()
                 {
-                    IgnorePriorityDraw = false,
+                    IsFocus = false,
                     range0 = 0.0f,
                     range1 = 0.0f,
 
@@ -183,9 +192,9 @@ public class CutObject : MonoBehaviour
         ProteinTypeParameters[ingredientId] = cutParameters;
     }
 
-    public void SetIgnorePriorityDrawFor(int ingredientId, bool value)
+    public void SetFocusFor(int ingredientId, bool value)
     {
-        ProteinTypeParameters[ingredientId].IgnorePriorityDraw = value;
+        ProteinTypeParameters[ingredientId].IsFocus = value;
     }
 
     public void SetValue1For(int ingredientId, float value1)
@@ -412,9 +421,15 @@ public class CutObject : MonoBehaviour
 	    }
     }
 
-    void OnEnable()
+    void Awake()
     {
         UniqueId++;
+        Id = UniqueId;
+    }
+
+    void OnEnable()
+    {
+        
         InitCutParameters();
 
         // Register this object in the cut object cache
@@ -435,10 +450,18 @@ public class CutObject : MonoBehaviour
 
     public void SetHidden(bool value, bool highlight = false)
     {
-        gameObject.GetComponent<MeshRenderer>().enabled = !value;
-        gameObject.GetComponent<TransformHandle>().enabled = !value;
-        if(gameObject.GetComponent<Collider>() != null) gameObject.GetComponent<Collider>().enabled = !value;
-        if (highlight) SelectionManager.Instance.SetHandleSelected(gameObject.GetComponent<TransformHandle>());
+        if (CutType == CutType.None)
+        {
+            gameObject.GetComponent<MeshRenderer>().enabled = false;
+            gameObject.GetComponent<TransformHandle>().enabled = false;
+        }
+        else
+        {
+            gameObject.GetComponent<MeshRenderer>().enabled = !value;
+            gameObject.GetComponent<TransformHandle>().enabled = !value;
+            if (gameObject.GetComponent<Collider>() != null) gameObject.GetComponent<Collider>().enabled = !value;
+            if (highlight) SelectionManager.Instance.SetHandleSelected(gameObject.GetComponent<TransformHandle>());
+        }
     }
 
     public void SetMesh()
@@ -493,5 +516,49 @@ public class CutObject : MonoBehaviour
                 gameObject.GetComponent<TransformHandle>().enabled = false;
                 break;
         }
+    }
+
+    public List<float> GetDistinctValue2()
+    {
+        var distincValue2List = new List<float>();
+        foreach (var cutParam in ProteinTypeParameters)
+        {
+            if (!distincValue2List.Contains(cutParam.value2) && cutParam.value2 != 0)
+            {
+                distincValue2List.Add(cutParam.value2);
+            }
+        }
+
+        return distincValue2List;
+    }
+
+    public List<int> GetAllWithValue2(float value2)
+    {
+        var list = new List<int>();
+        for(int i = 0; i < ProteinTypeParameters.Count; i++)
+        {
+
+            if (ProteinTypeParameters[i].value2 == value2)
+            {
+                list.Add(i);
+            }
+        }
+
+        return list;
+    }
+
+    public List<int> GetAllNonIgnorePriorityDraw()
+    {
+        var list = new List<int>();
+        for (int i = 0; i < ProteinTypeParameters.Count; i++)
+        {
+
+            if (ProteinTypeParameters[i].IsFocus)
+            {
+                list.Add(i);
+            }
+        }
+
+        return list;
     }
 }

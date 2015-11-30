@@ -18,9 +18,13 @@ public class CutObjectUIController : MonoBehaviour
     public Slider FuzzinessSlider;
     public Slider DistanceSlider;
     public Slider CurveSlider;
+    public Slider OcclusionSlider;
 
     private int previousSelectedIndex = -1;
     private int previousComboBoxSelectedIndex = -1;
+
+    public delegate void SelectedCutObjectChange();
+    public event SelectedCutObjectChange OnSelectedCutObjectChange;
 
     // Use this for initialization
     void Start()
@@ -56,6 +60,8 @@ public class CutObjectUIController : MonoBehaviour
     //    SceneManager.Instance.GetSelectedCutObject().SetHidden(false, true);
     //}
 
+    private bool ignoreUIChanges = false;
+
     // Update is called once per frame
     void Update()
     {
@@ -77,26 +83,23 @@ public class CutObjectUIController : MonoBehaviour
             }
             previousSelectedIndex = listViewUI.SelectedIndex;
             comboBox.Set(SceneManager.Instance.CutObjects[listViewUI.SelectedIndex].CutType.ToString(), false);
+
+            SceneManager.Instance.SelectedCutObject = listViewUI.SelectedIndex;
+
+            previousComboBoxSelectedIndex =
+                comboBox.ListView.FindIndex(
+                    SceneManager.Instance.CutObjects[listViewUI.SelectedIndex].CutType.ToString());
+
+            OnSelectedCutObjectChange();
         }
         else if (previousComboBoxSelectedIndex != comboBox.ListView.SelectedIndex)
         {
             SceneManager.Instance.GetSelectedCutObject().CutType = GetCutTypeFromName(comboBox.ListView.DataSource[comboBox.ListView.SelectedIndex]);
             SceneManager.Instance.GetSelectedCutObject().SetHidden(false, true);
+            previousComboBoxSelectedIndex = comboBox.ListView.SelectedIndex;
         }
 
-        previousComboBoxSelectedIndex = comboBox.ListView.SelectedIndex;
-        SceneManager.Instance.SelectedCutObject = listViewUI.SelectedIndex;
-
-
-        
-
-
-        //Debug.Log(listViewUI.SelectedIndex);
-
         ComputeFuzzinessPlot();
-
-
-        
     }
 
     public void ComputeFuzzinessPlot()
@@ -124,6 +127,11 @@ public class CutObjectUIController : MonoBehaviour
     {
         
         CurveSlider.value = value;
+    }
+
+    public void SetOcclusionUIValue(float value)
+    {
+        OcclusionSlider.value = value;
     }
 
     public void OnInvertValueChanged(bool value)
@@ -154,7 +162,7 @@ public class CutObjectUIController : MonoBehaviour
     {
         var cutObject = Instantiate(cutObjectPrefab).GetComponent<CutObject>();
         cutObject.Update();
-        cutObject.name = "Cut Object " + (CutObject.UniqueId - 1);
+        cutObject.name = "Cut Object " + cutObject.Id;
         listViewUI.SelectedIndex = listViewUI.Add(cutObject.name);
         Debug.Log(listViewUI.SelectedIndex);
         previousSelectedIndex = -1;

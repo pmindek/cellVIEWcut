@@ -37,6 +37,7 @@ public class GPUBuffer : MonoBehaviour
     public ComputeBuffer ProteinInstanceInfos;
     public ComputeBuffer ProteinInstancePositions;
     public ComputeBuffer ProteinInstanceRotations;
+    public ComputeBuffer ProteinInstanceCullFlags;
     public ComputeBuffer ProteinInstanceOcclusionFlags;
     public ComputeBuffer ProteinInstanceVisibilityFlags;
 
@@ -121,6 +122,7 @@ public class GPUBuffer : MonoBehaviour
         if (ProteinInstanceInfos == null) ProteinInstanceInfos = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstancePositions == null) ProteinInstancePositions = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstanceRotations == null) ProteinInstanceRotations = new ComputeBuffer(NumProteinInstancesMax, 16);
+        if (ProteinInstanceCullFlags == null) ProteinInstanceCullFlags = new ComputeBuffer(NumProteinInstancesMax, 4);
         if (ProteinInstanceOcclusionFlags == null) ProteinInstanceOcclusionFlags = new ComputeBuffer(NumProteinInstancesMax, 4);
         if (ProteinInstanceVisibilityFlags == null) ProteinInstanceVisibilityFlags = new ComputeBuffer(NumProteinInstancesMax, 4);
 
@@ -187,6 +189,7 @@ public class GPUBuffer : MonoBehaviour
         if (ProteinInstanceInfos != null) { ProteinInstanceInfos.Release(); ProteinInstanceInfos = null; }
         if (ProteinInstancePositions != null) { ProteinInstancePositions.Release(); ProteinInstancePositions = null; }
         if (ProteinInstanceRotations != null) { ProteinInstanceRotations.Release(); ProteinInstanceRotations = null; }
+        if (ProteinInstanceCullFlags != null) { ProteinInstanceCullFlags.Release(); ProteinInstanceCullFlags = null; }
         if (ProteinInstanceOcclusionFlags != null) { ProteinInstanceOcclusionFlags.Release(); ProteinInstanceOcclusionFlags = null; }
         if (ProteinInstanceVisibilityFlags != null) { ProteinInstanceVisibilityFlags.Release(); ProteinInstanceVisibilityFlags = null; }
 

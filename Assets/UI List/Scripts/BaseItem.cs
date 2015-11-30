@@ -247,6 +247,26 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
         
     }
 
+    public bool HasAllChildrenFocus()
+    {
+        foreach (var child in GetAllLeafChildren())
+        {
+            if (!child.RangeFieldItem.Toggle.isOn) return false;
+        }
+
+        return true;
+    }
+
+    public bool HasSomeChildrenFocus()
+    {
+        foreach (var child in GetAllLeafChildren())
+        {
+            if (child.RangeFieldItem.Toggle.isOn) return true;
+        }
+
+        return false;
+    }
+
     //public void SetSelected()
     //{
     //    RangeFieldItem.CustomRangeSliderUi.GetComponent<CanvasGroup>()

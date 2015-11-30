@@ -6,9 +6,9 @@ using System.Collections.Generic;
 public class RangeFieldItem : MonoBehaviour, IItemInterface
 {
     public Text TextUI;
+    public LockToggle LockToggle;
     public CustomRangeSlider CustomRangeSliderUi;
-    public Toggle Toggle1;
-    public Toggle Toggle2;
+    public CustomToggle Toggle;
 
     /// <summary>
     /// Parameters = new object[]{ string DisplayText }   OR
@@ -24,10 +24,12 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     public void Start()
     {
         baseItem = transform.parent.GetComponent<BaseItem>();
-        Toggle1.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem1(baseItem); });
-        //Toggle2.onValueChanged.AddListener(delegate { baseItem.ViewController.OnToggleItem2(baseItem); });
+        Toggle.isOn = false;
+        LockToggle.gameObject.SetActive(false);
+        LockToggle.LockToggleEvent += OnLockToggleClick;
+        Toggle.CustomToggleClickEvent += OnCustomToggleClick;
     }
-
+    
     public void SetRangeValues(List<float> rangeValues)
     {
         /*CustomRangeSliderUi.rangeValues.Clear();
@@ -58,14 +60,14 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
         CustomRangeSliderUi.useFakeRangeValues = true;
     }
 
-    public void SetToggle1(bool value)
+    public void OnLockToggleClick(bool value)
     {
-        Toggle1.isOn = value;
+        baseItem.ViewController.SetAllLockState(value);
     }
 
-    public void SetToggle2(bool value)
+    public void OnCustomToggleClick(bool value)
     {
-        Toggle2.isOn = value;
+        baseItem.ViewController.OnFocusToggleClick(baseItem);
     }
 
     public List<float> GetRangeValues()

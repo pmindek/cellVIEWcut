@@ -1,0 +1,345 @@
+﻿#include "Helper.cginc"
+
+#pragma kernel ComputeObjectSpaceCutAways
+
+// Cutaways
+struct CutInfoStruct
+{
+	float4 info;
+	float4 info2;
+};
+
+//histograms
+struct HistStruct
+{
+	int parent; //also write data to this id, unless it is < 0
+
+	int all;
+	int cutaway;
+	int occluding;
+	int visible;
+
+	int pad0;
+	int pad1;
+	int pad2;
+};
+
+
+uniform int _NumCutObjects;
+uniform StructuredBuffer<CutInfoStruct> _CutInfos;
+uniform	StructuredBuffer<float4> _CutScales;
+uniform	StructuredBuffer<float4> _CutPositions;	
+uniform StructuredBuffer<float4> _CutRotations;
+uniform StructuredBuffer<int> _HistogramsLookup;
+uniform RWStructuredBuffer<HistStruct> _Histograms;
+
+//uniform StructuredBuffer<int> _ProteinCutFilters;
+//uniform StructuredBuffer<int> _HistogramProteinTypes;
+//uniform RWStructuredBuffer<int> _HistogramStatistics;
+
+//uniform float noiseTextureW;
+//uniform float noiseTextureH;
+//uniform Texture2D<float4> noiseTexture;
+
+uniform float _Scale;
+uniform	int _NumInstances;
+uniform	StructuredBuffer<float> _ProteinRadii;	
+uniform	RWStructuredBuffer<float4> _ProteinInstanceInfo;
+uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
+uniform StructuredBuffer<int> _ProteinInstanceOcclusionFlags;
+uniform StructuredBuffer<int> _ProteinInstanceVisibilityFlags;
+uniform RWStructuredBuffer<int> _ProteinInstanceCullFlags;
+
+/*float CutAwayTest(float4 sphere, int proteinType)
+{
+    bool cut = false;
+    for (int i = 0; i < _NumCutObjects; i++)
+    {
+        int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+
+        if (proteinCutFilter == 1)
+        {
+            CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
+            float3 position = _CutPositions[i].xyz;
+            float4 rotation = _CutRotations[i];
+            float3 scale = _CutScales[i].xyz;
+           
+            if (info.info.x == 0)  //plane
+            {
+                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+                float4 plane = ComputePlane(normal, position);
+                bool test = SpherePlaneTest(plane, float4(sphere.xyz, 0));
+                if (test) return true;
+            }
+            else if (info.info.x == 1)  //sphere
+            {
+                bool test = SphereSphereTest(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+                if (test) return true;
+            }
+            else if (info.info.x == 2)  //cube
+            {
+                bool test = SphereCubeTest(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+                if (test) return true;
+            }
+        }
+    }
+
+    return cut;
+}*/
+
+//float rand_(in int id)
+//{
+//	float2 uv = normalize(float2(id, id * 3543543));
+
+//	uint2 uvi = uint2(id % noiseTextureW, id / noiseTextureH);
+
+//	//float2 noise = noiseTexture[uvi].x;
+//    float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453) * noiseTexture[uvi].xy;
+//    return abs(noise.x + noise.y) * 0.5;
+//}
+
+uint wang_hash(uint seed)
+{
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
+float rand(uint value)
+{
+	return float(wang_hash(value)) * (1.0 / 4294967296.0);
+}
+
+bool adjustDistanceTest(in int id, in float parameter, in float distance, in float pSize, in float pFuzziness, in float pFuzzinessCurve)
+{
+	//bool fuzzTest = rand(id) * 3.0 * pSize <= pow(abs(distance), pFuzziness * 1.0);
+	//return pow(rand(id), 0.5) < parameter;
+	//return rand(id) < lerp(1.0, 0.5, normalizedDistance) * parameter;
+
+	
+	float normalizedDistance = pow(abs(distance) / (0.01 + pSize * 250.0), pFuzzinessCurve);
+
+	if (normalizedDistance > 1.0)
+	{
+		return true;
+	}
+	else
+	{
+		return rand(id) < 1.0 - parameter * lerp(1.0, pFuzziness, pow(normalizedDistance, 1.0));
+	}
+
+	return true;
+
+}
+
+float CutAwayTest(float4 sphere, int proteinType, int id)
+{
+    bool cut = false;
+    for (int i = 0; i < _NumCutObjects; i++)
+    {
+        //int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
+		//int histogramFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
+		//int proteinCutFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
+
+		/*if (proteinType != 3)
+			return true;*/
+		/*if (_ProteinCutFilters[proteinType * _NumCutObjects + i] != 1)
+		{
+			return true;
+		}*/
+
+        //if (proteinCutFilter == 1)
+        {
+            CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
+            float3 position = _CutPositions[i].xyz;
+            float4 rotation = _CutRotations[i];
+			float3 scale = _CutScales[i].xyz;
+
+			float distance = 0.0;
+
+            if (info.info.x == 0)
+            {
+                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+                float4 plane = ComputePlane(normal, position);
+                distance = SpherePlaneSD(plane, float4(sphere.xyz, 0));
+            }
+			else if (info.info.x == 1)
+			{
+				distance = SphereSphereSD(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+			}
+			else if (info.info.x == 2)
+			{
+				distance = SphereCubeSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+			}
+			else if (info.info.x == 3)
+			{
+				distance = SphereCylinderSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+			}
+			else if (info.info.x == 4)
+			{
+				distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+			}
+			else if (info.info.x == 5)
+			{
+				distance = 0.1;
+			}
+
+
+			
+			//inverse
+			if (info.info.w == 1)
+			{
+				distance *= -1;
+			}
+
+			bool test = distance <= 0.0;
+			//bool fuzzTest = rand(id) * 3.0 * info.info.y <= pow(abs(distance), info.info.z * 1.0);
+			//bool fuzzTest = rand(id) < info.info.y;
+			bool fuzzTest = true;
+			bool adjustTest = true;
+			bool adjustVisibilityTest = true;
+
+			//if (histogramFilter == 1) //if this is uncommented, fuzzy filtering works only for the selected protein types (selected rather than checked)
+			{
+				float adjustCut = -1.0 + info.info.y * 2.0;
+				float adjustOcl = -1.0 + info.info.z * 2.0;;
+
+				float pFuzziness = 1.0 - info.info2.x;
+				float pSize = info.info2.y;
+				float pFuzzinessCurve = info.info2.z;
+
+				//pFuzziness = 1.0;
+				//pSize = 1.0;
+				//pFuzzinessCurve = 1.0;
+			
+				if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+				{
+					adjustTest = false;
+				}
+				if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !adjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+				{
+					test = true;
+				}
+
+
+				//if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
+				//{
+				//	adjustVisibilityTest = false;
+				//}
+				//if (_ProteinInstanceOcclusionFlags[id] != 0 && !test && adjustOcl < 0 && /*pow(rand(id), 0.5) < -adjustOcl*/ !adjustDistanceTest(id, -adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
+				//{
+				//	test = true;
+				//}
+
+			}
+
+            if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
+				cut = true;
+
+			if (_ProteinInstanceInfo[id].w == 1)
+			{
+				cut = true;
+			}
+        }    
+
+        //	//sphere
+        //	else if (_CutTypes[j] == 1)
+        //	{
+        //		if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
+        //		{
+        //			return;
+        //		}
+        //	}
+
+        //	//cube
+        //	else if (_CutTypes[j] == 2)
+        //	{
+        //		if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
+        //			isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
+        //		{
+        //			return;
+        //		}
+        //	}
+    }
+
+    return cut;
+}
+
+[numthreads(64,1,1)]
+void ComputeObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
+{
+	if(id.x >= (uint)_NumInstances) return;
+
+    float4 infos = _ProteinInstanceInfo[id.x];
+		
+	float radius = _ProteinRadii[infos.x] * _Scale;
+	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
+
+	float4 sphere = float4(pos, radius);	
+		
+	bool cutAwayTest = CutAwayTest(sphere, infos.x, id.x);
+	if(infos.w > 0) cutAwayTest = true;
+
+	_ProteinInstanceCullFlags[id.x] = (cutAwayTest) ? 1 : 0;
+		
+	int isVisible = _ProteinInstanceVisibilityFlags[id.x];
+
+	int addWhere = _HistogramsLookup[infos.x];
+	InterlockedAdd(_Histograms[addWhere].all, 1);
+
+	if (cutAwayTest)
+	{
+		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+	}	
+
+	if(isVisible)
+	{
+		InterlockedAdd(_Histograms[addWhere].visible, 1);
+	}
+
+
+	//int pof = _ProteinInstanceOcclusionFlags[id.x];
+	//int pvf = _ProteinInstanceVisibilityFlags[id.x];
+
+	//int addWhere = _HistogramsLookup[infos.x];
+
+	//while (addWhere >= 0)
+	//{
+	//	InterlockedAdd(_Histograms[addWhere].all, 1);
+	//	if (cutAwayTest)
+	//	{
+	//		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+	//	}
+	//	else
+	//	{
+	//		InterlockedAdd(_Histograms[addWhere].occluding, pof);
+	//		InterlockedAdd(_Histograms[addWhere].visible, pvf);
+	//	}
+
+	//	addWhere = _Histograms[addWhere].parent;
+	//}
+
+	//float adjustVisible = -1.0 + _AdjustVisible * 2.0;
+	//if (_ProteinInstanceOcclusionFlags[id.x]
+	//	&&
+	//	adjustVisible > 0.0
+	//	&&
+	//	rand(id * 256) < adjustVisible
+	//)
+	//	_ProteinInstanceInfo[id.x].w = 1;
+
+	//if (_ProteinInstanceOcclusionFlags[id.x]
+	//	&&
+	//	adjustVisible < 0.0
+	//	&&
+	//	rand(id * 256) < -adjustVisible
+	//)
+	//	_ProteinInstanceInfo[id.x].w = 0;
+}
