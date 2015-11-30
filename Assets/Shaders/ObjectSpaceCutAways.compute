@@ -273,9 +273,10 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 				float3 light = normalize(_CameraForward); //float3(0.0, 0.0, 1.0);
 		
 				float3 halfv=normalize(normalize(_CameraForward)+light);
-				float ndotl=max(dot(no,halfv),0.0);
+				//float ndotl=max(dot(no,halfv),0.0);
+				float ndotl=abs(dot(no,halfv));
 			
-				shading = max(ndotl,0.5);
+				shading = max(abs(ndotl),0.5);
 
 				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
 			}
