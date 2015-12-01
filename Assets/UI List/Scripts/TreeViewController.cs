@@ -99,7 +99,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             foreach (var leafNodes in GetAllLeaves(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
                 {
                     cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzziness = value;
                 }
@@ -117,7 +117,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             foreach (var leafNodes in GetAllLeaves(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
                 {
                     cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzzinessDistance = value;
                 }
@@ -135,7 +135,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             foreach (var leafNodes in GetAllLeaves(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
                 {
                     cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzzinessCurve = value;
                 }
@@ -176,7 +176,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             foreach (var leafNodes in GetAllLeaves(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.CutObjects)
+                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
                 {
                     cutObject.ProteinTypeParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].value2 = value;
                 }
