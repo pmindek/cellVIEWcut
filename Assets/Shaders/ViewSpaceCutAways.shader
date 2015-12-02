@@ -22,7 +22,9 @@
 
 	StructuredBuffer<int4> _OccludeeSphereBatches;
 	RWStructuredBuffer<int> _FlagBuffer : register(u1);
-
+		
+	int _CutObjectId;
+	int _NumIngredients;
 	sampler2D _DistanceField;
 	StructuredBuffer<CutInfoStruct> _CutInfo;
 
@@ -56,7 +58,7 @@
 		float3 pos = _ProteinInstancePositions[idx].xyz * _Scale;
 		
 		output.id = idx;
-		output.aperture = 1-_CutInfo[info.x].info2.w;
+		output.aperture = 1-_CutInfo[info.x + _CutObjectId * _NumIngredients].info2.w;
 		output.sphere = float4(pos, radius);
 	}
 	
@@ -68,7 +70,7 @@
 		float4 sphere = _LipidInstancePositions[idx] * _Scale;
 		
 		output.id = idx;
-		output.aperture = 1-_CutInfo[info.x].info2.w;
+		output.aperture = 1-_CutInfo[info.x + _CutObjectId * _NumIngredients].info2.w;
 		output.sphere = sphere;
 	}
 

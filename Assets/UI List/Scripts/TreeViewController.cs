@@ -71,6 +71,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         _selectedNode = selectedNode;
         UpdateSelectedNodeFuzziValue();
+        UpdateSelectedNodeApertureValue();
         UpdateSelectedNodeOcclusionValue();
     }
 
@@ -78,8 +79,8 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         UpdateAllToggles();
         UpdateInvertValue();
-        UpdateApertureValue();
         UpdateSelectedNodeFuzziValue();
+        UpdateSelectedNodeApertureValue();
         UpdateSelectedNodeOcclusionValue();
         
         if (_rootNodes == null || SceneManager.Instance.HistogramData == null) return;
@@ -96,7 +97,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     private bool _ignoreApertureUIChangeFlag;
 
-    void UpdateApertureValue()
+    void UpdateSelectedNodeApertureValue()
     {
         _ignoreApertureUIChangeFlag = true;
         var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));

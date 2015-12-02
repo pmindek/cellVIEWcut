@@ -52,10 +52,19 @@ void ClearHistograms(uint3 id : SV_DispatchThreadID)
     _Histograms[id.x] = clearHist;
 }
 
+// Cutaways
+struct CutInfoStruct
+{
+	float4 info;
+	float4 info2;
+};
+
 int _CutObjectId;
+int _NumIngredients;
 int _ConsumeRestoreState;
+
 StructuredBuffer<int> _HistogramsLookup;
-StructuredBuffer<float> _IngredientMaskParams;
+StructuredBuffer<CutInfoStruct> _CutInfo;
 
 RWStructuredBuffer<float4> _ProteinInstanceInfo;
 RWStructuredBuffer<int> _ProteinInstanceCullFlags;
@@ -65,7 +74,8 @@ RWStructuredBuffer<int> _ProteinInstanceOcclusionFlags;
 void DiscardOccludingProteinInstances(uint3 id : SV_DispatchThreadID)
 {	
 	float4 info = _ProteinInstanceInfo[id.x];
-	float cullProbability = _IngredientMaskParams[info.x];
+	//float cullProbability = _IngredientMaskParams[info.x];
+	float cullProbability = _CutInfo[info.x + _CutObjectId * _NumIngredients].info.z;
 
 	if(_ConsumeRestoreState == 2 && info.w == _CutObjectId)
 	{
@@ -110,14 +120,14 @@ RWStructuredBuffer<int> _LipidInstanceOcclusionFlags;
 void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
 {	
 	float4 info = _LipidInstanceInfo[id.x];
-	float cullProbability = _IngredientMaskParams[info.x];
+	float cullProbability = _CutInfo[info.x + _CutObjectId * _NumIngredients].info.z;
 		
 	if(_ConsumeRestoreState == 2 && info.w == _CutObjectId)
 	{
 		_LipidInstanceInfo[id.x].w = 0;
 	}
 
-	int occ = _LipidInstanceOcclusionFlags[id.x] ;
+	int occ = _LipidInstanceOcclusionFlags[id.x];	
 
 	if(occ == 1)
 	{
@@ -128,10 +138,11 @@ void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
 			InterlockedAdd(_Histograms[addWhere].cutaway, 1);
 
 			if(_ConsumeRestoreState == 1)
-			{ 
+			{
 				_LipidInstanceInfo[id.x].w = _CutObjectId;
 			}
 		}
+		//_ProteinInstanceOcclusionFlags[id.x] = 0;
 	}     
 	else if(occ == 2)
 	{
@@ -143,7 +154,7 @@ void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
 		{
 			_LipidInstanceInfo[id.x].w = _CutObjectId;
 		}
-	}  
+	}   
 
 	//if(_LipidInstanceOcclusionFlags[id.x] > 0)
 	//{

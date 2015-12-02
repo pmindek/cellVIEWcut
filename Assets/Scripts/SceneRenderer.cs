@@ -487,8 +487,12 @@ public class SceneRenderer : MonoBehaviour
             ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(4, Mathf.CeilToInt(SceneManager.Instance.NumLipidInstances / 64.0f), 1, 1);
         }
 
+        var cutObjectId = -1;
+
         foreach (var cutObject in SceneManager.Instance.CutObjects)
         {
+            cutObjectId++;
+
             //********************************************************//
 
             var internalState = 0;
@@ -522,27 +526,28 @@ public class SceneRenderer : MonoBehaviour
             var cullProtein = false;
 
             //Fill the buffer with occludees mask falgs
-            var maskFlags1 = new List<int>();
-            var maskFlags2 = new List<int>();
-            var value2List = new List<float>();
+            var maskFlags = new List<int>();
+            var cullFlags = new List<int>();
 
             foreach (var cutParam in cutObject.IngredientCutParameters)
             {
+                var isMask = cutParam.IsFocus;
+                var isCulled = !cutParam.IsFocus && (cutParam.Aperture > 0 || cutParam.value2 < 1);
+
                 if (cutParam.IsFocus )
                 {
                     if (cutParam.Id < SceneManager.Instance.NumProteinIngredients) maskProtein = true;
                     else maskLipid = true;
                 }
 
-                if (!cutParam.IsFocus)
+                if (isCulled)
                 { 
                     if (cutParam.Id < SceneManager.Instance.NumProteinIngredients) cullProtein = true;
                     else cullLipid = true;
                 }
 
-                maskFlags1.Add(cutParam.IsFocus ? 1 : 0);
-                maskFlags2.Add(!cutParam.IsFocus? 1 : 0);
-                value2List.Add(cutParam.value2);
+                maskFlags.Add(isMask ? 1 : 0);
+                cullFlags.Add(isCulled ? 1 : 0);
             }
 
             //if (!cullProtein && !cullLipid) continue;
@@ -550,7 +555,7 @@ public class SceneRenderer : MonoBehaviour
             //********************************************************//
 
             // Upload Mask Params to GPU
-            GPUBuffers.Instance.IngredientMaskParams.SetData(maskFlags1.ToArray());
+            GPUBuffers.Instance.IngredientMaskParams.SetData(maskFlags.ToArray());
 
             //***** Compute Depth-Stencil mask *****//
 
@@ -629,11 +634,11 @@ public class SceneRenderer : MonoBehaviour
             //break;
 
             /////**** Compute Queries ***//
-            
+
+            GPUBuffers.Instance.IngredientMaskParams.SetData(cullFlags.ToArray());
+
             if (cullProtein)
             {
-                GPUBuffers.Instance.IngredientMaskParams.SetData(maskFlags2.ToArray());
-
                 // Always clear append buffer before usage
                 GPUBuffers.Instance.SphereBatches.ClearAppendBuffer();
 
@@ -649,7 +654,7 @@ public class SceneRenderer : MonoBehaviour
                 // Count occluder instances
                 ComputeBuffer.CopyCount(GPUBuffers.Instance.SphereBatches, _argBuffer, 0);
 
-                DebugSphereBatchCount();
+                //DebugSphereBatchCount();
 
                 // Clear protein occlusion buffer 
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffers.Instance.ProteinInstanceOcclusionFlags);
@@ -663,6 +668,8 @@ public class SceneRenderer : MonoBehaviour
                 // Set the render target
                 Graphics.SetRenderTarget(tempBuffer);
 
+                OcclusionQueriesMaterial.SetInt("_CutObjectId", cutObjectId);
+                OcclusionQueriesMaterial.SetInt("_NumIngredients", SceneManager.Instance.NumAllIngredients);
                 OcclusionQueriesMaterial.SetBuffer("_CutInfo", GPUBuffers.Instance.CutInfo);
                 OcclusionQueriesMaterial.SetTexture("_DistanceField", _floodFillTexturePong);
 
@@ -677,25 +684,23 @@ public class SceneRenderer : MonoBehaviour
                 Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
                 Graphics.ClearRandomWriteTargets();
 
-                // Fill buffer with occlusion values
-                GPUBuffers.Instance.IngredientMaskParams.SetData(value2List.ToArray());
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObjectId);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_NumIngredients", SceneManager.Instance.NumAllIngredients);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_CutInfo", GPUBuffers.Instance.CutInfo);
 
                 //// Discard occluding instances according to value2
-                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
+                //ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_ConsumeRestoreState", internalState);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_Histograms", GPUBuffers.Instance.Histograms);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_HistogramsLookup", GPUBuffers.Instance.HistogramsLookup);
-                ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_IngredientMaskParams", GPUBuffers.Instance.IngredientMaskParams);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_ProteinInstanceInfo", GPUBuffers.Instance.ProteinInstanceInfo);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_ProteinInstanceCullFlags", GPUBuffers.Instance.ProteinInstanceCullFlags);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_ProteinInstanceOcclusionFlags", GPUBuffers.Instance.ProteinInstanceOcclusionFlags);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(3, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
             }
-
+            
             if (cullLipid)
             {
-                GPUBuffers.Instance.IngredientMaskParams.SetData(maskFlags2.ToArray());
-
                 // Always clear append buffer before usage
                 GPUBuffers.Instance.SphereBatches.ClearAppendBuffer();
 
@@ -710,9 +715,7 @@ public class SceneRenderer : MonoBehaviour
 
                 // Count occluder instances
                 ComputeBuffer.CopyCount(GPUBuffers.Instance.SphereBatches, _argBuffer, 0);
-
                 
-
                 // Clear lipid occlusion buffer 
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffers.Instance.LipidInstanceOcclusionFlags);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumLipidInstances / 64.0f), 1, 1);
@@ -725,6 +728,11 @@ public class SceneRenderer : MonoBehaviour
                 // Set the render target
                 Graphics.SetRenderTarget(tempBuffer);
 
+                OcclusionQueriesMaterial.SetInt("_CutObjectId", cutObjectId);
+                OcclusionQueriesMaterial.SetInt("_NumIngredients", SceneManager.Instance.NumAllIngredients);
+                OcclusionQueriesMaterial.SetBuffer("_CutInfo", GPUBuffers.Instance.CutInfo);
+                OcclusionQueriesMaterial.SetTexture("_DistanceField", _floodFillTexturePong);
+
                 OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
                 OcclusionQueriesMaterial.SetBuffer("_LipidInstanceInfo", GPUBuffers.Instance.LipidInstanceInfo);
                 OcclusionQueriesMaterial.SetBuffer("_LipidInstancePositions", GPUBuffers.Instance.LipidInstancePositions);
@@ -735,15 +743,15 @@ public class SceneRenderer : MonoBehaviour
                 Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
                 Graphics.ClearRandomWriteTargets();
 
-                // Fill buffer with occlusion values
-                GPUBuffers.Instance.IngredientMaskParams.SetData(value2List.ToArray());
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObjectId);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_NumIngredients", SceneManager.Instance.NumAllIngredients);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_CutInfo", GPUBuffers.Instance.CutInfo);
 
                 //// Discard occluding instances according to value2
-                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
+                //ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_ConsumeRestoreState", internalState);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_Histograms", GPUBuffers.Instance.Histograms);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_HistogramsLookup", GPUBuffers.Instance.HistogramsLookup);
-                ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_IngredientMaskParams", GPUBuffers.Instance.IngredientMaskParams);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_LipidInstanceInfo", GPUBuffers.Instance.LipidInstanceInfo);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_LipidInstanceCullFlags", GPUBuffers.Instance.LipidInstanceCullFlags);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_LipidInstanceOcclusionFlags", GPUBuffers.Instance.LipidInstanceOcclusionFlags);
