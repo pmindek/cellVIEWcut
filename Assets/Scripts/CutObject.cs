@@ -133,16 +133,17 @@ public class CutObject : MonoBehaviour
 
     public void InitCutParameters()
     {
-        SceneManager.Instance.WakeUpSingleton();
+        var ingredientsCount = SceneManager.Instance.NumAllIngredients;
         IngredientCutParameters.Clear();
 
-        for (int i = 0; i < SceneManager.Instance.AllIngredientNames.Count; i++)
+        for (int i = 0; i < ingredientsCount; i++)
         {
             IngredientCutParameters.Add(
                 new CutParameters()
                 {
                     Id = i,
                     IsFocus = false,
+                    Aperture = 0.0f,
                     range0 = 0.0f,
                     range1 = 0.0f,
 
@@ -151,7 +152,7 @@ public class CutObject : MonoBehaviour
                     count1 = 0,
 
                     value1 = 0.5f,
-                    value2 = 0.0f,
+                    value2 = 1.0f,
                     fuzziness = 0.0f,
                     fuzzinessDistance = 1.0f,
                     fuzzinessCurve = 1.0f

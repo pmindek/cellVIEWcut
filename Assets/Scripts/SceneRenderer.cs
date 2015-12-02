@@ -344,10 +344,14 @@ public class SceneRenderer : MonoBehaviour
 
     void ComputeDistanceTransform(RenderTexture inputTexture)
     {
+        var tempBuffer = RenderTexture.GetTemporary(512, 512, 32, RenderTextureFormat.ARGB32);
+        Graphics.SetRenderTarget(tempBuffer);
+        Graphics.Blit(inputTexture, tempBuffer);
+
         // Prepare and set the render target
         if (_floodFillTexturePing == null)
         {
-            _floodFillTexturePing = new RenderTexture(inputTexture.width, inputTexture.height, 32, RenderTextureFormat.ARGBFloat);
+            _floodFillTexturePing = new RenderTexture(tempBuffer.width, tempBuffer.height, 32, RenderTextureFormat.ARGBFloat);
             _floodFillTexturePing.enableRandomWrite = true;
             _floodFillTexturePing.filterMode = FilterMode.Point;
         }
@@ -357,7 +361,7 @@ public class SceneRenderer : MonoBehaviour
 
         if (_floodFillTexturePong == null)
         {
-            _floodFillTexturePong = new RenderTexture(inputTexture.width, inputTexture.height, 32, RenderTextureFormat.ARGBFloat);
+            _floodFillTexturePong = new RenderTexture(tempBuffer.width, tempBuffer.height, 32, RenderTextureFormat.ARGBFloat);
             _floodFillTexturePong.enableRandomWrite = true;
             _floodFillTexturePong.filterMode = FilterMode.Point;
         }
@@ -365,68 +369,95 @@ public class SceneRenderer : MonoBehaviour
         Graphics.SetRenderTarget(_floodFillTexturePong);
         GL.Clear(true, true, new Color(-1, -1, -1, -1));
 
+        float widthScale = inputTexture.width/512.0f;
+        float heightScale = inputTexture.height/512.0f;
+
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 2);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePing);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePong);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 4);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePong);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePing);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 8);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePing);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePong);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 16);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePong);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePing);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 32);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePing);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePong);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 64);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePong);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePing);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 128);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePing);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePong);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 256);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePong);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePing);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
 
         ComputeShaderManager.Instance.FloodFillCS.SetInt("_StepSize", 512 / 512);
-        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", inputTexture);
+        ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Mask", tempBuffer);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Ping", _floodFillTexturePing);
         ComputeShaderManager.Instance.FloodFillCS.SetTexture(0, "_Pong", _floodFillTexturePong);
-        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(inputTexture.width / 8.0f), Mathf.CeilToInt(inputTexture.height / 8.0f), 1);
-        
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_WidthScale", widthScale);
+        ComputeShaderManager.Instance.FloodFillCS.SetFloat("_HeightScale", heightScale);
+        ComputeShaderManager.Instance.FloodFillCS.Dispatch(0, Mathf.CeilToInt(tempBuffer.width / 8.0f), Mathf.CeilToInt(tempBuffer.height / 8.0f), 1);
+
+        RenderTexture.ReleaseTemporary(tempBuffer);
     }
 
-    [ImageEffectOpaque]
-    void OnRenderImage(RenderTexture src, RenderTexture dst)
-    //void ComputeViewSpaceCutAways()
+    //[ImageEffectOpaque]
+    //void OnRenderImage(RenderTexture src, RenderTexture dst)
+    void ComputeViewSpaceCutAways()
     {
+        //ComputeProteinObjectSpaceCutAways();
+        //ComputeLipidObjectSpaceCutAways();
+
         // Prepare and set the render target
         var tempBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.ARGB32);
+        //var tempBuffer = RenderTexture.GetTemporary(512, 512, 32, RenderTextureFormat.ARGB32);
 
         var resetCutSnapshot = SceneManager.Instance.ResetCutSnapshot;
         SceneManager.Instance.ResetCutSnapshot = -1;
@@ -503,18 +534,18 @@ public class SceneRenderer : MonoBehaviour
                     else maskLipid = true;
                 }
 
-                if (!cutParam.IsFocus && cutParam.value2 > 0 )
+                if (!cutParam.IsFocus)
                 { 
                     if (cutParam.Id < SceneManager.Instance.NumProteinIngredients) cullProtein = true;
                     else cullLipid = true;
                 }
 
                 maskFlags1.Add(cutParam.IsFocus ? 1 : 0);
-                maskFlags2.Add(!cutParam.IsFocus && cutParam.value2 > 0 ? 1 : 0);
+                maskFlags2.Add(!cutParam.IsFocus? 1 : 0);
                 value2List.Add(cutParam.value2);
             }
 
-            if (!cullProtein && !cullLipid) continue;
+            //if (!cullProtein && !cullLipid) continue;
 
             //********************************************************//
 
@@ -525,7 +556,7 @@ public class SceneRenderer : MonoBehaviour
 
             // First clear mask buffer
             Graphics.SetRenderTarget(tempBuffer);
-            GL.Clear(true, true, Color.white);
+            GL.Clear(true, true, Color.blue);
             
             //***** Compute Protein Mask *****//
             if (maskProtein)
@@ -591,9 +622,11 @@ public class SceneRenderer : MonoBehaviour
             }
 
             ComputeDistanceTransform(tempBuffer);
-            Graphics.Blit(_floodFillTexturePong, dst);
+
+            //Graphics.Blit(_floodFillTexturePong, dst);
+            //Graphics.Blit(_floodFillTexturePong, dst, CompositeMaterial,4);
             //Graphics.Blit(tempBuffer, dst);
-            break;
+            //break;
 
             /////**** Compute Queries ***//
             
@@ -616,6 +649,8 @@ public class SceneRenderer : MonoBehaviour
                 // Count occluder instances
                 ComputeBuffer.CopyCount(GPUBuffers.Instance.SphereBatches, _argBuffer, 0);
 
+                DebugSphereBatchCount();
+
                 // Clear protein occlusion buffer 
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffers.Instance.ProteinInstanceOcclusionFlags);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 64.0f), 1, 1);
@@ -627,6 +662,9 @@ public class SceneRenderer : MonoBehaviour
 
                 // Set the render target
                 Graphics.SetRenderTarget(tempBuffer);
+
+                OcclusionQueriesMaterial.SetBuffer("_CutInfo", GPUBuffers.Instance.CutInfo);
+                OcclusionQueriesMaterial.SetTexture("_DistanceField", _floodFillTexturePong);
 
                 OcclusionQueriesMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
                 OcclusionQueriesMaterial.SetBuffer("_ProteinRadii", GPUBuffers.Instance.ProteinRadii);
@@ -673,7 +711,7 @@ public class SceneRenderer : MonoBehaviour
                 // Count occluder instances
                 ComputeBuffer.CopyCount(GPUBuffers.Instance.SphereBatches, _argBuffer, 0);
 
-                DebugSphereBatchCount();
+                
 
                 // Clear lipid occlusion buffer 
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffers.Instance.LipidInstanceOcclusionFlags);
@@ -795,113 +833,113 @@ public class SceneRenderer : MonoBehaviour
         Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
     }
 
-    //[ImageEffectOpaque]
-    //void OnRenderImage(RenderTexture src, RenderTexture dst)
-    //{
-    //    if (GetComponent<Camera>().pixelWidth == 0 || GetComponent<Camera>().pixelHeight == 0) return;
+    [ImageEffectOpaque]
+    void OnRenderImage(RenderTexture src, RenderTexture dst)
+    {
+        if (GetComponent<Camera>().pixelWidth == 0 || GetComponent<Camera>().pixelHeight == 0) return;
 
-    //    if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumLipidInstances == 0)
-    //    {
-    //        Graphics.Blit(src, dst);
-    //        return;
-    //    }
+        if (SceneManager.Instance.NumProteinInstances == 0 && SceneManager.Instance.NumLipidInstances == 0)
+        {
+            Graphics.Blit(src, dst);
+            return;
+        }
 
-    //    ComputeProteinObjectSpaceCutAways();
-    //    ComputeLipidObjectSpaceCutAways();
-    //    ComputeViewSpaceCutAways();
+        ComputeProteinObjectSpaceCutAways();
+        ComputeLipidObjectSpaceCutAways();
+        ComputeViewSpaceCutAways();
 
-    //    ///**** Start rendering routine ***
+        ///**** Start rendering routine ***
 
-    //    // Declare temp buffers
-    //    var colorBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGB32);
-    //    var depthBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.Depth);
-    //    var itemBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
-    //    //var depthNormalsBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGBFloat);
-    //    var compositeColorBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGB32);
-    //    var compositeDepthBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.Depth);
+        // Declare temp buffers
+        var colorBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGB32);
+        var depthBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.Depth);
+        var itemBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.RInt);
+        //var depthNormalsBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGBFloat);
+        var compositeColorBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 0, RenderTextureFormat.ARGB32);
+        var compositeDepthBuffer = RenderTexture.GetTemporary(GetComponent<Camera>().pixelWidth, GetComponent<Camera>().pixelHeight, 32, RenderTextureFormat.Depth);
 
-    //    // Clear temp buffers
-    //    Graphics.SetRenderTarget(itemBuffer);
-    //    GL.Clear(true, true, new Color(-1, 0, 0, 0));
+        // Clear temp buffers
+        Graphics.SetRenderTarget(itemBuffer);
+        GL.Clear(true, true, new Color(-1, 0, 0, 0));
 
-    //    Graphics.SetRenderTarget(colorBuffer.colorBuffer, depthBuffer.depthBuffer);
-    //    GL.Clear(true, true, Color.black);
+        Graphics.SetRenderTarget(colorBuffer.colorBuffer, depthBuffer.depthBuffer);
+        GL.Clear(true, true, Color.black);
 
-    //    // Draw proteins
-    //    if (SceneManager.Instance.NumProteinInstances > 0)
-    //    {
-    //        ComputeSphereBatches();
-    //        DrawProteinSphereBatches(itemBuffer, depthBuffer);
-    //        ComputeVisibility(itemBuffer);
-    //    }
+        // Draw proteins
+        if (SceneManager.Instance.NumProteinInstances > 0)
+        {
+            ComputeSphereBatches();
+            DrawProteinSphereBatches(itemBuffer, depthBuffer);
+            ComputeVisibility(itemBuffer);
+        }
 
-    //    // Draw Lipids
-    //    if (SceneManager.Instance.LipidInstanceInfos.Count > 0)
-    //    {
-    //        ComputeLipidSphereBatches();
-    //        DrawLipidSphereBatches(itemBuffer, depthBuffer);
-    //    }
+        // Draw Lipids
+        if (SceneManager.Instance.LipidInstanceInfos.Count > 0)
+        {
+            ComputeLipidSphereBatches();
+            DrawLipidSphereBatches(itemBuffer, depthBuffer);
+        }
 
-    //    //// Draw curve ingredients
-    //    //if (SceneManager.Instance.NumDnaSegments > 0)
-    //    //{
-    //    //    SetCurveShaderParams();
-    //    //    Graphics.SetRenderTarget(new[] { colorBuffer.colorBuffer, _itemBuffer.colorBuffer }, depthBuffer.depthBuffer);
-    //    //    _renderCurveIngredientsMaterial.SetPass(0);
-    //    //    Graphics.DrawProcedural(MeshTopology.Points, Mathf.Max(SceneManager.Instance.NumDnaSegments - 2, 0)); // Do not draw first and last segments
-    //    //}
+        //// Draw curve ingredients
+        //if (SceneManager.Instance.NumDnaSegments > 0)
+        //{
+        //    SetCurveShaderParams();
+        //    Graphics.SetRenderTarget(new[] { colorBuffer.colorBuffer, _itemBuffer.colorBuffer }, depthBuffer.depthBuffer);
+        //    _renderCurveIngredientsMaterial.SetPass(0);
+        //    Graphics.DrawProcedural(MeshTopology.Points, Mathf.Max(SceneManager.Instance.NumDnaSegments - 2, 0)); // Do not draw first and last segments
+        //}
 
-    //    //ComputeVisibility(itemBuffer);
-    //    FetchHistogramValues();
+        //ComputeVisibility(itemBuffer);
+        FetchHistogramValues();
 
-    //    ///////*** Post processing ***/
+        ///////*** Post processing ***/
 
-    //    // Get color from id buffer
-    //    CompositeMaterial.SetTexture("_IdTexture", itemBuffer);
-    //    CompositeMaterial.SetBuffer("_ProteinColors", GPUBuffers.Instance.ProteinColors);
-    //    CompositeMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffers.Instance.ProteinInstanceInfo);
-    //    CompositeMaterial.SetBuffer("_LipidInstanceInfo", GPUBuffers.Instance.LipidInstanceInfo);
-    //    Graphics.Blit(null, colorBuffer, CompositeMaterial, 3);
+        // Get color from id buffer
+        CompositeMaterial.SetTexture("_IdTexture", itemBuffer);
+        CompositeMaterial.SetBuffer("_ProteinColors", GPUBuffers.Instance.ProteinColors);
+        CompositeMaterial.SetBuffer("_ProteinInstanceInfo", GPUBuffers.Instance.ProteinInstanceInfo);
+        CompositeMaterial.SetBuffer("_LipidInstanceInfo", GPUBuffers.Instance.LipidInstanceInfo);
+        Graphics.Blit(null, colorBuffer, CompositeMaterial, 3);
 
-    //    // Compute contours detection
-    //    SetContourShaderParams();
-    //    ContourMaterial.SetTexture("_IdTexture", itemBuffer);
-    //    Graphics.Blit(colorBuffer, compositeColorBuffer, ContourMaterial, 0);
+        // Compute contours detection
+        SetContourShaderParams();
+        ContourMaterial.SetTexture("_IdTexture", itemBuffer);
+        Graphics.Blit(colorBuffer, compositeColorBuffer, ContourMaterial, 0);
 
-    //    Graphics.Blit(compositeColorBuffer, dst);
+        Graphics.Blit(compositeColorBuffer, dst);
 
-    //    // Composite with scene color
-    //    CompositeMaterial.SetTexture("_ColorTexture", compositeColorBuffer);
-    //    CompositeMaterial.SetTexture("_DepthTexture", depthBuffer);
-    //    Graphics.Blit(null, src, CompositeMaterial, 0);
-    //    Graphics.Blit(src, dst);
+        // Composite with scene color
+        CompositeMaterial.SetTexture("_ColorTexture", compositeColorBuffer);
+        CompositeMaterial.SetTexture("_DepthTexture", depthBuffer);
+        Graphics.Blit(null, src, CompositeMaterial, 0);
+        Graphics.Blit(src, dst);
 
-    //    //Composite with scene depth
-    //    CompositeMaterial.SetTexture("_DepthTexture", depthBuffer);
-    //    Graphics.Blit(null, compositeDepthBuffer, CompositeMaterial, 1);
+        //Composite with scene depth
+        CompositeMaterial.SetTexture("_DepthTexture", depthBuffer);
+        Graphics.Blit(null, compositeDepthBuffer, CompositeMaterial, 1);
 
-    //    ////Composite with scene depth normals
-    //    ////_compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
-    //    ////Graphics.Blit(null, depthNormalsBuffer, _compositeMaterial, 2);
+        ////Composite with scene depth normals
+        ////_compositeMaterial.SetTexture("_DepthTexture", depthBuffer);
+        ////Graphics.Blit(null, depthNormalsBuffer, _compositeMaterial, 2);
 
-    //    //// Set global shader properties
-    //    Shader.SetGlobalTexture("_CameraDepthTexture", compositeDepthBuffer);
-    //    ////Shader.SetGlobalTexture("_CameraDepthNormalsTexture", depthNormalsBuffer);
+        //// Set global shader properties
+        Shader.SetGlobalTexture("_CameraDepthTexture", compositeDepthBuffer);
+        ////Shader.SetGlobalTexture("_CameraDepthNormalsTexture", depthNormalsBuffer);
 
-    //    /*** Object Picking ***/
+        /*** Object Picking ***/
 
-    //    if (SelectionManager.Instance.MouseRightClickFlag)
-    //    {
-    //        SelectionManager.Instance.SetSelectedObject(MyUtility.ReadPixelId(itemBuffer, SelectionManager.Instance.MousePosition));
-    //        SelectionManager.Instance.MouseRightClickFlag = false;
-    //    }
+        if (SelectionManager.Instance.MouseRightClickFlag)
+        {
+            SelectionManager.Instance.SetSelectedObject(MyUtility.ReadPixelId(itemBuffer, SelectionManager.Instance.MousePosition));
+            SelectionManager.Instance.MouseRightClickFlag = false;
+        }
 
-    //    // Release temp buffers
-    //    RenderTexture.ReleaseTemporary(itemBuffer);
-    //    RenderTexture.ReleaseTemporary(colorBuffer);
-    //    RenderTexture.ReleaseTemporary(depthBuffer);
-    //    //RenderTexture.ReleaseTemporary(depthNormalsBuffer);
-    //    RenderTexture.ReleaseTemporary(compositeColorBuffer);
-    //    RenderTexture.ReleaseTemporary(compositeDepthBuffer);
-    //}
+        // Release temp buffers
+        RenderTexture.ReleaseTemporary(itemBuffer);
+        RenderTexture.ReleaseTemporary(colorBuffer);
+        RenderTexture.ReleaseTemporary(depthBuffer);
+        //RenderTexture.ReleaseTemporary(depthNormalsBuffer);
+        RenderTexture.ReleaseTemporary(compositeColorBuffer);
+        RenderTexture.ReleaseTemporary(compositeDepthBuffer);
+    }
 }

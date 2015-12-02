@@ -4,10 +4,20 @@
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 
+uniform float _WidthScale;
+uniform float _HeightScale;
+
 uniform int _StepSize;
 Texture2D<float4> _Mask;
 Texture2D<float4> _Ping;
 RWTexture2D<float4> _Pong;
+
+float scaleDistance(int2 a, int2 b, float widthScale, float heightScale)
+{
+	float dx = (b.x - a.x) * widthScale;
+	float dy = (b.y - a.y) * heightScale;
+	return sqrt(dx*dx + dy*dy);
+}
 
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
@@ -33,7 +43,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 							
 			if(_Mask[idd].x == 0)
 			{
-				float newDist = distance(idd, id.xy);	
+				//float newDist = distance(idd, id.xy);	
+				float newDist = scaleDistance(idd, id.xy, _WidthScale, _HeightScale);	
 				if(newDist < dist || dist < 0)
 				{
 					coord = idd;
@@ -45,7 +56,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 				float4 samplePing = _Ping[idd];
 				if(samplePing.z < 0) continue;
 				
-				float newDist = distance(samplePing.xy, id.xy);	
+				//float newDist = distance(samplePing.xy, id.xy);	
+				float newDist = scaleDistance(samplePing.xy, id.xy, _WidthScale, _HeightScale);	
 				if(newDist < dist || dist < 0)
 				{
 					coord = samplePing.xy;

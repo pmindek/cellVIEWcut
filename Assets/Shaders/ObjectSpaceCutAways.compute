@@ -234,7 +234,7 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			}
 
             if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
-				cut = true;
+				cut = cut | true;
 
 			//if (_ProteinInstanceInfo[id].w == 1)
 			//{

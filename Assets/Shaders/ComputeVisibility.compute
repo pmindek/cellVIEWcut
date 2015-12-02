@@ -72,9 +72,11 @@ void DiscardOccludingProteinInstances(uint3 id : SV_DispatchThreadID)
 		_ProteinInstanceInfo[id.x].w = 0;
 	}
 
-	if(_ProteinInstanceOcclusionFlags[id.x] == 1)
+	int occ = _ProteinInstanceOcclusionFlags[id.x] ;
+
+	if(occ == 1)
 	{
-		if(rand(id.x) < cullProbability)
+		if(rand(id.x) > cullProbability)
 		{
 			_ProteinInstanceCullFlags[id.x] = 1;	
 			int addWhere = _HistogramsLookup[info.x];
@@ -86,6 +88,17 @@ void DiscardOccludingProteinInstances(uint3 id : SV_DispatchThreadID)
 			}
 		}
 		//_ProteinInstanceOcclusionFlags[id.x] = 0;
+	}     
+	else if(occ == 2)
+	{
+		_ProteinInstanceCullFlags[id.x] = 1;	
+		int addWhere = _HistogramsLookup[info.x];
+		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+
+		if(_ConsumeRestoreState == 1)
+		{
+			_ProteinInstanceInfo[id.x].w = _CutObjectId;
+		}
 	}     
 }
 
@@ -104,19 +117,47 @@ void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
 		_LipidInstanceInfo[id.x].w = 0;
 	}
 
-	if(_LipidInstanceOcclusionFlags[id.x] == 1)
+	int occ = _LipidInstanceOcclusionFlags[id.x] ;
+
+	if(occ == 1)
 	{
-		if(rand(id.x) < cullProbability)
+		if(rand(id.x) > cullProbability)
 		{
 			_LipidInstanceCullFlags[id.x] = 1;	
 			int addWhere = _HistogramsLookup[info.x];
 			InterlockedAdd(_Histograms[addWhere].cutaway, 1);
 
 			if(_ConsumeRestoreState == 1)
-			{
+			{ 
 				_LipidInstanceInfo[id.x].w = _CutObjectId;
 			}
 		}
-		//_ProteinInstanceOcclusionFlags[id.x] = 0;
 	}     
+	else if(occ == 2)
+	{
+		_LipidInstanceCullFlags[id.x] = 1;	
+		int addWhere = _HistogramsLookup[info.x];
+		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+
+		if(_ConsumeRestoreState == 1)
+		{
+			_LipidInstanceInfo[id.x].w = _CutObjectId;
+		}
+	}  
+
+	//if(_LipidInstanceOcclusionFlags[id.x] > 0)
+	//{
+	//	if(rand(id.x) < cullProbability)
+	//	{
+	//		_LipidInstanceCullFlags[id.x] = 1;	
+	//		int addWhere = _HistogramsLookup[info.x];
+	//		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+
+	//		if(_ConsumeRestoreState == 1)
+	//		{
+	//			_LipidInstanceInfo[id.x].w = _CutObjectId;
+	//		}
+	//	}
+	//	//_ProteinInstanceOcclusionFlags[id.x] = 0;
+	//}     
 }

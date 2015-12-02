@@ -5,6 +5,13 @@
 	#include "UnityCG.cginc"
 	#include "Helper.cginc"		
 
+	// Cutaways
+	struct CutInfoStruct
+	{
+		float4 info;
+		float4 info2;
+	};
+
 	float _Scale;
 	StructuredBuffer<float> _ProteinRadii;
 	StructuredBuffer<float4> _ProteinInstanceInfo;
@@ -16,9 +23,13 @@
 	StructuredBuffer<int4> _OccludeeSphereBatches;
 	RWStructuredBuffer<int> _FlagBuffer : register(u1);
 
+	sampler2D _DistanceField;
+	StructuredBuffer<CutInfoStruct> _CutInfo;
+
 	struct gs_input
 	{
 		int id : INT0;
+		float aperture : FLOAT0;
 		float4 sphere : FLOAT40;
 	};
 
@@ -26,9 +37,12 @@
 	{
 		nointerpolation int id : INT0;
 		nointerpolation float radius : FLOAT0;
+		nointerpolation float aperture : FLOAT1;
+		nointerpolation	float pixelradius : FLOAT2;
 
 		float2 uv: TEXCOORD0;
-		centroid float4 pos : SV_Position;
+		float2 uv2: TEXCOORD1;
+		float4 pos : SV_POSITION;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -37,11 +51,12 @@
 	{		
 		int idx = _OccludeeSphereBatches[id].x;
 
-		float4 infos = _ProteinInstanceInfo[idx];
-		float radius = _ProteinRadii[infos.x] * _Scale * 1;
+		float4 info = _ProteinInstanceInfo[idx];
+		float radius = _ProteinRadii[info.x] * _Scale * 1;
 		float3 pos = _ProteinInstancePositions[idx].xyz * _Scale;
 		
 		output.id = idx;
+		output.aperture = 1-_CutInfo[info.x].info2.w;
 		output.sphere = float4(pos, radius);
 	}
 	
@@ -49,10 +64,11 @@
 	{		
 		int idx = _OccludeeSphereBatches[id].x;
 
-		//float4 infos = _LipidInstanceInfo[idx];
+		float4 info = _LipidInstanceInfo[idx];
 		float4 sphere = _LipidInstancePositions[idx] * _Scale;
 		
 		output.id = idx;
+		output.aperture = 1-_CutInfo[info.x].info2.w;
 		output.sphere = sphere;
 	}
 
@@ -68,10 +84,22 @@
 		viewPos -= normalize(viewPos) * input[0].sphere.w;
 		float4 projPos = mul(UNITY_MATRIX_P, float4(viewPos.xyz, 1));
 		float4 offset = mul(UNITY_MATRIX_P, float4(input[0].sphere.w, input[0].sphere.w, 0, 0));
+		
+		float2 centerPixel = ((projPos.xy / projPos.w) * 0.5 + 0.5) * _ScreenParams.xy;		
+		
+		float4 corner = projPos + float4(offset.xy, 0, 0);
+		float2 cornerPixel = ((corner.xy / corner.w) * 0.5 + 0.5) * _ScreenParams.xy;		
+
+		// Find pixel radius
+		float pixelradius = abs(centerPixel.x - cornerPixel.x);
 
 		fs_input output;
 		output.id = input[0].id;
 		output.radius = input[0].sphere.w;
+		output.aperture = input[0].aperture;
+		output.uv2 = (projPos.xy / projPos.w) * 0.5 + 0.5;
+		output.uv2.y = 1-output.uv2.y;
+		output.pixelradius = pixelradius;
 
 		output.uv = float2(1.0f, 1.0f);
 		output.pos = projPos + float4(output.uv * offset.xy, 0, 0);
@@ -102,7 +130,24 @@
 	[earlydepthstencil] // Necessary when writing to UAV's otherwise the depth stencil test will happen after the fragment shader
 	void fs_sphere2(fs_input input)
 	{	
-		_FlagBuffer[input.id] = 1;
+		//float2 uv = input.pos.xy / float2(512,512);
+		float2 uv = input.pos.xy / _ScreenParams.xy;
+		
+		//float4 d = tex2D(_DistanceField, uv);
+		float4 d = tex2D(_DistanceField, input.uv2) + input.pixelradius;
+		
+		if(d.z < 0)
+		{
+			//_FlagBuffer[input.id] = 0;
+		}
+		else if(d.z < input.aperture * 256 )
+		{
+			_FlagBuffer[input.id] = 1;
+		}
+		else
+		{
+			_FlagBuffer[input.id] = 2;
+		}
 	}
 
 	ENDCG		

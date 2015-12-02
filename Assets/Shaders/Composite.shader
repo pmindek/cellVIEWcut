@@ -145,6 +145,31 @@
             
             ENDCG
         }
+
+		Pass
+		{
+			ZTest Always
+
+			CGPROGRAM
+			#pragma target 5.0	
+			#pragma fragment frag
+			#pragma vertex vert_img
+
+			sampler2D _MainTex;
+
+			#include "UnityCG.cginc"
+
+			void frag(v2f_img i, out float4 color : COLOR)
+			{
+				float4 c = tex2D(_MainTex, i.uv);
+				if(c.z > 0) color = float4(c.z/50,0,0,0);
+				else color = float4(0,0,0,0);
+
+				//if(c.z < 0) color = float4(1,0,0,1);
+				//else color = float4(0,0,1,1);
+			}
+			ENDCG
+		}
 	}	
 
 	FallBack "Diffuse"
