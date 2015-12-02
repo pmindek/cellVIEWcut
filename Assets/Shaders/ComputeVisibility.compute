@@ -1,8 +1,11 @@
-﻿// Each #kernel tells which function to compile; you can have many kernels
+﻿#include "Helper.cginc"
+
+// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel ClearVisibilityFlags
 #pragma kernel ComputeVisibility
 #pragma kernel ClearHistograms
-#pragma kernel DicardOccludingInstances
+#pragma kernel DiscardOccludingProteinInstances
+#pragma kernel DiscardOccludingLipidInstances
 
 Texture2D<int> _ItemBuffer;
 RWStructuredBuffer<int> _FlagBuffer;
@@ -52,32 +55,17 @@ void ClearHistograms(uint3 id : SV_DispatchThreadID)
 int _CutObjectId;
 int _ConsumeRestoreState;
 StructuredBuffer<int> _HistogramsLookup;
-StructuredBuffer<float> _ProteinOcclusionValues;
+StructuredBuffer<float> _IngredientMaskParams;
 
 RWStructuredBuffer<float4> _ProteinInstanceInfo;
 RWStructuredBuffer<int> _ProteinInstanceCullFlags;
 RWStructuredBuffer<int> _ProteinInstanceOcclusionFlags;
 
-uint wang_hash(uint seed)
-{
-    seed = (seed ^ 61) ^ (seed >> 16);
-    seed *= 9;
-    seed = seed ^ (seed >> 4);
-    seed *= 0x27d4eb2d;
-    seed = seed ^ (seed >> 15);
-    return seed;
-}
-
-float rand(uint value)
-{
-	return float(wang_hash(value)) * (1.0 / 4294967296.0);
-}
-
 [numthreads(64, 1, 1)]
-void DicardOccludingInstances(uint3 id : SV_DispatchThreadID)
+void DiscardOccludingProteinInstances(uint3 id : SV_DispatchThreadID)
 {	
 	float4 info = _ProteinInstanceInfo[id.x];
-	float probability = _ProteinOcclusionValues[info.x];
+	float cullProbability = _IngredientMaskParams[info.x];
 
 	if(_ConsumeRestoreState == 2 && info.w == _CutObjectId)
 	{
@@ -86,7 +74,7 @@ void DicardOccludingInstances(uint3 id : SV_DispatchThreadID)
 
 	if(_ProteinInstanceOcclusionFlags[id.x] == 1)
 	{
-		if(rand(id.x) < probability)
+		if(rand(id.x) < cullProbability)
 		{
 			_ProteinInstanceCullFlags[id.x] = 1;	
 			int addWhere = _HistogramsLookup[info.x];
@@ -97,7 +85,38 @@ void DicardOccludingInstances(uint3 id : SV_DispatchThreadID)
 				_ProteinInstanceInfo[id.x].w = _CutObjectId;
 			}
 		}
+		//_ProteinInstanceOcclusionFlags[id.x] = 0;
+	}     
+}
 
-		_ProteinInstanceOcclusionFlags[id.x] = 0;
+RWStructuredBuffer<float4> _LipidInstanceInfo;
+RWStructuredBuffer<int> _LipidInstanceCullFlags;
+RWStructuredBuffer<int> _LipidInstanceOcclusionFlags;
+
+[numthreads(64, 1, 1)]
+void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
+{	
+	float4 info = _LipidInstanceInfo[id.x];
+	float cullProbability = _IngredientMaskParams[info.x];
+		
+	if(_ConsumeRestoreState == 2 && info.w == _CutObjectId)
+	{
+		_LipidInstanceInfo[id.x].w = 0;
+	}
+
+	if(_LipidInstanceOcclusionFlags[id.x] == 1)
+	{
+		if(rand(id.x) < cullProbability)
+		{
+			_LipidInstanceCullFlags[id.x] = 1;	
+			int addWhere = _HistogramsLookup[info.x];
+			InterlockedAdd(_Histograms[addWhere].cutaway, 1);
+
+			if(_ConsumeRestoreState == 1)
+			{
+				_LipidInstanceInfo[id.x].w = _CutObjectId;
+			}
+		}
+		//_ProteinInstanceOcclusionFlags[id.x] = 0;
 	}     
 }

@@ -17,9 +17,7 @@ public static class CellPackLoader
 	public static List<Vector3> ColorsPalette2;
 	public static Dictionary<int,List<int>> usedColors;
 	private static bool use_rigid_body = true;
-
-	
-
+    
     public static string GetPath(List<string> path)
     {
         var value = path[0];
@@ -35,133 +33,129 @@ public static class CellPackLoader
         return value;
     }
 
-    static void BuildHierachy2(JSONNode resultData)
-    {
-        var component = PersistantSettings.Instance;
-        component.hierachy.Clear();
+    //static void BuildHierachy2(JSONNode resultData)
+    //{
+    //    var component = PersistantSettings.Instance;
+    //    component.SceneHierachy.Clear();
         
 
-        var currentPath = new List<string>();
+    //    var currentPath = new List<string>();
 
-        //currentPath.Add(resultData["recipe"]["name"]);
-        //component.hierachy.Add(new Node(currentPath.Last()));
+    //    //currentPath.Add(resultData["recipe"]["name"]);
+    //    //component.hierachy.Add(new Node(currentPath.Last()));
 
-        if (resultData["cytoplasme"] != null)
-        {
-            currentPath.Add("cytoplasm");
-            component.hierachy.Add(new PersistantSettings.Node("cytoplasm", GetPath(currentPath)));
+    //    if (resultData["cytoplasme"] != null)
+    //    {
+    //        currentPath.Add("cytoplasm");
+    //        component.SceneHierachy.Add(new PersistantSettings.Node("cytoplasm", GetPath(currentPath)));
 
-            var ingredients = resultData["cytoplasme"];
+    //        var ingredients = resultData["cytoplasme"];
 
-            for (int j = 0; j < ingredients["ingredients"].Count; j++)
-            {
-                string iname = ingredients["ingredients"][j]["name"];
+    //        for (int j = 0; j < ingredients["ingredients"].Count; j++)
+    //        {
+    //            string iname = ingredients["ingredients"][j]["name"];
 
-                if (!SceneManager.Instance.ProteinNames.Contains("cytoplasme" + "_" + iname)) continue;
-                currentPath.Add(iname);
-                component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
-                currentPath.Remove(currentPath.Last());
+    //            if (!SceneManager.Instance.ProteinIngredientNames.Contains("cytoplasme" + "_" + iname)) continue;
+    //            currentPath.Add(iname);
+    //            component.SceneHierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
+    //            currentPath.Remove(currentPath.Last());
 
-            }
+    //        }
 
-            currentPath.Remove(currentPath.Last());
-        }
+    //        currentPath.Remove(currentPath.Last());
+    //    }
 
-        for (int i = 0; i < resultData["compartments"].Count; i++)
-        {
-            var surfaceName = "surface" + i;
-            var interiorName = "interior" + i;
+    //    for (int i = 0; i < resultData["compartments"].Count; i++)
+    //    {
+    //        var surfaceName = "surface" + i;
+    //        var interiorName = "interior" + i;
 
-            var compartment = resultData["compartments"].GetKey(i);
+    //        var compartment = resultData["compartments"].GetKey(i);
 
-            currentPath.Add(compartment);
-            component.hierachy.Add(new PersistantSettings.Node(compartment, GetPath(currentPath)));
+    //        currentPath.Add(compartment);
+    //        component.SceneHierachy.Add(new PersistantSettings.Node(compartment, GetPath(currentPath)));
 
-            //*****//
+    //        //*****//
 
-            var surface = "surface";
-            var ingredients = resultData["compartments"][i][surface];
+    //        var surface = "surface";
+    //        var ingredients = resultData["compartments"][i][surface];
 
-            if (ingredients["ingredients"].Count > 0)
-            {
-                currentPath.Add(surface);
-                component.hierachy.Add(new PersistantSettings.Node(surface, GetPath(currentPath)));
+    //        if (ingredients["ingredients"].Count > 0)
+    //        {
+    //            currentPath.Add(surface);
+    //            component.SceneHierachy.Add(new PersistantSettings.Node(surface, GetPath(currentPath)));
 
-                for (int j = 0; j < ingredients["ingredients"].Count; j++)
-                {
-                    string iname = ingredients["ingredients"][j]["name"];
-                    if (!SceneManager.Instance.ProteinNames.Contains(surfaceName + "_" + iname)) continue;
-                    currentPath.Add(iname);
-                    component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
-                    currentPath.Remove(currentPath.Last());
-                }
+    //            for (int j = 0; j < ingredients["ingredients"].Count; j++)
+    //            {
+    //                string iname = ingredients["ingredients"][j]["name"];
+    //                if (!SceneManager.Instance.ProteinIngredientNames.Contains(surfaceName + "_" + iname)) continue;
+    //                currentPath.Add(iname);
+    //                component.SceneHierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
+    //                currentPath.Remove(currentPath.Last());
+    //            }
 
-                currentPath.Remove(currentPath.Last());
-            }
+    //            currentPath.Remove(currentPath.Last());
+    //        }
 
-            //*****//
+    //        //*****//
 
-            var interior = "interior";
-            ingredients = resultData["compartments"][i][interior];
+    //        var interior = "interior";
+    //        ingredients = resultData["compartments"][i][interior];
 
-            if (ingredients["ingredients"].Count > 0)
-            {
-                currentPath.Add(interior);
-                component.hierachy.Add(new PersistantSettings.Node(interior, GetPath(currentPath)));
+    //        if (ingredients["ingredients"].Count > 0)
+    //        {
+    //            currentPath.Add(interior);
+    //            component.SceneHierachy.Add(new PersistantSettings.Node(interior, GetPath(currentPath)));
 
-                for (int j = 0; j < ingredients["ingredients"].Count; j++)
-                {
-                    string iname = ingredients["ingredients"][j]["name"];
-                    if (!SceneManager.Instance.ProteinNames.Contains(interiorName + "_" + iname)) continue;
-                    currentPath.Add(iname);
-                    component.hierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
-                    currentPath.Remove(currentPath.Last());
-                }
+    //            for (int j = 0; j < ingredients["ingredients"].Count; j++)
+    //            {
+    //                string iname = ingredients["ingredients"][j]["name"];
+    //                if (!SceneManager.Instance.ProteinIngredientNames.Contains(interiorName + "_" + iname)) continue;
+    //                currentPath.Add(iname);
+    //                component.SceneHierachy.Add(new PersistantSettings.Node(iname, GetPath(currentPath)));
+    //                currentPath.Remove(currentPath.Last());
+    //            }
 
-                currentPath.Remove(currentPath.Last());
-            }
+    //            currentPath.Remove(currentPath.Last());
+    //        }
 
-            currentPath.Remove(currentPath.Last());
-        }
+    //        currentPath.Remove(currentPath.Last());
+    //    }
 
-        int a = 0;
+    //    int a = 0;
 
-        //foreach (var node in component.hierachy)
-        //{
-        //    Debug.Log(" path: " + node.path);
-        //}
-    }
+    //    //foreach (var node in component.hierachy)
+    //    //{
+    //    //    Debug.Log(" path: " + node.path);
+    //    //}
+    //}
 
     public static void LoadCellPackResults(bool load=true)
     {
-            #if UNITY_EDITOR
-			Debug.Log("Loading");
-            var directory = "";
+        #if UNITY_EDITOR
+		Debug.Log("Loading");
+        var directory = "";
 
-            if (string.IsNullOrEmpty(PersistantSettings.Instance.LastSceneLoaded) || !Directory.Exists(Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded)))
-            {
-                directory = Application.dataPath;
-            }
-            else
-            {
-                directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
-            }
+        if (string.IsNullOrEmpty(PersistantSettings.Instance.LastSceneLoaded) || !Directory.Exists(Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded)))
+        {
+            directory = Application.dataPath;
+        }
+        else
+        {
+            directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
+        }
 
-            var path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
-            if (string.IsNullOrEmpty(path)) return;
+        var path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
+        if (string.IsNullOrEmpty(path)) return;
         
-            PersistantSettings.Instance.LastSceneLoaded = path;
-            LoadIngredients(path);
+        PersistantSettings.Instance.LastSceneLoaded = path;
+        LoadIngredients(path);
 
-            Debug.Log("*****");
-            Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
+        Debug.Log("*****");
+        Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
 
-            // Upload scene data to the GPU
-            SceneManager.Instance.UploadAllData();
-
-            // Send new protein cut filters to cut object
-            SceneManager.Instance.SetCutObjects();
-
+        // Upload scene data to the GPU
+        SceneManager.Instance.UploadAllData();
         #endif
     }
 
@@ -182,8 +176,8 @@ public static class CellPackLoader
         current_color = 0;
         //first grab the total number of object
         int nIngredients = 0;
-        if (resultData["cytoplasme"] != null)
-            nIngredients += resultData["cytoplasme"]["ingredients"].Count;
+        if (resultData["cytoplasme"] != null) nIngredients += resultData["cytoplasme"]["ingredients"].Count;
+
         for (int i = 0; i < resultData["compartments"].Count; i++)
         {
             nIngredients += resultData["compartments"][i]["interior"]["ingredients"].Count;
@@ -205,6 +199,7 @@ public static class CellPackLoader
         // Sort colors by differenciation first
         //ColorsPalette2 = paletteGenerator.diffSort(ColorsPalette2);
         //check if cytoplasme present
+
         Color baseColor = new Color(1.0f, 107.0f / 255.0f, 66.0f / 255.0f);
         if (resultData["cytoplasme"] != null)
         {
@@ -216,41 +211,46 @@ public static class CellPackLoader
 
         for (int i = 0; i < resultData["compartments"].Count; i++)
         {
+            var compartmentName = resultData["compartments"].GetKey(i);
+
             baseColor = new Color(148.0f / 255.0f, 66.0f / 255.0f, 255.0f / 255.0f);
             usedColors.Add(current_color, new List<int>());
-            AddRecipeIngredients(resultData["compartments"][i]["interior"]["ingredients"], baseColor, "interior" + i.ToString());
+
+            AddRecipeIngredients(resultData["compartments"][i]["interior"]["ingredients"], baseColor, compartmentName, "interior");
+
             current_color += 1;
             baseColor = new Color(173.0f / 255.0f, 255.0f / 255.0f, 66.0f / 255.0f);
             usedColors.Add(current_color, new List<int>());
-            AddRecipeIngredients(resultData["compartments"][i]["surface"]["ingredients"], baseColor, "surface" + i.ToString());
+
+            AddRecipeIngredients(resultData["compartments"][i]["surface"]["ingredients"], baseColor, compartmentName, "surface");
             current_color += 1;
         }
-
-        BuildHierachy2(resultData);
     }
 
-	public static void AddRecipeIngredients(JSONNode recipeDictionary, Color baseColor, string prefix)
+	public static void AddRecipeIngredients(JSONNode recipeDictionary, Color baseColor, params string[] pathElements)
     {
 		for (int j = 0; j < recipeDictionary.Count; j++)
 		{
             if (recipeDictionary[j]["nbCurve"] != null)
             {
-                AddCurveIngredients(recipeDictionary[j], prefix);
+                //AddCurveIngredients(recipeDictionary[j], pathElements);
             }
             else
             {
-                AddProteinIngredient(recipeDictionary[j], prefix);
+                AddProteinIngredient(recipeDictionary[j], pathElements);
             }
         }
 	}
 
-    public static void AddProteinIngredient(JSONNode ingredientDictionary, string prefix)
+    public static void AddProteinIngredient(JSONNode ingredientDictionary, params string[] pathElements)
     {
-        var name = prefix + "_" + ingredientDictionary["name"];
+        var name = ingredientDictionary["name"];
+        var path = MyUtility.GetUrlPath(pathElements.ToList(), name);
         var biomt = (bool)ingredientDictionary["source"]["biomt"].AsBool;
         var center = (bool)ingredientDictionary["source"]["transform"]["center"].AsBool;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
-		List<Vector4> atomSpheres;
+        
+        List<Vector4> atomSpheres;
 		List<Matrix4x4> biomtTransforms = new List<Matrix4x4>();
 		Vector3 biomtCenter = Vector3.zero;
 		bool containsACarbonOnly = false;
@@ -337,7 +337,7 @@ public static class CellPackLoader
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);
 	
-		SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color, clusterLevels,oneLOD);
+		SceneManager.Instance.AddProteinIngredient(path, bounds, atomSpheres, color, clusterLevels,oneLOD);
         int instanceCount = 0;
         
         for (int k = 0; k < ingredientDictionary["results"].Count; k++)
@@ -356,7 +356,7 @@ public static class CellPackLoader
             {
                 // Find centered position
                 if (!center) position += MyUtility.QuaternionTransform(rotation, centerPosition);
-                SceneManager.Instance.AddIngredientInstance(name, position, rotation);
+                SceneManager.Instance.AddProteinInstance(path, position, rotation);
                 instanceCount++;
             }
             else
@@ -372,14 +372,15 @@ public static class CellPackLoader
 					var biomtInstanceRot = rotation * rotBiomt;//Helper.RotationMatrixToQuaternion(transform);
 					var biomtInstancePos = rotation * posBiomt + position;
 
-					SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);
+					SceneManager.Instance.AddProteinInstance(path, biomtInstancePos, biomtInstanceRot);
                     instanceCount++;
                 }
             }
         }
 
         Debug.Log("*****");
-        Debug.Log("Added ingredient: " + name);
+        Debug.Log("Added ingredient: " + path);
+
         //if (isCarbonAlphaOnly) Debug.Log("Alpha-carbons only");
         //Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSet.Count + " *** " + "Num instances: " + instanceCount + " *** " + "Total atom count: " + atomSet.Count * instanceCount);
     }
@@ -406,7 +407,7 @@ public static class CellPackLoader
                 controlPoints.Add(new Vector4(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat, 1));
             }
 
-            SceneManager.Instance.AddCurve(curveIngredientName, controlPoints);
+            SceneManager.Instance.AddCurveIntance(curveIngredientName, controlPoints);
             //break;
         }
 
@@ -439,14 +440,7 @@ public static class CellPackLoader
         var path = EditorUtility.OpenFilePanel("Select .mbr", directory, "mbr");
         if (string.IsNullOrEmpty(path)) return;
 
-        SceneManager.Instance.LoadMembrane(path, Vector3.zero, Quaternion.identity);
-
-        var newNode = new PersistantSettings.Node("membrane", "membrane");
-        if (!PersistantSettings.Instance.hierachy.Contains(newNode))
-        {
-            PersistantSettings.Instance.hierachy.Add(newNode);
-        }
-
+        SceneManager.Instance.AddMembrane(path, Vector3.zero, Quaternion.identity);
 
         // Upload scene data to the GPU
         SceneManager.Instance.UploadAllData();

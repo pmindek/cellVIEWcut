@@ -31,7 +31,7 @@
 		float4 batchInfo = _LipidSphereBatches[id.x];	
 		float4 position = _LipidInstancePositions[batchInfo.x];
 
-		output.id = id.x; // Offset id to get unique id
+		output.id = batchInfo.x; // Offset id to get unique id
 		output.type = 0;		
 		output.state = 0;
 		output.rot = float4(0,0,0,1);	
@@ -41,8 +41,8 @@
 		output.lodLevel = 0;
 		output.radiusScale = 1;
 		output.decimationFactor = 1;
-		output.sphereStart = batchInfo.w;
-		output.sphereCount = batchInfo.z;		
+		output.sphereStart = batchInfo.z;
+		output.sphereCount = batchInfo.w;		
 	}		
 
 	struct hsConst

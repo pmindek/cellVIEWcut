@@ -139,6 +139,8 @@ public class SelectionManager : MonoBehaviour
 
     public void SetSelectedObject(int instanceID)
     {
+        if (instanceID > 100000) return;
+
         Debug.Log("Selected element id: " + instanceID);
 
         if (instanceID > 0) Debug.Log("Selected element type: " + SceneManager.Instance.ProteinInstanceInfos[instanceID].x);
@@ -267,8 +269,8 @@ public class SelectionManager : MonoBehaviour
             SceneManager.Instance.ProteinInstancePositions[_selectedObjectID] = _selectionGameObject.transform.position / PersistantSettings.Instance.Scale;
             SceneManager.Instance.ProteinInstanceRotations[_selectedObjectID] = MyUtility.QuanternionToVector4(_selectionGameObject.transform.rotation);
 
-            GPUBuffer.Instance.ProteinInstancePositions.SetData(SceneManager.Instance.ProteinInstancePositions.ToArray());
-            GPUBuffer.Instance.ProteinInstanceRotations.SetData(SceneManager.Instance.ProteinInstanceRotations.ToArray());
+            GPUBuffers.Instance.ProteinInstancePositions.SetData(SceneManager.Instance.ProteinInstancePositions.ToArray());
+            GPUBuffers.Instance.ProteinInstanceRotations.SetData(SceneManager.Instance.ProteinInstanceRotations.ToArray());
 
             _selectionGameObject.transform.hasChanged = false;
         }

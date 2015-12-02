@@ -7,21 +7,8 @@ using System.Collections.Generic;
 [ExecuteInEditMode]
 public class PersistantSettings : MonoBehaviour
 {
-    [Serializable]
-    public struct Node
-    {
-        public Node(string name, string path = "")
-        {
-            this.name = name;
-            this.path = path;
-        }
-
-        public string name;
-        public string path;
-    }
-
-    [HideInInspector]
-    public List<Node> hierachy = new List<Node>();
+    //[HideInInspector]
+    //public List<string> SceneHierachy = new List<string>();
     
     public string LastSceneLoaded;
 

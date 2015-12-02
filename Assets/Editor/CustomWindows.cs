@@ -182,7 +182,7 @@ public class CustomWindow : EditorWindow
                             if (PersistantSettings.Instance.LodLevels[i] != lodInfo)
                             {
                                 PersistantSettings.Instance.LodLevels[i] = lodInfo;
-                                GPUBuffer.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
+                                GPUBuffers.Instance.LodInfo.SetData(PersistantSettings.Instance.LodLevels);
                             }
 
                             EditorGUI.indentLevel--;
@@ -200,83 +200,83 @@ public class CustomWindow : EditorWindow
 
 #region Ingredient Panel
 
-            if (SceneManager.Instance.ProteinNames.Count > 0 || SceneManager.Instance.CurveIngredientsNames.Count > 0)
-            {
-                showIngredients = EditorGUILayout.Foldout(showIngredients, "Show Ingredients");
+            //if (SceneManager.Instance.ProteinIngredientNames.Count > 0 || SceneManager.Instance.CurveIngredientsNames.Count > 0)
+            //{
+            //    showIngredients = EditorGUILayout.Foldout(showIngredients, "Show Ingredients");
 
-                if (showIngredients)
-                {
-                    var setDirty = false;
+            //    if (showIngredients)
+            //    {
+            //        var setDirty = false;
 
-                    var style4 = new GUIStyle();
-                    style4.margin = new RectOffset(10, 10, 5, 5);
-                    style4.padding = new RectOffset(10, 10, 0, 0);
+            //        var style4 = new GUIStyle();
+            //        style4.margin = new RectOffset(10, 10, 5, 5);
+            //        style4.padding = new RectOffset(10, 10, 0, 0);
 
-                    EditorGUILayout.BeginVertical(style4);
-                    {
-                        var newToggleSelectAll = EditorGUILayout.ToggleLeft("Select All", toggleSelectAll);
+            //        EditorGUILayout.BeginVertical(style4);
+            //        {
+            //            var newToggleSelectAll = EditorGUILayout.ToggleLeft("Select All", toggleSelectAll);
 
-                        if (newToggleSelectAll != toggleSelectAll)
-                        {
-                            for (int i = 0; i < SceneManager.Instance.ProteinToggleFlags.Count; i++)
-                            {
-                                SceneManager.Instance.ProteinToggleFlags[i] = Convert.ToInt32(newToggleSelectAll);
-                            }
+            //            if (newToggleSelectAll != toggleSelectAll)
+            //            {
+            //                for (int i = 0; i < SceneManager.Instance.ProteinToggleFlags.Count; i++)
+            //                {
+            //                    SceneManager.Instance.ProteinToggleFlags[i] = Convert.ToInt32(newToggleSelectAll);
+            //                }
 
-                            for (int i = 0; i < SceneManager.Instance.CurveIngredientToggleFlags.Count; i++)
-                            {
-                                SceneManager.Instance.CurveIngredientToggleFlags[i] = Convert.ToInt32(newToggleSelectAll);
-                            }
+            //                for (int i = 0; i < SceneManager.Instance.CurveIngredientToggleFlags.Count; i++)
+            //                {
+            //                    SceneManager.Instance.CurveIngredientToggleFlags[i] = Convert.ToInt32(newToggleSelectAll);
+            //                }
 
-                            toggleSelectAll = newToggleSelectAll;
-                            setDirty = true;
-                        }
+            //                toggleSelectAll = newToggleSelectAll;
+            //                setDirty = true;
+            //            }
 
-                    }
-                    EditorGUILayout.EndVertical();
+            //        }
+            //        EditorGUILayout.EndVertical();
 
-                    var style5 = new GUIStyle(GUI.skin.box);
-                    style5.margin = new RectOffset(10, 10, 5, 10);
-                    style5.padding = new RectOffset(10, 10, 10, 10);
+            //        var style5 = new GUIStyle(GUI.skin.box);
+            //        style5.margin = new RectOffset(10, 10, 5, 10);
+            //        style5.padding = new RectOffset(10, 10, 10, 10);
 
-                    EditorGUILayout.BeginVertical(style5);
-                    {
-                        for (int i = 0; i < SceneManager.Instance.ProteinNames.Count; i++)
-                        {
-                            var toggle = Convert.ToBoolean(SceneManager.Instance.ProteinToggleFlags[i]);
-                            var newToggle = EditorGUILayout.ToggleLeft(SceneManager.Instance.ProteinNames[i], toggle);
-                            if (toggle != newToggle)
-                            {
-                                SceneManager.Instance.ProteinToggleFlags[i] = Convert.ToInt32(newToggle);
-                                setDirty = true;
-                            }
+            //        EditorGUILayout.BeginVertical(style5);
+            //        {
+            //            for (int i = 0; i < SceneManager.Instance.ProteinIngredientNames.Count; i++)
+            //            {
+            //                var toggle = Convert.ToBoolean(SceneManager.Instance.ProteinToggleFlags[i]);
+            //                var newToggle = EditorGUILayout.ToggleLeft(SceneManager.Instance.ProteinIngredientNames[i], toggle);
+            //                if (toggle != newToggle)
+            //                {
+            //                    SceneManager.Instance.ProteinToggleFlags[i] = Convert.ToInt32(newToggle);
+            //                    setDirty = true;
+            //                }
 
-                            GUILayout.Space(3);
-                        }
+            //                GUILayout.Space(3);
+            //            }
 
-                        for (int i = 0; i < SceneManager.Instance.CurveIngredientsNames.Count; i++)
-                        {
-                            var toggle = Convert.ToBoolean(SceneManager.Instance.CurveIngredientToggleFlags[i]);
-                            var newToggle =
-                                EditorGUILayout.ToggleLeft(SceneManager.Instance.CurveIngredientsNames[i], toggle);
-                            if (toggle != newToggle)
-                            {
-                                SceneManager.Instance.CurveIngredientToggleFlags[i] = Convert.ToInt32(newToggle);
-                                setDirty = true;
-                            }
+            //            for (int i = 0; i < SceneManager.Instance.CurveIngredientsNames.Count; i++)
+            //            {
+            //                var toggle = Convert.ToBoolean(SceneManager.Instance.CurveIngredientToggleFlags[i]);
+            //                var newToggle =
+            //                    EditorGUILayout.ToggleLeft(SceneManager.Instance.CurveIngredientsNames[i], toggle);
+            //                if (toggle != newToggle)
+            //                {
+            //                    SceneManager.Instance.CurveIngredientToggleFlags[i] = Convert.ToInt32(newToggle);
+            //                    setDirty = true;
+            //                }
 
-                            GUILayout.Space(3);
-                        }
-                    }
-                    EditorGUILayout.EndVertical();
+            //                GUILayout.Space(3);
+            //            }
+            //        }
+            //        EditorGUILayout.EndVertical();
 
-                    if (setDirty)
-                    {
-                        EditorUtility.SetDirty(SceneManager.Instance);
-                        SceneManager.Instance.UploadIngredientToggleData();
-                    }
-                }
-            }
+            //        if (setDirty)
+            //        {
+            //            EditorUtility.SetDirty(SceneManager.Instance);
+            //            SceneManager.Instance.UploadIngredientToggleData();
+            //        }
+            //    }
+            //}
 
 #endregion
             

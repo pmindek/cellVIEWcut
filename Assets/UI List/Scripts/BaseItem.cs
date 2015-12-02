@@ -62,6 +62,14 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
         ViewController.UpdateLayout();
     }
 
+    public void SetFoldedState(bool value)
+    {
+        IsFolded = value;
+        SetChildrenVisibility(!value);
+        ViewController.UpdateLayout();
+        SetArrowState(IsFolded);
+    }
+
     public void Initialize(string name, string path, string type, object[] args, bool isFolded, TreeViewController controller, int id)
 	{
         Name = name;
@@ -95,7 +103,9 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
         FieldObject.transform.SetParent(this.transform, false);
         SetFieldObjectSize(ViewController.TextFieldSize);
         RangeFieldItem = GetComponentInChildren<RangeFieldItem>();
-    }
+
+        SetFoldedState(isFolded);
+	}
 
     //void Awake()
     //{

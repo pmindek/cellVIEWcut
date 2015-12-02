@@ -101,6 +101,8 @@
 			StructuredBuffer<float4> _ProteinColors;
 			StructuredBuffer<float4> _ProteinInstanceInfo;
 
+			StructuredBuffer<float4> _LipidInstanceInfo;
+
             void frag(v2f_img i, out float4 color : COLOR0) 
 			{   
 				int2 uv = i.uv * _ScreenParams.xy; 
@@ -119,8 +121,11 @@
 				{
 					// if is lipid
 					if(id >= 100000)
-					{						
-						color = float4(ColorCorrection(float3(1,1,0)), 1);	
+					{		
+						float4 lipidInfo = _LipidInstanceInfo[id - 100000];		
+						if(lipidInfo.x > 43) color = float4(1,1,1,1);
+						else color = float4(0,1,1,1);
+						//color = float4(0,1,1,1);
 					}
 					else
 					{
@@ -128,7 +133,8 @@
 						float4 proteinColor = _ProteinColors[proteinInfo.x];
 
 						float diffuse = proteinInfo.z;
-						color = float4(ColorCorrection(proteinColor.xyz) * diffuse, 1);	
+						//color = float4(ColorCorrection(proteinColor.xyz) * diffuse, 1);	
+						color = float4(ColorCorrection(proteinColor.xyz), 1);	
 					}						
 				}
 				else

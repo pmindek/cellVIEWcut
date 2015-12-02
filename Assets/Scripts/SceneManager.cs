@@ -1,7 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Reflection;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -62,6 +63,16 @@ public class SceneManager : MonoBehaviour
         }
     }
 
+    public void WakeUpSingleton()
+    {
+        int a = 0;
+    }
+
+    public void OnEnable()
+    {
+        Instance.WakeUpSingleton();
+    }
+
     public static bool CheckInstance()
     {
         return _instance != null;
@@ -69,10 +80,10 @@ public class SceneManager : MonoBehaviour
 
     //--------------------------------------------------------------
 
+    public string scene_name;
+    
     // Scene data
-    public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
-    public List<Vector4> ProteinInstancePositions = new List<Vector4>();
-    public List<Vector4> ProteinInstanceRotations = new List<Vector4>();
+    public List<string> SceneHierarchy = new List<string>();
 
     // Lipid data 
     public List<string> LipidIngredientNames = new List<string>();
@@ -80,30 +91,23 @@ public class SceneManager : MonoBehaviour
     public List<Vector4> LipidInstanceInfos = new List<Vector4>();
     public List<Vector4> LipidInstancePositions = new List<Vector4>();
 
-    public List<Vector4> CurveControlPointsInfos = new List<Vector4>();
-    public List<Vector4> CurveControlPointsNormals = new List<Vector4>();
-    public List<Vector4> CurveControlPointsPositions = new List<Vector4>();
-
     // Protein ingredients data
+    public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
+    public List<Vector4> ProteinInstancePositions = new List<Vector4>();
+    public List<Vector4> ProteinInstanceRotations = new List<Vector4>();
 
     public List<int> ProteinAtomCount = new List<int>();
     public List<int> ProteinAtomStart = new List<int>();
     public List<int> ProteinToggleFlags = new List<int>();
-    public List<string> ProteinNames = new List<string>();
+    public List<string> ProteinIngredientNames = new List<string>();
     public List<Vector4> ProteinAtoms = new List<Vector4>();
     public List<Vector4> ProteinColors = new List<Vector4>();
     public List<float> ProteinRadii = new List<float>();
     public List<Vector4> ProteinAtomClusters = new List<Vector4>();
     public List<int> ProteinAtomClusterCount = new List<int>();
     public List<int> ProteinAtomClusterStart = new List<int>();
-
-    public List<int> HistogramsLookup = new List<int>();
-    public List<int> NodeToProteinLookup = new List<int>();
-
-    public string scene_name;
-
+    
     // Curve ingredients data
-
     public List<int> CurveIngredientsAtomStart = new List<int>();
     public List<int> CurveIngredientsAtomCount = new List<int>();
     public List<int> CurveIngredientToggleFlags = new List<int>();
@@ -111,14 +115,31 @@ public class SceneManager : MonoBehaviour
     public List<Vector4> CurveIngredientsAtoms = new List<Vector4>();
     public List<Vector4> CurveIngredientsInfos = new List<Vector4>();
     public List<Vector4> CurveIngredientsColors = new List<Vector4>();
+    
+    public List<Vector4> CurveControlPointsInfos = new List<Vector4>();
+    public List<Vector4> CurveControlPointsNormals = new List<Vector4>();
+    public List<Vector4> CurveControlPointsPositions = new List<Vector4>();
+
+    // Histogram data
+
+    [NonSerialized]
+    public List<HistStruct> HistogramData = new List<HistStruct>();
+
+    [NonSerialized]
+    public List<int> ProteinToNodeLookup = new List<int>();
+
+    [NonSerialized]
+    public List<int> NodeToProteinLookup = new List<int>();
 
     //*****
 
     // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
     // The cache will be filled automatically via the CutObject script onEnable
 
-    [NonSerialized] public int SelectedCutObject = 0;
+    [NonSerialized]
+    public int ResetCutSnapshot = -1;
 
+    [NonSerialized] public int SelectedCutObject = 0;
     [NonSerialized] public List<CutObject> CutObjects = new List<CutObject>();
 
     public CutObject GetSelectedCutObject()
@@ -133,23 +154,42 @@ public class SceneManager : MonoBehaviour
         return selectedCutObjects;
     }
 
-    public List<HistStruct> Histograms = new List<HistStruct>();
+    //*** Ingredients ****//
 
-    public int[] stats = new int[] {0, 0, 0, 0};
+    private List<string> _ingredientNames = new List<string>();
+    public List<string> AllIngredientNames
+    {
+        get
+        {
+            if(_ingredientNames.Count != (ProteinIngredientNames.Count + LipidIngredientNames.Count))
+            {
+                _ingredientNames.Clear();
+                _ingredientNames.AddRange(ProteinIngredientNames);
+                _ingredientNames.AddRange(LipidIngredientNames);
+            }
 
-    public HistStruct[] histograms;
+            return _ingredientNames;
+        }
+    }
+
+    public int NumAllIngredients
+    {
+        get { return AllIngredientNames.Count; }
+    }
 
     //--------------------------------------------------------------
 
     public int NumLodLevels = 0;
     public int TotalNumProteinAtoms = 0;
 
-
-    public bool isUpdated = false;
-
-    public int NumIngredientTypes
+    public int NumLipidIngredients
     {
-        get { return LipidIngredientNames.Count + ProteinNames.Count; }
+        get { return LipidIngredientNames.Count; }
+    }
+
+    public int NumProteinIngredients
+    {
+        get { return ProteinIngredientNames.Count; }
     }
 
     public int NumLipidInstances
@@ -177,24 +217,10 @@ public class SceneManager : MonoBehaviour
         get { return Math.Max(CurveControlPointsPositions.Count - 1, 0); }
     }
 
+    
+
     //--------------------------------------------------------------
-
-    private void OnEnable()
-    {
-        CutObject[] cuts = FindObjectsOfType(typeof (CutObject)) as CutObject[];
-
-        Debug.Log("Start. Cut objects in scene: " + cuts.Length);
-        foreach (var cut in cuts)
-        {
-            cut.InitCutParameters();
-        }
-
-        SetCutObjects();
-
-        //CutObjects = cuts.ToList();
-        //UpdateCutObjects();
-    }
-
+    
     private void Update()
     {
         UpdateCutObjects();
@@ -203,99 +229,67 @@ public class SceneManager : MonoBehaviour
     private void OnUnityReload()
     {
         Debug.Log("Reload Scene");
+        
         UploadAllData();
-    }
-
-    //--------------------------------------------------------------
-    // Membrane stuffs
-
-    public void LoadMembrane(string filePath, Vector3 position, Quaternion rotation)
-    {
-        LipidAtomPositions.Clear();
-        LipidInstanceInfos.Clear();
-        LipidInstancePositions.Clear();
-        LipidIngredientNames.Clear();
-        LipidIngredientNames.Add("HIV Membrane");
-
-        var currentLipidAtoms = new List<Vector4>();
-        var membraneData = MyUtility.ReadBytesAsFloats(filePath);
-
-        var step = 5;
-        var dataIndex = 0;
-        var lipidAtomStart = 0;
-        var previousLipidId = -1;
-
-        while (true)
-        {
-            var flushCurrentBatch = false;
-            var breakAfterFlushing = false;
-
-            if (dataIndex >= membraneData.Count())
-            {
-                flushCurrentBatch = true;
-                breakAfterFlushing = true;
-            }
-            else
-            {
-                var lipidId = (int)membraneData[dataIndex + 4] ;
-                if (previousLipidId < 0) previousLipidId = lipidId;
-                if (lipidId != previousLipidId)
-                {
-                    flushCurrentBatch = true;
-                    previousLipidId = lipidId;
-                }
-            }
-
-            if (flushCurrentBatch)
-            {
-                var bounds = AtomHelper.ComputeBounds(currentLipidAtoms);
-                var center = new Vector4(bounds.center.x, bounds.center.y, bounds.center.z, 0);
-                for (var j = 0; j < currentLipidAtoms.Count; j++) currentLipidAtoms[j] -= center;
-
-                Vector4 batchPosition = position + bounds.center;
-                batchPosition.w = Vector3.Magnitude(bounds.extents);
-
-                LipidInstancePositions.Add(batchPosition);
-                LipidInstanceInfos.Add(new Vector4(currentLipidAtoms.Count, lipidAtomStart, 0, 0));
-                
-                lipidAtomStart += currentLipidAtoms.Count;
-                LipidAtomPositions.AddRange(currentLipidAtoms);
-                currentLipidAtoms.Clear();
-
-                if(breakAfterFlushing) break;
-            }
-
-            
-            var currentAtom = new Vector4(membraneData[dataIndex], membraneData[dataIndex + 1], membraneData[dataIndex + 2], AtomHelper.AtomRadii[(int)membraneData[dataIndex + 3]]);
-            currentLipidAtoms.Add(currentAtom);
-            dataIndex += step;
-        }
-
-        int a = 0;
     }
 
     //--------------------------------------------------------------
 
     #region Ingredients
 
-    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color,
+    public void AddIngredientToHierarchy(string ingredientUrlPath)
+    {
+        var urlPathSplit = MyUtility.SplitUrlPath(ingredientUrlPath);
+
+        if (urlPathSplit.Count() == 1)
+        {
+            if (!SceneHierarchy.Contains(urlPathSplit.First()))
+                SceneHierarchy.Add(urlPathSplit.First());
+        }
+        else
+        {
+            var parentUrlPath = MyUtility.GetParentUrlPath(ingredientUrlPath);
+            
+            if (!SceneHierarchy.Contains(parentUrlPath))
+            {
+                AddIngredientToHierarchy(parentUrlPath);
+            }
+
+            if (!SceneHierarchy.Contains(ingredientUrlPath))
+            {
+                SceneHierarchy.Add(ingredientUrlPath);
+            }
+            else
+            {
+                throw new Exception("Ingredient path already used");
+            }
+        }
+    }
+
+    //*** Protein Ingredients ****//
+
+    public void AddProteinIngredient(string path, Bounds bounds, List<Vector4> atomSpheres, Color color,
         List<float> clusterLevels = null,
         bool nolod = false)
     {
-        if (ProteinNames.Contains(ingredientName)) return;
+        if (SceneHierarchy.Contains(path)) throw new Exception("Invalid protein path: " + path); 
+        if (ProteinIngredientNames.Contains(path)) throw new Exception("Invalid protein path: " + path);
+
         if (clusterLevels != null)
         {
             if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
-                throw new Exception("Uneven cluster levels number: " + ingredientName);
+                throw new Exception("Uneven cluster levels number: " + path);
         }
         if (color == null)
         {
             color = MyUtility.GetRandomColor();
         }
 
+        AddIngredientToHierarchy(path);
+
         ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
-        ProteinNames.Add(ingredientName);
+        ProteinIngredientNames.Add(path);
         ProteinRadii.Add(AtomHelper.ComputeRadius(atomSpheres));
 
         ProteinAtomCount.Add(atomSpheres.Count);
@@ -320,14 +314,14 @@ public class SceneManager : MonoBehaviour
         }
     }
 
-    public void AddIngredientInstance(string ingredientName, Vector3 position, Quaternion rotation, int unitId = 0)
+    public void AddProteinInstance(string path, Vector3 position, Quaternion rotation, int unitId = 0)
     {
-        if (!ProteinNames.Contains(ingredientName))
+        if (!ProteinIngredientNames.Contains(path))
         {
-            throw new Exception("Ingredient type do not exists");
+            throw new Exception("Ingredient path do not exists");
         }
 
-        var ingredientId = ProteinNames.IndexOf(ingredientName);
+        var ingredientId = ProteinIngredientNames.IndexOf(path);
 
         ProteinInstanceInfos.Add(new Vector4(ingredientId, (int) InstanceState.Normal, 0));
         ProteinInstancePositions.Add(position);
@@ -336,9 +330,11 @@ public class SceneManager : MonoBehaviour
         TotalNumProteinAtoms += ProteinAtomCount[ingredientId];
     }
 
+    //*** Curve Ingredients ****//
+
     public void AddCurveIngredient(string name, string pdbName)
     {
-        if (ProteinNames.Contains(name)) return;
+        if (ProteinIngredientNames.Contains(name)) return;
 
         int numSteps = 1;
         float twistAngle = 0;
@@ -404,7 +400,7 @@ public class SceneManager : MonoBehaviour
         CurveIngredientsInfos.Add(new Vector4(numSteps, twistAngle, segmentLength));
     }
 
-    public void AddCurve(string name, List<Vector4> path)
+    public void AddCurveIntance(string name, List<Vector4> path)
     {
         if (!CurveIngredientsNames.Contains(name))
         {
@@ -429,18 +425,97 @@ public class SceneManager : MonoBehaviour
         //Debug.Log(positions.Count);
     }
 
+    //*** Membrane Ingredients ****//
+
+    public void AddMembrane(string filePath, Vector3 position, Quaternion rotation)
+    {
+        var pathInner = "membrane.inner_membrane";
+        var pathOuter = "membrane.outer_membrane";
+
+        AddIngredientToHierarchy(pathInner);
+        AddIngredientToHierarchy(pathOuter);
+
+        LipidIngredientNames.Clear();
+        LipidIngredientNames.Add(pathInner);
+        LipidIngredientNames.Add(pathOuter);
+
+        LipidAtomPositions.Clear();
+        LipidInstanceInfos.Clear();
+        LipidInstancePositions.Clear();
+
+        var currentLipidAtoms = new List<Vector4>();
+        var membraneData = MyUtility.ReadBytesAsFloats(filePath);
+
+        var ingredientIdInner = AllIngredientNames.IndexOf(pathInner);
+        var ingredientIdOuter = AllIngredientNames.IndexOf(pathOuter);
+
+        var step = 5;
+        var dataIndex = 0;
+        var lipidAtomStart = 0;
+        var previousLipidId = -1;
+
+        while (true)
+        {
+            var flushCurrentBatch = false;
+            var breakAfterFlushing = false;
+
+            if (dataIndex >= membraneData.Count())
+            {
+                flushCurrentBatch = true;
+                breakAfterFlushing = true;
+            }
+            else
+            {
+                var lipidId = (int)membraneData[dataIndex + 4];
+                if (previousLipidId < 0) previousLipidId = lipidId;
+                if (lipidId != previousLipidId)
+                {
+                    flushCurrentBatch = true;
+                    previousLipidId = lipidId;
+                }
+            }
+
+            if (flushCurrentBatch)
+            {
+                var bounds = AtomHelper.ComputeBounds(currentLipidAtoms);
+                var center = new Vector4(bounds.center.x, bounds.center.y, bounds.center.z, 0);
+                for (var j = 0; j < currentLipidAtoms.Count; j++) currentLipidAtoms[j] -= center;
+
+                var innerMembrane = Vector3.Magnitude(bounds.center) < 727;
+
+                Vector4 batchPosition = position + bounds.center;
+                batchPosition.w = Vector3.Magnitude(bounds.extents);
+
+                LipidInstancePositions.Add(batchPosition);
+                LipidInstanceInfos.Add(new Vector4(innerMembrane ? ingredientIdInner : ingredientIdOuter, lipidAtomStart, currentLipidAtoms.Count));
+
+                lipidAtomStart += currentLipidAtoms.Count;
+                LipidAtomPositions.AddRange(currentLipidAtoms);
+                currentLipidAtoms.Clear();
+
+                if (breakAfterFlushing) break;
+            }
+
+            var currentAtom = new Vector4(membraneData[dataIndex], membraneData[dataIndex + 1], membraneData[dataIndex + 2], AtomHelper.AtomRadii[(int)membraneData[dataIndex + 3]]);
+            currentLipidAtoms.Add(currentAtom);
+            dataIndex += step;
+        }
+
+        int a = 0;
+    }
+
     #endregion
 
     //--------------------------------------------------------------
 
     #region Cut Objects
 
-    public void AddCutObject(CutType type)
-    {
-        var gameObject =
-            Instantiate(Resources.Load("Prefabs/CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
-        var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
-    }
+    //public void AddCutObject(CutType type)
+    //{
+    //    var gameObject =
+    //        Instantiate(Resources.Load("Prefabs/CutObjectPrefab"), Vector3.zero, Quaternion.identity) as GameObject;
+    //    var cutObject = gameObject.GetComponent<CutObject>().CutType = type;
+    //}
 
     // Todo: proceed only if changes are made 
     public void UpdateCutObjects()
@@ -450,26 +525,6 @@ public class SceneManager : MonoBehaviour
         var CutPositions = new List<Vector4>();
         var CutRotations = new List<Vector4>();
 
-        //var ProteinCutFilters = new List<int>();
-        //var HistogramProteinTypes = new List<int>();
-
-        ////Debug.Log(CutObjects.Count);
-
-        //// Fill the protein cut filter buffer
-
-        //for (var i = 0; i < ProteinNames.Count; i++)
-        //{
-        //    foreach (var cutObject in CutObjects)
-        //    {
-        //        //Debug.Log(i + " PCF " + cutObject.ProteinCutFilters.Count());
-        //        //Debug.Log(i + " HPT " + cutObject.HistogramProteinTypes.Count());
-        //        ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
-        //        //HistogramProteinTypes.Add(Convert.ToInt32(cutObject.HistogramProteinTypes[i].State));
-
-        //        //Debug.Log("---" + i + " -- " + " ~ " + cutObject.HistogramProteinTypes[i].Name + " ~ " + cutObject.HistogramProteinTypes[i].State + " ... " + cutObject.ProteinCutFilters[i].State);
-        //    }
-        //}
-
         // For each cut object
         foreach (var cut in CutObjects)
         {
@@ -478,29 +533,38 @@ public class SceneManager : MonoBehaviour
             CutScales.Add(cut.transform.localScale);
             CutPositions.Add(cut.transform.position);
             CutRotations.Add(MyUtility.QuanternionToVector4(cut.transform.rotation));
-
             //CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, cut.Inverse ? 1.0f : 0.0f));
         }
 
         foreach (var cut in CutObjects)
         {
-            foreach (var cutParam in cut.ProteinTypeParameters)
+            foreach (var cutParam in cut.IngredientCutParameters)
             {
                 CutInfos.Add(new CutInfoStruct
                 {
                     info = new Vector4((float) cut.CutType, cutParam.value1, cutParam.value2, cut.Inverse ? 1.0f : 0.0f),
-                    info2 = new Vector4(cutParam.fuzziness, cutParam.fuzzinessDistance, cutParam.fuzzinessCurve, 0.0f)
+                    info2 = new Vector4(cutParam.fuzziness, cutParam.fuzzinessDistance, cutParam.fuzzinessCurve, cutParam.Aperture)
                 });
             }
         }
 
-        GPUBuffer.Instance.CutInfos.SetData(CutInfos.ToArray());
-        GPUBuffer.Instance.CutScales.SetData(CutScales.ToArray());
-        GPUBuffer.Instance.CutPositions.SetData(CutPositions.ToArray());
-        GPUBuffer.Instance.CutRotations.SetData(CutRotations.ToArray());
+        GPUBuffers.Instance.CutInfo.SetData(CutInfos.ToArray());
+        GPUBuffers.Instance.CutScales.SetData(CutScales.ToArray());
+        GPUBuffers.Instance.CutPositions.SetData(CutPositions.ToArray());
+        GPUBuffers.Instance.CutRotations.SetData(CutRotations.ToArray());
         //GPUBuffer.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
         //GPUBuffer.Instance.HistogramProteinTypes.SetData(HistogramProteinTypes.ToArray());
         //GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 1, 2, 3 });
+    }
+
+    public void UpdateCutObjectParams()
+    {
+        CutObjects.Clear();
+        foreach (var cutObject in FindObjectsOfType<CutObject>())
+        {
+            cutObject.InitCutParameters();
+            CutObjects.Add(cutObject);
+        }
     }
 
     #endregion
@@ -512,311 +576,195 @@ public class SceneManager : MonoBehaviour
     // Scene data gets serialized on each reload, to clear the scene call this function
     public void ClearScene()
     {
+        System.GC.Collect();
+
         Debug.Log("Clear Scene");
 
         NumLodLevels = 0;
         TotalNumProteinAtoms = 0;
 
-        // Clear lipid data
-        LipidIngredientNames.Clear();
-        LipidAtomPositions.Clear();
-        LipidInstanceInfos.Clear();
-        LipidInstancePositions.Clear();
+        // Clear all lists
+        foreach (var field in GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (field.FieldType.FullName.Contains("System.Collections.Generic.List"))
+            {
+                var v = field.GetValue(this) as IList;
+                v.Clear();
+                //int a = 0;
+            }
+        }
 
-        // Clear scene data
-        ProteinInstanceInfos.Clear();
-        ProteinInstancePositions.Clear();
-        ProteinInstanceRotations.Clear();
+        //// Clear lipid data
+        //LipidIngredientNames.Clear();
+        //LipidAtomPositions.Clear();
+        //LipidInstanceInfos.Clear();
+        //LipidInstancePositions.Clear();
 
-        // Clear ingredient data
-        ProteinNames.Clear();
-        ProteinColors.Clear();
-        ProteinToggleFlags.Clear();
-        ProteinRadii.Clear();
+        //// Clear scene data
+        //ProteinInstanceInfos.Clear();
+        //ProteinInstancePositions.Clear();
+        //ProteinInstanceRotations.Clear();
 
-        // Clear atom data
-        ProteinAtoms.Clear();
-        ProteinAtomCount.Clear();
-        ProteinAtomStart.Clear();
+        //// Clear ingredient data
+        //ProteinIngredientNames.Clear();
+        //ProteinColors.Clear();
+        //ProteinToggleFlags.Clear();
+        //ProteinRadii.Clear();
 
-        // Clear cluster data
-        ProteinAtomClusters.Clear();
-        ProteinAtomClusterStart.Clear();
-        ProteinAtomClusterCount.Clear();
+        //// Clear atom data
+        //ProteinAtoms.Clear();
+        //ProteinAtomCount.Clear();
+        //ProteinAtomStart.Clear();
 
-        // Clear curve data
-        CurveIngredientsInfos.Clear();
-        CurveIngredientsNames.Clear();
-        CurveIngredientsColors.Clear();
-        CurveIngredientToggleFlags.Clear();
-        CurveIngredientsAtoms.Clear();
-        CurveIngredientsAtomCount.Clear();
-        CurveIngredientsAtomStart.Clear();
+        //// Clear cluster data
+        //ProteinAtomClusters.Clear();
+        //ProteinAtomClusterStart.Clear();
+        //ProteinAtomClusterCount.Clear();
+
+        //// Clear curve data
+        //CurveIngredientsInfos.Clear();
+        //CurveIngredientsNames.Clear();
+        //CurveIngredientsColors.Clear();
+        //CurveIngredientToggleFlags.Clear();
+        //CurveIngredientsAtoms.Clear();
+        //CurveIngredientsAtomCount.Clear();
+        //CurveIngredientsAtomStart.Clear();
         
-        CurveControlPointsPositions.Clear();
-        CurveControlPointsNormals.Clear();
-        CurveControlPointsInfos.Clear();
+        //CurveControlPointsPositions.Clear();
+        //CurveControlPointsNormals.Clear();
+        //CurveControlPointsInfos.Clear();
+
+        UploadAllData();
     }
 
     private void CheckBufferSizes()
     {
-        if (Instance.NumCutObjects >= GPUBuffer.NumCutsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.NumCutObjects >= GPUBuffers.NumCutsMax) throw new Exception("GPU buffer overflow");
         //if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.NumLodLevels >= GPUBuffer.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinNames.Count >= GPUBuffer.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtoms.Count >= GPUBuffer.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusters.Count >= GPUBuffer.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusterCount.Count >= GPUBuffer.NumProteinMax * GPUBuffer.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinInstancePositions.Count >= GPUBuffer.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
+        if (Instance.NumLodLevels >= GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinIngredientNames.Count >= GPUBuffers.NumProteinMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtoms.Count >= GPUBuffers.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusters.Count >= GPUBuffers.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusterCount.Count >= GPUBuffers.NumProteinMax * GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinInstancePositions.Count >= GPUBuffers.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
 
-        if (Instance.CurveIngredientsNames.Count >= GPUBuffer.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveControlPointsPositions.Count >= GPUBuffer.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveIngredientsAtoms.Count >= GPUBuffer.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveIngredientsNames.Count >= GPUBuffers.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveControlPointsPositions.Count >= GPUBuffers.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveIngredientsAtoms.Count >= GPUBuffers.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
     }
 
     public void UploadAllData()
     {
+        System.GC.Collect();
+
+        InitHistogramLookups();
+        UpdateCutObjectParams();
+
         CheckBufferSizes();
+        GPUBuffers.Instance.InitBuffers();
+        
+        // Upload histogram info
+        GPUBuffers.Instance.Histograms.SetData(HistogramData.ToArray());
+        GPUBuffers.Instance.HistogramsLookup.SetData(ProteinToNodeLookup.ToArray());
 
-        GPUBuffer.Instance.InitBuffers();
+        // Upload Lod levels info
+        GPUBuffers.Instance.LodInfo.SetData(PersistantSettings.Instance.LodLevels);
 
-        HistogramsLookup.Clear();
-        NodeToProteinLookup.Clear();
+        // Upload ingredient data
+        GPUBuffers.Instance.ProteinRadii.SetData(ProteinRadii.ToArray());
+        GPUBuffers.Instance.ProteinColors.SetData(ProteinColors.ToArray());
+        GPUBuffers.Instance.IngredientMaskParams.SetData(ProteinToggleFlags.ToArray());
 
-        //Debug.Log("Reload Unity");
-        //HistogramsLookup.Add(0);
+        GPUBuffers.Instance.ProteinAtoms.SetData(ProteinAtoms.ToArray());
+        GPUBuffers.Instance.ProteinAtomCount.SetData(ProteinAtomCount.ToArray());
+        GPUBuffers.Instance.ProteinAtomStart.SetData(ProteinAtomStart.ToArray());
 
-        foreach (var node in PersistantSettings.Instance.hierachy)
+        GPUBuffers.Instance.ProteinAtomClusters.SetData(ProteinAtomClusters.ToArray());
+        GPUBuffers.Instance.ProteinAtomClusterCount.SetData(ProteinAtomClusterCount.ToArray());
+        GPUBuffers.Instance.ProteinAtomClusterStart.SetData(ProteinAtomClusterStart.ToArray());
+
+        GPUBuffers.Instance.ProteinInstanceInfo.SetData(ProteinInstanceInfos.ToArray());
+        GPUBuffers.Instance.ProteinInstancePositions.SetData(ProteinInstancePositions.ToArray());
+        GPUBuffers.Instance.ProteinInstanceRotations.SetData(ProteinInstanceRotations.ToArray());
+
+        // Upload curve ingredient data
+        GPUBuffers.Instance.CurveIngredientsAtoms.SetData(CurveIngredientsAtoms.ToArray());
+        GPUBuffers.Instance.CurveIngredientsAtomCount.SetData(CurveIngredientsAtomCount.ToArray());
+        GPUBuffers.Instance.CurveIngredientsAtomStart.SetData(CurveIngredientsAtomStart.ToArray());
+        
+        GPUBuffers.Instance.CurveIngredientsInfo.SetData(CurveIngredientsInfos.ToArray());
+        GPUBuffers.Instance.CurveIngredientsColors.SetData(CurveIngredientsColors.ToArray());
+        GPUBuffers.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
+
+        GPUBuffers.Instance.CurveControlPointsInfo.SetData(CurveControlPointsInfos.ToArray());
+        GPUBuffers.Instance.CurveControlPointsNormals.SetData(CurveControlPointsNormals.ToArray());
+        GPUBuffers.Instance.CurveControlPointsPositions.SetData(CurveControlPointsPositions.ToArray());
+
+        // Upload lipid data
+        GPUBuffers.Instance.LipidAtomPositions.SetData(LipidAtomPositions.ToArray());
+        GPUBuffers.Instance.LipidInstanceInfo.SetData(LipidInstanceInfos.ToArray());
+        GPUBuffers.Instance.LipidInstancePositions.SetData(LipidInstancePositions.ToArray());
+    }
+
+    void InitHistogramLookups()
+    {
+        // Init histogram GPU buffer
+        HistogramData.Clear();
+        foreach (var path in SceneHierarchy)
         {
-            HistStruct hist = new HistStruct();
-            hist.parent = -1;
-            hist.all = 0;
-            hist.cutaway = 0;
-            hist.occluding = 0;
-            hist.visible = 0;
+            var hist = new HistStruct
+            {
+                parent = -1,
+                all = 0,
+                cutaway = 0,
+                occluding = 0,
+                visible = 0
+            };
 
-            string parentPath = TreeUtility.GetNodeParentPath(node.path);
-
-            if (string.IsNullOrEmpty(parentPath))
+            if (MyUtility.IsPathRoot(path))
             {
                 hist.parent = -1;
             }
             else
             {
-                int index = 0;
-                foreach (var node0 in PersistantSettings.Instance.hierachy)
-                {
-                    if (parentPath == node0.path)
-                    {
-                        hist.parent = index;
-                        break;
-                    }
-                    index++;
-                }
+                var parentPath = MyUtility.GetParentUrlPath(path);
+                if(!SceneHierarchy.Contains(parentPath)) throw new Exception("Hierarchy corrupted");
+                hist.parent = SceneHierarchy.IndexOf(parentPath);
             }
 
-            Histograms.Add(hist);
-
-            //TreeViewController.AddNodeObject(node.path, new object[] { node.name }, "Text");
-            //Debug.Log(node.path + " ~~ " + node.name);
-            //Debug.Log(":::::::: " + hist.parent);
+            HistogramData.Add(hist);
         }
 
-        //Debug.Log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        //*******************************//
 
+        ProteinToNodeLookup.Clear();
 
-        int proteinNameIndex = 0;
-
-        foreach (var name in ProteinNames)
+        foreach (var ingredientName in AllIngredientNames)
         {
-            /*if (name.Contains("cytoplasme") || name.Contains("membrane") || name.Contains("surface") ||
-                name.Contains("interior"))
+            if (SceneHierarchy.Contains(ingredientName))
             {
-                HistogramsLookup.Add(-1);
+                ProteinToNodeLookup.Add(SceneHierarchy.IndexOf(ingredientName));
             }
-            else*/
+        }
+
+        //*******************************//
+
+        NodeToProteinLookup.Clear();
+
+        foreach (var path in SceneHierarchy)
+        {
+            if (AllIngredientNames.Contains(path))
             {
-                string[] parts = name.Split(new char[] { '_' }, 2);
-
-                if (parts.Length > 1)
-                {
-                    //Debug.Log("////////// " + parts[1]);
-
-                    int index = 0;
-                    foreach (var node in PersistantSettings.Instance.hierachy)
-                    {
-                        if (node.name == parts[1] && !HistogramsLookup.Contains(index))
-                        {
-                            break;
-                        }
-                        index++;
-                    }
-
-                    //Debug.Log("found at " + index);
-
-                    HistogramsLookup.Add(index);
-
-                    /*for (int q = 0; q < index - HistogramsReverseLookup.Count; q++)
-                    {
-                        HistogramsReverseLookup.Add(-1);
-                    }
-                    HistogramsReverseLookup.Add(proteinNameIndex);*/
-
-                }
-
-                proteinNameIndex++;
+                NodeToProteinLookup.Add(AllIngredientNames.IndexOf(path));
             }
-
-            //Debug.Log(name);
-        }
-
-        if (LipidIngredientNames.Count > 0)
-        {
-            // Register membrane to histograms
-            HistogramsLookup.Add(PersistantSettings.Instance.hierachy.Count - 1);
-        }
-
-        
-
-
-
-
-        foreach (var node in PersistantSettings.Instance.hierachy)
-        {
-            int index = 0;
-            int found = -1;
-            foreach (var name in ProteinNames)
+            else
             {
-                string[] parts = name.Split(new char[] { '_' }, 2);
-
-                if (parts.Length > 1)
-                {
-                    if (node.name == parts[1] && !NodeToProteinLookup.Contains(index))
-                    {
-                        found = index;
-                        break;
-                    }
-                }
-                index++;
+                NodeToProteinLookup.Add(-1);
             }
-
-            NodeToProteinLookup.Add(found);
-
-            //Debug.Log("RL: " + found);
         }
-
-        if (LipidIngredientNames.Count > 0)
-        {
-            // Register membrane to histograms
-            NodeToProteinLookup[NodeToProteinLookup.Count - 1] = ProteinNames.Count;
-        }
-
-        
-
-        /*int qw = 0;
-        Debug.Log("HIERARCHY");
-        foreach (var node in PersistantSettings.Instance.hierachy)
-        {
-            Debug.Log("#" + qw + ": " + node.name);
-            qw++;
-        }
-        qw = 0;
-        Debug.Log("PROTEIN NAMES");
-        foreach (var name in ProteinNames)
-        {
-            Debug.Log("#" + qw + ": " + name);
-            qw++;
-        }*/
-
-
-        //Debug.Log("-------------------------------------------------------------");
-
-        //foreach (var lk in HistogramsLookup)
-        //{
-        //    Debug.Log(lk);
-        //}
 
         int a = 0;
-        GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 0, 0, 4 });
-
-        //todo - fill histograms lookup
-        GPUBuffer.Instance.HistogramsLookup.SetData(HistogramsLookup.ToArray());
-        GPUBuffer.Instance.Histograms.SetData(Histograms.ToArray());
-
-        GPUBuffer.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
-
-        // Upload ingredient data
-        GPUBuffer.Instance.ProteinRadii.SetData(ProteinRadii.ToArray());
-        GPUBuffer.Instance.ProteinColors.SetData(ProteinColors.ToArray());
-        GPUBuffer.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
-
-        GPUBuffer.Instance.ProteinAtoms.SetData(ProteinAtoms.ToArray());
-        GPUBuffer.Instance.ProteinAtomCount.SetData(ProteinAtomCount.ToArray());
-        GPUBuffer.Instance.ProteinAtomStart.SetData(ProteinAtomStart.ToArray());
-
-        GPUBuffer.Instance.ProteinAtomClusters.SetData(ProteinAtomClusters.ToArray());
-        GPUBuffer.Instance.ProteinAtomClusterCount.SetData(ProteinAtomClusterCount.ToArray());
-        GPUBuffer.Instance.ProteinAtomClusterStart.SetData(ProteinAtomClusterStart.ToArray());
-
-        GPUBuffer.Instance.ProteinInstanceInfos.SetData(ProteinInstanceInfos.ToArray());
-        GPUBuffer.Instance.ProteinInstancePositions.SetData(ProteinInstancePositions.ToArray());
-        GPUBuffer.Instance.ProteinInstanceRotations.SetData(ProteinInstanceRotations.ToArray());
-
-        // Upload curve ingredient data
-        GPUBuffer.Instance.CurveIngredientsAtoms.SetData(CurveIngredientsAtoms.ToArray());
-        GPUBuffer.Instance.CurveIngredientsAtomCount.SetData(CurveIngredientsAtomCount.ToArray());
-        GPUBuffer.Instance.CurveIngredientsAtomStart.SetData(CurveIngredientsAtomStart.ToArray());
-        
-        GPUBuffer.Instance.CurveIngredientsInfos.SetData(CurveIngredientsInfos.ToArray());
-        GPUBuffer.Instance.CurveIngredientsColors.SetData(CurveIngredientsColors.ToArray());
-        GPUBuffer.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
-
-        GPUBuffer.Instance.CurveControlPointsInfos.SetData(CurveControlPointsInfos.ToArray());
-        GPUBuffer.Instance.CurveControlPointsNormals.SetData(CurveControlPointsNormals.ToArray());
-        GPUBuffer.Instance.CurveControlPointsPositions.SetData(CurveControlPointsPositions.ToArray());
-
-        //
-        GPUBuffer.Instance.LipidAtomPositions.SetData(LipidAtomPositions.ToArray());
-        GPUBuffer.Instance.LipidInstanceInfos.SetData(LipidInstanceInfos.ToArray());
-        GPUBuffer.Instance.LipidInstancePositions.SetData(LipidInstancePositions.ToArray());
-    }
-
-    public void UploadIngredientToggleData()
-    {
-        GPUBuffer.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
-        GPUBuffer.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
-    }
-
-    public void SetCutObjects()
-    {
-        var cutObjects = FindObjectsOfType<CutObject>();
-
-        foreach (var cutObject in cutObjects)
-        {
-            cutObject.ProteinCutFilters.Clear();
-            cutObject.HistogramProteinTypes.Clear();
-            cutObject.HistogramRanges.Clear();
-
-            cutObject.SetCutItems(ProteinNames);
-        }
     }
     
     #endregion
-
-    //public int GetProteinId(String name)
-    //{
-    //    int index = 0;
-
-    //    foreach (var node in PersistantSettings.Instance.hierachy)
-    //    {
-    //        if (node.name == name)
-    //        {
-    //            return index;
-    //        }
-
-    //        index++;
-    //    }
-
-    //    return -1;
-    //}
 }

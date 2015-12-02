@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +12,61 @@ using UnityEditor;
 
 public static class MyUtility
 {
+    /************** Path Utility *******************/
+
+    private static string _pathSeparator = ".";
+
+    public static string GetUrlPath(List<string> parentElements, string ingredientName)
+    {
+        var urlPath = "";
+        for (int i = 0; i < parentElements.Count(); i++)
+        {
+            urlPath += parentElements[i] + _pathSeparator;
+        }
+
+        urlPath += ingredientName;
+        return urlPath;
+    }
+
+    public static string GetUrlPath(List<string> pathElements)
+    {
+        var urlPath = "";
+        for(int i = 0; i < pathElements.Count()-1; i++)
+        {
+            urlPath += pathElements[i] + _pathSeparator;
+        }
+
+        urlPath += pathElements.Last();
+        return urlPath;
+    }
+
+    public static List<string> SplitUrlPath(string urlPath)
+    {
+        return urlPath.Split(_pathSeparator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
+    public static string GetNameFromUrlPath(string urlPath)
+    {
+        return SplitUrlPath(urlPath).Last();
+    }
+
+    public static bool IsPathRoot(string urlPath)
+    {
+        var split = SplitUrlPath(urlPath);
+        return (split.Count == 1);
+    }
+
+    public static string GetParentUrlPath(string urlPath)
+    {
+        if (IsPathRoot(urlPath)) return "";
+
+        var split = SplitUrlPath(urlPath);
+        split.Remove(split.Last());
+        return GetUrlPath(split);
+    }
+    
+    /*********************************/
+
     public static void DummyBlit()
     {
         var dummy1 = RenderTexture.GetTemporary(8, 8, 24, RenderTextureFormat.ARGB32);
@@ -22,6 +78,9 @@ public static class MyUtility
 
         dummy1.Release();
         dummy2.Release();
+
+        GameObject.DestroyImmediate(dummy1);
+        GameObject.DestroyImmediate(dummy2);
     }
 
     public static List<Vector4> ResampleControlPoints(List<Vector4> controlPoints, float segmentLength)

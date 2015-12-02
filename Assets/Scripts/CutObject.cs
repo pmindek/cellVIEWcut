@@ -43,7 +43,10 @@ public enum LockState
 
 public class CutParameters
 {
+    public int Id;
     public bool IsFocus;
+    public float Aperture;
+
     public float range0;
     public float range1;
 
@@ -104,7 +107,7 @@ public class CutObject : MonoBehaviour
     public List<CutItemRanges> HistogramRanges = new List<CutItemRanges>(); //i will maybe use this later?
 
     [HideInInspector]
-    public List<CutParameters> ProteinTypeParameters = new List<CutParameters>(); //this structure stores the cutaway parameters per protein type
+    public List<CutParameters> IngredientCutParameters = new List<CutParameters>(); //this structure stores the cutaway parameters per protein type
 
 	//private TreeViewControlEditor _tree;
 	//private RecipeTreeUI _tree_ui;
@@ -130,13 +133,15 @@ public class CutObject : MonoBehaviour
 
     public void InitCutParameters()
     {
-        ProteinTypeParameters.Clear();
+        SceneManager.Instance.WakeUpSingleton();
+        IngredientCutParameters.Clear();
 
-        for (int i = 0; i < SceneManager.Instance.ProteinNames.Count; i++)
+        for (int i = 0; i < SceneManager.Instance.AllIngredientNames.Count; i++)
         {
-            ProteinTypeParameters.Add(
+            IngredientCutParameters.Add(
                 new CutParameters()
                 {
+                    Id = i,
                     IsFocus = false,
                     range0 = 0.0f,
                     range1 = 0.0f,
@@ -154,89 +159,49 @@ public class CutObject : MonoBehaviour
                 );   
         }
 
-        if (SceneManager.Instance.LipidIngredientNames.Count > 0)
-        {
-            // Add an extra one for the membrane
-            ProteinTypeParameters.Add(
-                    new CutParameters()
-                    {
-                        IsFocus = false,
-                        range0 = 0.0f,
-                        range1 = 0.0f,
-
-                        countAll = 0,
-                        count0 = 0,
-                        count1 = 0,
-
-                        value1 = 0.5f,
-                        value2 = 0.0f,
-                        fuzziness = 0.0f,
-                        fuzzinessDistance = 1.0f,
-                        fuzzinessCurve = 1.0f
-                    }
-                    );
-        }
-
-        
-
-        /*ProteinTypeParameters.AddRange(Enumerable.Repeat(new CutParameters()
-        {
-            range0 = 0.0f,
-            range1 = 0.0f,
-
-            countAll = 0,
-            count0 = 0,
-            count1 = 0,
-
-            value1 = 0.5f,
-            value2 = 0.5f,
-            fuzziness = 0.0f,
-            fuzzinessDistance = 1.0f,
-            fuzzinessCurve = 1.0f
-        }, SceneManager.Instance.ProteinNames.Count
-        ));*/
+        int a = 0;
     }
 
     public CutParameters GetCutParametersFor(int ingredientId)
     {
-        if (ProteinTypeParameters.Count == 0 || ProteinTypeParameters.Count <= ingredientId)
+        if (IngredientCutParameters.Count == 0 || IngredientCutParameters.Count <= ingredientId)
         {
             InitCutParameters();
         }
 
-        return ProteinTypeParameters[ingredientId];
+        return IngredientCutParameters[ingredientId];
     }
 
     public void SetCutParametersFor(int ingredientId, CutParameters cutParameters)
     {
-        if (ProteinTypeParameters.Count == 0 || ProteinTypeParameters.Count <= ingredientId)
+        if (IngredientCutParameters.Count == 0 || IngredientCutParameters.Count <= ingredientId)
         {
             InitCutParameters();
         }
 
-        ProteinTypeParameters[ingredientId] = cutParameters;
+        IngredientCutParameters[ingredientId] = cutParameters;
     }
 
     public void SetFocusFor(int ingredientId, bool value)
     {
-        ProteinTypeParameters[ingredientId].IsFocus = value;
+        IngredientCutParameters[ingredientId].IsFocus = value;
     }
 
     public void SetValue1For(int ingredientId, float value1)
     {
-        ProteinTypeParameters[ingredientId].value1 = value1;
+        IngredientCutParameters[ingredientId].value1 = value1;
     }
 
     public void SetValue2For(int ingredientId, float value2)
     {
-        ProteinTypeParameters[ingredientId].value2 = value2;
+        IngredientCutParameters[ingredientId].value2 = value2;
     }
     
     public void SetFuzzinessParametersFor(int ingredientId, float value1, float value2, float value3)
     {
-        ProteinTypeParameters[ingredientId].fuzziness = value1;
-        ProteinTypeParameters[ingredientId].fuzzinessDistance = value2;
-        ProteinTypeParameters[ingredientId].fuzzinessCurve = value3;
+        IngredientCutParameters[ingredientId].fuzziness = value1;
+        IngredientCutParameters[ingredientId].fuzzinessDistance = value2;
+        IngredientCutParameters[ingredientId].fuzzinessCurve = value3;
     }
 
     public float[] GetRangeValues(int ingredientId)
@@ -454,7 +419,6 @@ public class CutObject : MonoBehaviour
 
     void OnEnable()
     {
-        
         InitCutParameters();
 
         // Register this object in the cut object cache
@@ -471,6 +435,10 @@ public class CutObject : MonoBehaviour
         // De-register this object in the cut object cache
         if (SceneManager.CheckInstance() && SceneManager.Instance.CutObjects.Contains(this))
         {
+            if (CurrentLockState != LockState.Unlocked)
+            {
+                SceneManager.Instance.ResetCutSnapshot = Id;
+            }
             SceneManager.Instance.CutObjects.Remove(this);
         }
     }
@@ -548,7 +516,7 @@ public class CutObject : MonoBehaviour
     public List<float> GetDistinctValue2()
     {
         var distincValue2List = new List<float>();
-        foreach (var cutParam in ProteinTypeParameters)
+        foreach (var cutParam in IngredientCutParameters)
         {
             if (!distincValue2List.Contains(cutParam.value2) && cutParam.value2 != 0)
             {
@@ -562,10 +530,10 @@ public class CutObject : MonoBehaviour
     public List<int> GetAllWithValue2(float value2)
     {
         var list = new List<int>();
-        for(int i = 0; i < ProteinTypeParameters.Count; i++)
+        for(int i = 0; i < IngredientCutParameters.Count; i++)
         {
 
-            if (ProteinTypeParameters[i].value2 == value2)
+            if (IngredientCutParameters[i].value2 == value2)
             {
                 list.Add(i);
             }
@@ -577,10 +545,10 @@ public class CutObject : MonoBehaviour
     public List<int> GetAllNonIgnorePriorityDraw()
     {
         var list = new List<int>();
-        for (int i = 0; i < ProteinTypeParameters.Count; i++)
+        for (int i = 0; i < IngredientCutParameters.Count; i++)
         {
 
-            if (ProteinTypeParameters[i].IsFocus)
+            if (IngredientCutParameters[i].IsFocus)
             {
                 list.Add(i);
             }

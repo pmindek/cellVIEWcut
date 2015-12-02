@@ -26,7 +26,7 @@ public class tmp_util : MonoBehaviour {
             foreach (CutObject cuto in SceneManager.Instance.CutObjects)
             {
                 CutObjectProperties props = new CutObjectProperties();
-                props.ProteinTypeParameters = cuto.ProteinTypeParameters;
+                props.ProteinTypeParameters = cuto.IngredientCutParameters;
                 props.Inverse = cuto.Inverse;
                 props.CutType = (int)cuto.CutType;
                 props.rotation = cuto.transform.rotation;
@@ -62,7 +62,7 @@ public class tmp_util : MonoBehaviour {
 
             for (int i = 0; i < importParams.CutObjectProps.Count && i < SceneManager.Instance.CutObjects.Count; i++)
             {
-                SceneManager.Instance.CutObjects[i].ProteinTypeParameters = importParams.CutObjectProps[i].ProteinTypeParameters;
+                SceneManager.Instance.CutObjects[i].IngredientCutParameters = importParams.CutObjectProps[i].ProteinTypeParameters;
                 SceneManager.Instance.CutObjects[i].Inverse = importParams.CutObjectProps[i].Inverse;
                 SceneManager.Instance.CutObjects[i].CutType = (CutType) importParams.CutObjectProps[i].CutType;
 

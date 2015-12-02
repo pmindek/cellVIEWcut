@@ -7,32 +7,7 @@ using System;
 
 public static class TreeUtility
 {
-    public static string GetNodeName(string nodePath)
-    {
-        var split = nodePath.Split('.');
-        return split.Last();
-    }
-
-    public static string GetNodeParentPath(string nodePath)
-    {
-        var split = nodePath.Split('.').ToList();
-        split.Remove(split.Last());
-
-        if (split.Count == 0)
-        {
-            return "";
-        }
-
-        var value = split.First();
-        split.Remove(split.First());
-
-        foreach (var s in split)
-        {
-            value += "." + s;
-        }
-
-        return value;
-    }
+    
 
     public static GameObject InstantiateNodeField(string type)
     {

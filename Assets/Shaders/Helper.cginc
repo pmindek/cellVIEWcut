@@ -216,3 +216,18 @@ float SphereInfiniteConeSD(float3 position, float4 rotation, float3 size, float4
     float q = length(t.xy);
     return dot(size.xy, float2(q, t.z));
 }
+
+uint wang_hash(uint seed)
+{
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
+float rand(uint value)
+{
+	return float(wang_hash(value)) * (1.0 / 4294967296.0);
+}

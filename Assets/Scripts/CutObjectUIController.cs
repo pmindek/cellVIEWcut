@@ -21,6 +21,8 @@ public class CutObjectUIController : MonoBehaviour
     public Slider DistanceSlider;
     public Slider CurveSlider;
     public Slider OcclusionSlider;
+    public Slider ApertureSlider;
+    public Toggle InvertToggle;
 
     private int previousSelectedIndex = -1;
     private int previousComboBoxSelectedIndex = -1;
@@ -55,24 +57,7 @@ public class CutObjectUIController : MonoBehaviour
         }
 
         comboBox2.Set("Show Current", false);
-
-        //comboBox.OnSelect.AddListener(OnComboBoxSelect);
     }
-
-    CutType GetCutTypeFromName(string name)
-    {
-        for (CutType type = CutType.Plane; type <= CutType.None; type++)
-        {
-            if (name == type.ToString()) return type;
-        }
-        throw new Exception("Cut type not found");
-    }
-
-    //void OnComboBoxSelect(int value, string name)
-    //{
-    //    SceneManager.Instance.GetSelectedCutObject().CutType = GetCutTypeFromName(name);
-    //    SceneManager.Instance.GetSelectedCutObject().SetHidden(false, true);
-    //}
 
     private bool ignoreUIChanges = false;
 
@@ -112,13 +97,13 @@ public class CutObjectUIController : MonoBehaviour
             SceneManager.Instance.GetSelectedCutObject().SetHidden(false, true);
             previousComboBoxSelectedIndex = comboBox.ListView.SelectedIndex;
         }
-
-        ComputeFuzzinessPlot();
     }
 
-    public void ComputeFuzzinessPlot()
+    // Set UI values
+
+    public void SetInvertToggleValue(bool value)
     {
-        
+        InvertToggle.isOn = value;
     }
 
     public void HideFuzzinessUIPanel(bool value)
@@ -147,6 +132,13 @@ public class CutObjectUIController : MonoBehaviour
     {
         OcclusionSlider.value = value;
     }
+
+    public void SetApertureUIValue(float value)
+    {
+        ApertureSlider.value = value;
+    }
+
+    // Event Callbacks
 
     public void OnInvertValueChanged(bool value)
     {
@@ -200,5 +192,16 @@ public class CutObjectUIController : MonoBehaviour
 
         previousSelectedIndex = -1;
         listViewUI.SelectedIndex = Mathf.Min(cache, listViewUI.DataSource.Count - 1);
+    }
+
+    // ******** Misc 
+
+    CutType GetCutTypeFromName(string name)
+    {
+        for (CutType type = CutType.Plane; type <= CutType.None; type++)
+        {
+            if (name == type.ToString()) return type;
+        }
+        throw new Exception("Cut type not found");
     }
 }

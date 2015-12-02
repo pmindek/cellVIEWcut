@@ -1,8 +1,9 @@
 ﻿#include "Helper.cginc"
 
 #pragma kernel ComputeProteinSphereBatches
-#pragma kernel ComputeOcclusionMaskSphereBatches
+#pragma kernel ComputeProteinOcclusionMask
 #pragma kernel ComputeLipidSphereBatches
+#pragma kernel ComputeLipidOcclusionMask
 
 #define MAX_SPHERE_COUNT_PER_BATCH 100
 
@@ -30,6 +31,8 @@ uniform StructuredBuffer<int> _ProteinInstanceVisibilityFlags;
 
 uniform AppendStructuredBuffer<int4> _ProteinSphereBatchInfos;
 
+//**** ComputeProteinSphereBatches ****//
+
 [numthreads(64,1,1)]
 void ComputeProteinSphereBatches (uint3 id : SV_DispatchThreadID)
 {
@@ -45,7 +48,6 @@ void ComputeProteinSphereBatches (uint3 id : SV_DispatchThreadID)
 
 	int cullFlag = _ProteinInstanceCullFlags[id.x];
 	if(cullFlag == 1) return;
-
 
 	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);	
     if (frustrumTest) return;
@@ -79,30 +81,31 @@ void ComputeProteinSphereBatches (uint3 id : SV_DispatchThreadID)
 	}		
 }
 
-////*****//
+//**** ComputeProteinOcclusionMask ****//
 
-uniform	StructuredBuffer<int> _ProteinOcclusionMaskFlags;
-uniform AppendStructuredBuffer<int4> _OcclusionMaskSphereBatches;
+uniform	StructuredBuffer<int> _IngredientMaskParams;
+uniform AppendStructuredBuffer<int4> _OccludeeSphereBatches;
 
 [numthreads(64,1,1)]
-void ComputeOcclusionMaskSphereBatches (uint3 id : SV_DispatchThreadID)
+void ComputeProteinOcclusionMask (uint3 id : SV_DispatchThreadID)
 {
 	if(id.x >= (uint)_NumInstances) return;
-
+		
+    float4 info = _ProteinInstanceInfo[id.x];	
 	int cullFlag = _ProteinInstanceCullFlags[id.x];
-    float4 infos = _ProteinInstanceInfo[id.x];	
 
-	if(cullFlag != 1 && _ProteinOcclusionMaskFlags[infos.x] == 1)
+	if(cullFlag != 1 && _IngredientMaskParams[info.x] == 1)
 	{
-		_OcclusionMaskSphereBatches.Append(int4(id.x, 0, 0, 0));
+		_OccludeeSphereBatches.Append(int4(id.x, 0, 0, 0));
 	}
 }
 
-////*****//
+//**** ComputeLipidSphereBatches ****//
 
-uniform StructuredBuffer<float4> _LipidInstanceInfos;	
+uniform StructuredBuffer<float4> _LipidInstanceInfo;	
 uniform StructuredBuffer<float4> _LipidInstancePositions;
 uniform StructuredBuffer<int> _LipidInstanceCullFlags;
+uniform StructuredBuffer<int> _LipidInstanceOcclusionFlags;
 
 uniform AppendStructuredBuffer<int4> _LipidSphereBatches;
 
@@ -111,14 +114,33 @@ void ComputeLipidSphereBatches (uint3 id : SV_DispatchThreadID)
 {	
 	if(id.x >= (uint)_NumInstances) return;
 
-	float4 info = _LipidInstanceInfos[id.x];	
+	float4 info = _LipidInstanceInfo[id.x];	
 	float4 sphere = _LipidInstancePositions[id.x] * _Scale;	
+	
+	//int occlusionFlag = _LipidInstanceOcclusionFlags[id.x];
+	//if(occlusionFlag == 1) return;
 
 	int cullFlag = _LipidInstanceCullFlags[id.x];
 	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);	
 
 	if(cullFlag != 1 && !frustrumTest)
 	{
-		_LipidSphereBatches.Append(int4(id.x, 0, info.x, info.y));
+		_LipidSphereBatches.Append(int4(id.x, 0, info.y, info.z));
 	}	
+}
+
+//**** ComputeLipidOcclusionMask ****//
+
+[numthreads(64,1,1)]
+void ComputeLipidOcclusionMask (uint3 id : SV_DispatchThreadID)
+{
+	if(id.x >= (uint)_NumInstances) return;
+		
+    float4 info = _LipidInstanceInfo[id.x];	
+	int cullFlag = _LipidInstanceCullFlags[id.x];
+
+	if(cullFlag != 1 && _IngredientMaskParams[info.x] == 1)
+	{
+		_OccludeeSphereBatches.Append(int4(id.x, 0, 0, 0));
+	}
 }

@@ -6,6 +6,7 @@ public class ComputeShaderManager : MonoBehaviour
 {
     public ComputeShader KMeansCS;
     public ComputeShader ReadPixelCS;
+    public ComputeShader FloodFillCS;
     public ComputeShader SphereBatchCS;
     public ComputeShader OcclusionCullingCS;
     public ComputeShader ObjectSpaceCutAwaysCS;

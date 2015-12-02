@@ -9,8 +9,11 @@
 	StructuredBuffer<float> _ProteinRadii;
 	StructuredBuffer<float4> _ProteinInstanceInfo;
 	StructuredBuffer<float4> _ProteinInstancePositions;
-	uniform	StructuredBuffer<int4> _OcclusionQueriesBatchSpheres;
+		
+	StructuredBuffer<float4> _LipidInstanceInfo;
+	StructuredBuffer<float4> _LipidInstancePositions;
 
+	StructuredBuffer<int4> _OccludeeSphereBatches;
 	RWStructuredBuffer<int> _FlagBuffer : register(u1);
 
 	struct gs_input
@@ -32,20 +35,31 @@
 
 	void vs_protein(uint id : SV_VertexID, out gs_input output)
 	{		
-		int idx = _OcclusionQueriesBatchSpheres[id].x;
+		int idx = _OccludeeSphereBatches[id].x;
 
 		float4 infos = _ProteinInstanceInfo[idx];
-		float radius = _ProteinRadii[infos.x] * _Scale;
+		float radius = _ProteinRadii[infos.x] * _Scale * 1;
 		float3 pos = _ProteinInstancePositions[idx].xyz * _Scale;
 		
 		output.id = idx;
 		output.sphere = float4(pos, radius);
 	}
 	
+	void vs_lipid(uint id : SV_VertexID, out gs_input output)
+	{		
+		int idx = _OccludeeSphereBatches[id].x;
+
+		//float4 infos = _LipidInstanceInfo[idx];
+		float4 sphere = _LipidInstancePositions[idx] * _Scale;
+		
+		output.id = idx;
+		output.sphere = sphere;
+	}
+
 	//--------------------------------------------------------------------------------------
 
 	[maxvertexcount(4)]
-	void gs_protein(point gs_input input[1], inout TriangleStream<fs_input> triangleStream)
+	void gs_sphere(point gs_input input[1], inout TriangleStream<fs_input> triangleStream)
 	{
 		// Discard unwanted atoms
 		if (input[0].sphere.w <= 0) return;
@@ -78,7 +92,7 @@
 
 	//--------------------------------------------------------------------------------------
 	
-	void fs_protein(fs_input input, out float4 color: COLOR)
+	void fs_sphere(fs_input input, out float4 color: COLOR)
 	{
 		float lensqr = dot(input.uv, input.uv);
 		if (lensqr > 1) discard;
@@ -86,7 +100,7 @@
 	}	
 
 	[earlydepthstencil] // Necessary when writing to UAV's otherwise the depth stencil test will happen after the fragment shader
-	void fs_protein2(fs_input input)
+	void fs_sphere2(fs_input input)
 	{	
 		_FlagBuffer[input.id] = 1;
 	}
@@ -116,8 +130,8 @@
 			#pragma target 5.0				
 
 			#pragma vertex vs_protein			
-			#pragma geometry gs_protein			
-			#pragma fragment fs_protein
+			#pragma geometry gs_sphere			
+			#pragma fragment fs_sphere
 
 			ENDCG
 		}
@@ -142,8 +156,61 @@
 			#pragma target 5.0				
 
 			#pragma vertex vs_protein			
-			#pragma geometry gs_protein			
-			#pragma fragment fs_protein2
+			#pragma geometry gs_sphere		
+			#pragma fragment fs_sphere2
+
+			ENDCG
+		}
+
+		Pass
+		{
+			ZWrite On
+			ZTest Lequal
+
+			// These stencil values will write 1 in the stencil channel for each instance drawn
+			Stencil
+			{
+				Ref 1
+				Comp always
+				Pass replace
+			}
+
+			CGPROGRAM
+
+			#include "UnityCG.cginc"
+
+			#pragma only_renderers d3d11
+			#pragma target 5.0				
+
+			#pragma vertex vs_lipid			
+			#pragma geometry gs_sphere			
+			#pragma fragment fs_sphere
+
+			ENDCG
+		}
+
+		Pass
+		{
+			ZWrite Off
+			ZTest Less
+
+			// These stencil values will discard instances drawn outiside of the mask
+			Stencil
+			{
+				Ref 1
+				Comp equal
+			}
+
+			CGPROGRAM
+
+			#include "UnityCG.cginc"
+
+			#pragma only_renderers d3d11
+			#pragma target 5.0				
+
+			#pragma vertex vs_lipid			
+			#pragma geometry gs_sphere		
+			#pragma fragment fs_sphere2
 
 			ENDCG
 		}

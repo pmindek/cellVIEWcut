@@ -102,21 +102,6 @@ uniform float3 _CameraForward;
 //    return abs(noise.x + noise.y) * 0.5;
 //}
 
-uint wang_hash(uint seed)
-{
-    seed = (seed ^ 61) ^ (seed >> 16);
-    seed *= 9;
-    seed = seed ^ (seed >> 4);
-    seed *= 0x27d4eb2d;
-    seed = seed ^ (seed >> 15);
-    return seed;
-}
-
-float rand(uint value)
-{
-	return float(wang_hash(value)) * (1.0 / 4294967296.0);
-}
-
 bool adjustDistanceTest(in int id, in float parameter, in float distance, in float pSize, in float pFuzziness, in float pFuzzinessCurve)
 {
 	//bool fuzzTest = rand(id) * 3.0 * pSize <= pow(abs(distance), pFuzziness * 1.0);
@@ -251,10 +236,10 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
             if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
 				cut = true;
 
-			if (_ProteinInstanceInfo[id].w == 1)
-			{
-				cut = true;
-			}
+			//if (_ProteinInstanceInfo[id].w == 1)
+			//{
+			//	cut = true;
+			//}
 
 
 
@@ -287,31 +272,7 @@ if (abs(distance) < 20.0 && distance >= 0.0 &&
 
 				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
 			}
-
         }    
-
-        //	//sphere
-        //	else if (_CutTypes[j] == 1)
-        //	{
-        //		if (length(_CutVertices[_].xyz - sphere) < _CutVertices[_].w)
-        //		{
-        //			return;
-        //		}
-        //	}
-
-        //	//cube
-        //	else if (_CutTypes[j] == 2)
-        //	{
-        //		if (isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 1].xyz) && //bottom
-        //			isPointBehindPlane(sphere, _CutVertices[_ + 3].xyz, _CutVertices[_ + 2].xyz, _CutVertices[_ + 4].xyz) && //top
-        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 3].xyz, _CutVertices[_ + 5].xyz) && //left
-        //			isPointBehindPlane(sphere, _CutVertices[_ + 0].xyz, _CutVertices[_ + 6].xyz, _CutVertices[_ + 4].xyz) && //right
-        //			isPointBehindPlane(sphere, _CutVertices[_ + 1].xyz, _CutVertices[_ + 0].xyz, _CutVertices[_ + 2].xyz) && //front
-        //			isPointBehindPlane(sphere, _CutVertices[_ + 6].xyz, _CutVertices[_ + 7].xyz, _CutVertices[_ + 5].xyz))  //back
-        //		{
-        //			return;
-        //		}
-        //	}
     }
 
     return cut;
@@ -322,36 +283,33 @@ void ComputeObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
 {
 	if(id.x >= (uint)_NumInstances) return;
 
-    float4 infos = _ProteinInstanceInfo[id.x];
+    float4 info = _ProteinInstanceInfo[id.x];
 		
-	float radius = _ProteinRadii[infos.x] * _Scale;
+	float radius = _ProteinRadii[info.x] * _Scale;
 	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
 
 	float4 sphere = float4(pos, radius);	
 		
-	bool cutAwayTest = CutAwayTest(sphere, infos.x, id.x);
-	if(infos.w > 0) cutAwayTest = true;
-
-	_ProteinInstanceCullFlags[id.x] = (cutAwayTest) ? 1 : 0;
+	bool cutAway = CutAwayTest(sphere, info.x, id.x);
+	if(info.w > 0) cutAway = true;
+	_ProteinInstanceCullFlags[id.x] = (cutAway) ? 1 : 0;
 		
-	int isVisible = _ProteinInstanceVisibilityFlags[id.x];
-
-	int addWhere = _HistogramsLookup[infos.x];
+	int addWhere = _HistogramsLookup[info.x];
 	InterlockedAdd(_Histograms[addWhere].all, 1);
 
-	if (cutAwayTest)
+	if (cutAway)
 	{
 		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
 	}	
 
+	int isVisible = _ProteinInstanceVisibilityFlags[id.x];
 	if(isVisible)
 	{
 		InterlockedAdd(_Histograms[addWhere].visible, 1);
 	}
 }
 	
-uniform int _TypeId;
-uniform StructuredBuffer<float4> _LipidInstanceInfos;	
+uniform StructuredBuffer<float4> _LipidInstanceInfo;	
 uniform StructuredBuffer<float4> _LipidInstancePositions;
 uniform RWStructuredBuffer<int> _LipidInstanceCullFlags;	
 
@@ -360,16 +318,14 @@ void ComputeLipidObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
 {
 	if(id.x >= (uint)_NumInstances) return;    
 		
-	float4 info = _LipidInstanceInfos[id.x];	
+	float4 info = _LipidInstanceInfo[id.x];	
 	float4 sphere = _LipidInstancePositions[id.x] * _Scale;	
 		
-	bool cutAway = CutAwayTest(sphere, _TypeId, id.x);
-	cutAway = cutAway | info.w > 0;
+	bool cutAway = CutAwayTest(sphere, info.x, id.x);
+	if(info.w > 0) cutAway = true;
 	_LipidInstanceCullFlags[id.x] = (cutAway) ? 1 : 0;
 		
-	//int isVisible = _ProteinInstanceVisibilityFlags[id.x];
-
-	int addWhere = _HistogramsLookup[_TypeId];
+	int addWhere = _HistogramsLookup[info.x];
 	InterlockedAdd(_Histograms[addWhere].all, 1);
 
 	if (cutAway)
@@ -377,6 +333,7 @@ void ComputeLipidObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
 		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
 	}	
 
+	//int isVisible = _ProteinInstanceVisibilityFlags[id.x];
 	//if(isVisible)
 	//{
 	//	InterlockedAdd(_Histograms[addWhere].visible, 1);
