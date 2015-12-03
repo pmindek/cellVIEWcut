@@ -188,7 +188,8 @@
 		Pass
 		{
 			ZWrite Off
-			ZTest Less
+			ZTest Lequal
+			//ZTest Always
 
 			// These stencil values will discard instances drawn outiside of the mask
 			Stencil

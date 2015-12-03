@@ -23,7 +23,7 @@ public class tmp_util : MonoBehaviour {
         {
             CutParametersContainer exportParams = new CutParametersContainer();
 
-            foreach (CutObject cuto in SceneManager.Instance.CutObjects)
+            foreach (CutObject cuto in SceneManager.Get.CutObjects)
             {
                 CutObjectProperties props = new CutObjectProperties();
                 props.ProteinTypeParameters = cuto.IngredientCutParameters;
@@ -60,16 +60,16 @@ public class tmp_util : MonoBehaviour {
             CutParametersContainer importParams = serializer.Deserialize(stream) as CutParametersContainer;
             stream.Close();
 
-            for (int i = 0; i < importParams.CutObjectProps.Count && i < SceneManager.Instance.CutObjects.Count; i++)
+            for (int i = 0; i < importParams.CutObjectProps.Count && i < SceneManager.Get.CutObjects.Count; i++)
             {
-                SceneManager.Instance.CutObjects[i].IngredientCutParameters = importParams.CutObjectProps[i].ProteinTypeParameters;
-                SceneManager.Instance.CutObjects[i].Inverse = importParams.CutObjectProps[i].Inverse;
-                SceneManager.Instance.CutObjects[i].CutType = (CutType) importParams.CutObjectProps[i].CutType;
+                SceneManager.Get.CutObjects[i].IngredientCutParameters = importParams.CutObjectProps[i].ProteinTypeParameters;
+                SceneManager.Get.CutObjects[i].Inverse = importParams.CutObjectProps[i].Inverse;
+                SceneManager.Get.CutObjects[i].CutType = (CutType) importParams.CutObjectProps[i].CutType;
 
                 //restore transform info
-                SceneManager.Instance.CutObjects[i].transform.rotation = importParams.CutObjectProps[i].rotation;
-                SceneManager.Instance.CutObjects[i].transform.position = importParams.CutObjectProps[i].position;
-                SceneManager.Instance.CutObjects[i].transform.localScale = importParams.CutObjectProps[i].scale;
+                SceneManager.Get.CutObjects[i].transform.rotation = importParams.CutObjectProps[i].rotation;
+                SceneManager.Get.CutObjects[i].transform.position = importParams.CutObjectProps[i].position;
+                SceneManager.Get.CutObjects[i].transform.localScale = importParams.CutObjectProps[i].scale;
             }
         }
         catch(Exception e)

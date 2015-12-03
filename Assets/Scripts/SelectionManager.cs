@@ -143,9 +143,9 @@ public class SelectionManager : MonoBehaviour
 
         Debug.Log("Selected element id: " + instanceID);
 
-        if (instanceID > 0) Debug.Log("Selected element type: " + SceneManager.Instance.ProteinInstanceInfos[instanceID].x);
+        if (instanceID > 0) Debug.Log("Selected element type: " + SceneManager.Get.ProteinInstanceInfos[instanceID].x);
 
-        if (instanceID >= SceneManager.Instance.ProteinInstancePositions.Count) return;
+        if (instanceID >= SceneManager.Get.ProteinInstancePositions.Count) return;
 
         // If element id is different than the currently selected element
         if (_selectedObjectID != instanceID)
@@ -155,12 +155,12 @@ public class SelectionManager : MonoBehaviour
             {
                 if (_ctrlKeyFlag)
                 {
-                    float radius = SceneManager.Instance.ProteinRadii[(int)SceneManager.Instance.ProteinInstanceInfos[instanceID].x] * PersistantSettings.Instance.Scale;
+                    float radius = SceneManager.Get.ProteinRadii[(int)SceneManager.Get.ProteinInstanceInfos[instanceID].x] * PersistantSettings.Instance.Scale;
 
                     SelectionGameObject.GetComponent<SphereCollider>().radius = radius;
 
-                    SelectionGameObject.transform.position = SceneManager.Instance.ProteinInstancePositions[instanceID] * PersistantSettings.Instance.Scale;
-                    SelectionGameObject.transform.rotation = MyUtility.Vector4ToQuaternion(SceneManager.Instance.ProteinInstanceRotations[instanceID]);
+                    SelectionGameObject.transform.position = SceneManager.Get.ProteinInstancePositions[instanceID] * PersistantSettings.Instance.Scale;
+                    SelectionGameObject.transform.rotation = MyUtility.Vector4ToQuaternion(SceneManager.Get.ProteinInstanceRotations[instanceID]);
 
                     // Enable handle
                     SelectionGameObject.GetComponent<TransformHandle>().Enable();
@@ -266,11 +266,11 @@ public class SelectionManager : MonoBehaviour
         {
             //Debug.Log("Selected instance transform changed");
 
-            SceneManager.Instance.ProteinInstancePositions[_selectedObjectID] = _selectionGameObject.transform.position / PersistantSettings.Instance.Scale;
-            SceneManager.Instance.ProteinInstanceRotations[_selectedObjectID] = MyUtility.QuanternionToVector4(_selectionGameObject.transform.rotation);
+            SceneManager.Get.ProteinInstancePositions[_selectedObjectID] = _selectionGameObject.transform.position / PersistantSettings.Instance.Scale;
+            SceneManager.Get.ProteinInstanceRotations[_selectedObjectID] = MyUtility.QuanternionToVector4(_selectionGameObject.transform.rotation);
 
-            GPUBuffers.Instance.ProteinInstancePositions.SetData(SceneManager.Instance.ProteinInstancePositions.ToArray());
-            GPUBuffers.Instance.ProteinInstanceRotations.SetData(SceneManager.Instance.ProteinInstanceRotations.ToArray());
+            GPUBuffers.Instance.ProteinInstancePositions.SetData(SceneManager.Get.ProteinInstancePositions.ToArray());
+            GPUBuffers.Instance.ProteinInstanceRotations.SetData(SceneManager.Get.ProteinInstanceRotations.ToArray());
 
             _selectionGameObject.transform.hasChanged = false;
         }

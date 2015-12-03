@@ -2,7 +2,8 @@
 {
 	SubShader
 	{
-		Tags{ "Queue" = "Overlay" }
+		//Tags{ "Queue" = "Overlay" }
+		Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
 
 		Pass
 		{
@@ -76,6 +77,84 @@
 				return _HandleColor * ndotl;
 			}
 
+			ENDCG
+		}
+
+		Pass 
+		{  
+			Cull Off
+			ZWrite Off
+			ZTest Lequal			
+			Blend SrcAlpha OneMinusSrcAlpha 
+			
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+			#pragma multi_compile_fog
+			
+			#include "UnityCG.cginc"
+
+			struct appdata_t {
+				float4 vertex : POSITION;
+			};
+
+			struct v2f {
+				float4 vertex : SV_POSITION;
+			};
+
+			uniform float4 _HandleColor;
+			
+			v2f vert (appdata_t v)
+			{
+				v2f o;
+				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+				return o;
+			}
+			
+			uniform float _CutObjectAlpha;
+
+			fixed4 frag (v2f i) : SV_Target
+			{
+				return float4(_HandleColor.xyz, (_CutObjectAlpha * 2) - 0.15);
+			}
+			ENDCG
+		}
+
+		Pass 
+		{  
+			Cull Off
+			ZWrite Off
+			ZTest Always
+			Blend SrcAlpha OneMinusSrcAlpha 
+			
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+			#pragma multi_compile_fog
+			
+			#include "UnityCG.cginc"
+
+			struct appdata_t {
+				float4 vertex : POSITION;
+			};
+
+			struct v2f {
+				float4 vertex : SV_POSITION;
+			};
+
+			uniform float4 _HandleColor;
+			
+			v2f vert (appdata_t v)
+			{
+				v2f o;
+				o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+				return o;
+			}
+			
+			fixed4 frag (v2f i) : SV_Target
+			{
+				return float4(_HandleColor.xyz, 0.15);
+			}
 			ENDCG
 		}
 	}

@@ -69,7 +69,7 @@ public class MyHandleUtility
     private static Material _handleMaterial;
     private static Material _handleWireMaterial;
 
-    public static Material handleMaterial
+    public static Material HandleMaterial
     {
         get
         {
@@ -79,7 +79,7 @@ public class MyHandleUtility
         }
     }
 
-    private static Material handleWireMaterial
+    private static Material HandleWireMaterial
     {
         get
         {
@@ -91,12 +91,12 @@ public class MyHandleUtility
 
     internal static void ApplyLineMaterial()
     {
-        handleMaterial.SetPass(0);
+        HandleMaterial.SetPass(0);
     }
 
     internal static void ApplyShadedMaterial()
     {
-        handleWireMaterial.SetPass(1);
+        HandleWireMaterial.SetPass(1);
     }
 
     //*******//
@@ -461,11 +461,23 @@ public class MyHandleUtility
         Shader.SetGlobalColor("_HandleColor", color);
         Shader.SetGlobalInt("_EnableShading", 0);
 
-        ApplyLineMaterial();
+        HandleMaterial.SetPass(2);
 
         GL.wireframe = true;
         Graphics.DrawMeshNow(mesh, transform.localToWorldMatrix);
         GL.wireframe = false;
+
+        HandleMaterial.SetPass(3);
+
+        GL.wireframe = true;
+        Graphics.DrawMeshNow(mesh, transform.localToWorldMatrix);
+        GL.wireframe = false;
+
+        //handleMaterial.SetPass(1);
+
+        //GL.wireframe = true;
+        //Graphics.DrawMeshNow(mesh, transform.localToWorldMatrix);
+        //GL.wireframe = false;
     }
 
     public static float SnapValue(float val, float snap)

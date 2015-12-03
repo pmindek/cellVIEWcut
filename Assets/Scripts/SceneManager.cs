@@ -42,7 +42,7 @@ public class SceneManager : MonoBehaviour
     // Declare the scene manager as a singleton
     private static SceneManager _instance = null;
 
-    public static SceneManager Instance
+    public static SceneManager Get
     {
         get
         {
@@ -54,7 +54,7 @@ public class SceneManager : MonoBehaviour
                 var go = GameObject.Find("_SceneManager");
                 if (go != null) DestroyImmediate(go);
 
-                go = new GameObject("_SceneManager") {hideFlags = HideFlags.HideInInspector};
+                go = new GameObject("_SceneManager") { hideFlags = HideFlags.HideInInspector };
                 _instance = go.AddComponent<SceneManager>();
             }
 
@@ -63,14 +63,14 @@ public class SceneManager : MonoBehaviour
         }
     }
 
-    public void WakeUpSingleton()
+    public void Awake()
     {
-        int a = 0;
+        var s = SceneManager.Get;
     }
 
     public void OnEnable()
     {
-        Instance.WakeUpSingleton();
+        
     }
 
     public static bool CheckInstance()
@@ -171,6 +171,9 @@ public class SceneManager : MonoBehaviour
             return _ingredientNames;
         }
     }
+
+    [NonSerialized]
+    public List<int> AllIngredientStates = new List<int>(); 
 
     public int NumAllIngredients
     {
@@ -639,18 +642,18 @@ public class SceneManager : MonoBehaviour
 
     private void CheckBufferSizes()
     {
-        if (Instance.NumCutObjects >= GPUBuffers.NumCutsMax) throw new Exception("GPU buffer overflow");
+        if (Get.NumCutObjects >= GPUBuffers.NumCutsMax) throw new Exception("GPU buffer overflow");
         //if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.NumLodLevels >= GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinIngredientNames.Count >= GPUBuffers.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtoms.Count >= GPUBuffers.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusters.Count >= GPUBuffers.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinAtomClusterCount.Count >= GPUBuffers.NumProteinMax * GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Instance.ProteinInstancePositions.Count >= GPUBuffers.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
+        if (Get.NumLodLevels >= GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Get.ProteinIngredientNames.Count >= GPUBuffers.NumProteinMax) throw new Exception("GPU buffer overflow");
+        if (Get.ProteinAtoms.Count >= GPUBuffers.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
+        if (Get.ProteinAtomClusters.Count >= GPUBuffers.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
+        if (Get.ProteinAtomClusterCount.Count >= GPUBuffers.NumProteinMax * GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Get.ProteinInstancePositions.Count >= GPUBuffers.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
 
-        if (Instance.CurveIngredientsNames.Count >= GPUBuffers.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveControlPointsPositions.Count >= GPUBuffers.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
-        if (Instance.CurveIngredientsAtoms.Count >= GPUBuffers.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+        if (Get.CurveIngredientsNames.Count >= GPUBuffers.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
+        if (Get.CurveControlPointsPositions.Count >= GPUBuffers.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
+        if (Get.CurveIngredientsAtoms.Count >= GPUBuffers.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
     }
 
     public void UploadAllData()

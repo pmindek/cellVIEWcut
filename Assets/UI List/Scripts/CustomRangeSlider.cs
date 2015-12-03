@@ -7,7 +7,7 @@ using System.Linq;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class CustomRangeSlider : MonoBehaviour 
+public class CustomRangeSlider : MonoBehaviour, IPointerClickHandler
 {
     public Texture2D cursor;
     public int totalLength = 200;
@@ -165,6 +165,7 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnEnter()
     {
+        
         LockState = true;
         Cursor.SetCursor(cursor, new Vector2(14, 14), CursorMode.Auto);
     }
@@ -188,13 +189,14 @@ public class CustomRangeSlider : MonoBehaviour
         Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
     }
 
-    public void OnPointerDown()
+    public void OnPointerDown(BaseEventData eventData)
     {
         StoppedDragging = false;
         StartedDragging = true;
         DragState = true;
         LockState = true;
         Cursor.SetCursor(cursor, new Vector2(14, 14), CursorMode.Auto);
+        ExecuteEvents.ExecuteHierarchy(transform.parent.gameObject, eventData, ExecuteEvents.pointerClickHandler);
     }
 
     public void OnDragExit()
@@ -209,11 +211,13 @@ public class CustomRangeSlider : MonoBehaviour
 
     public void OnPointerEnter()
     {
+        //Debug.Log("Hello");
         SlowDownState = true;
     }
 
     public void OnPointerExit()
     {
+        //Debug.Log("Leave");
         SlowDownState = false;
     }
 
@@ -221,5 +225,10 @@ public class CustomRangeSlider : MonoBehaviour
     {
         // Handle event here AND in ancestors
         ExecuteEvents.ExecuteHierarchy(transform.parent.gameObject, eventData, ExecuteEvents.pointerClickHandler);
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        int a = 0;
     }
 }

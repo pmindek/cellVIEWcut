@@ -1,15 +1,35 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using System;
 using System.Linq;
-using System.Runtime.InteropServices;
-using UnityEditor.Animations;
 using UnityEngine.EventSystems;
 
-public class BaseItem : MonoBehaviour, IPointerClickHandler
+public class BaseItem : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
+    public delegate void NodeItemClick(BaseItem node);
+    public event NodeItemClick PointerClick;
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        PointerClick(this);
+    }
+
+    public delegate void NodeItemEnter(BaseItem node);
+    public event NodeItemEnter PointerEnter;
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        PointerEnter(this);
+    }
+
+    public delegate void NodeItemExit(BaseItem node);
+    public event NodeItemExit PointerExit;
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        PointerExit(this);
+    }
+
     public bool IsFolded = true;
     public bool IsVisible = true;
     
@@ -29,26 +49,6 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
     
     public TreeViewController ViewController;
     public List<BaseItem> Children = new List<BaseItem>();
-
-
-    [UnityEditor.Callbacks.DidReloadScripts]
-    private static void DidReloadScripts()
-    {
-        //Debug.Log("HEllloooooooo");
-    }
-
-    public void OnBeforeSerialize()
-    {
-        //Debug.Log("HEllloooooooo");
-    }
-
-    public void OnAfterDeserialize()
-    {
-        /*ArrowObject.GetComponent<ArrowScript>().DropDownToggle += DropDownToggleDelegate;
-        ArrowObject.GetComponent<ArrowScript>().SetState(IsFolded);
-        ArrowObject.GetComponent<ArrowScript>().SetState(IsVisible);
-        ArrowObject.GetComponent<ArrowScript>().SetAlpha(0.5f);*/
-    }
 
     void Start()
     {
@@ -246,18 +246,7 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
         return Children.Count == 0;
     }
 
-    public delegate void NodeItemClick(BaseItem node);
-    public event NodeItemClick PointerClick;
-
-    public void OnPointerClick(PointerEventData ped)
-    {
-        PointerClick(this);
-    }
-
-    public void OnPointerEnter(PointerEventData ped)
-    {
-        
-    }
+    
 
     public bool HasAllChildrenFocus()
     {
@@ -283,4 +272,7 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
     //{
     //    RangeFieldItem.CustomRangeSliderUi.GetComponent<CanvasGroup>()
     //}
+
+
+   
 }

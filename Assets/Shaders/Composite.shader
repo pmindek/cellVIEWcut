@@ -97,11 +97,12 @@
             #include "UnityCG.cginc"
 			#include "Helper.cginc"	
 
+			StructuredBuffer<int > _IngredientStates;
+
 			uniform Texture2D<int> _IdTexture; 
 			StructuredBuffer<float4> _ProteinColors;
-			StructuredBuffer<float4> _ProteinInstanceInfo;
-
-			StructuredBuffer<float4> _LipidInstanceInfo;
+			StructuredBuffer<float4> _ProteinInstanceInfo;			
+			StructuredBuffer<float4> _LipidInstanceInfo;			
 
             void frag(v2f_img i, out float4 color : COLOR0) 
 			{   
@@ -119,14 +120,16 @@
 				
 				if(id >= 0)
 				{
+					int ingredientId = -1;
+
 					// if is lipid
 					if(id >= 100000)
 					{		
-						float4 lipidInfo = _LipidInstanceInfo[id - 100000];		
-						if(lipidInfo.x > 42) color = float4(1,1,1,1);
-						if(lipidInfo.x > 42) color = float4(1,1,1,1);
-						else color = float4(0,1,1,1);
-						//color = float4(0,1,1,1);
+						id -= 100000;
+						float4 lipidInfo = _LipidInstanceInfo[id];		
+						color = float4(ColorCorrection((lipidInfo.x > 42) ? float3(0.5,0.4,0.0) : float3(0.5,0.6,0.0)), 1);
+						
+						ingredientId = lipidInfo.x;
 					}
 					else
 					{
@@ -136,7 +139,19 @@
 						float diffuse = proteinInfo.z;
 						//color = float4(ColorCorrection(proteinColor.xyz) * diffuse, 1);	
 						color = float4(ColorCorrection(proteinColor.xyz), 1);	
-					}						
+
+						ingredientId = proteinInfo.x;
+					}	
+					
+					int state = _IngredientStates[ingredientId];					
+					if(state == 1)
+					{
+						color = float4(OffsetHSL(color.xyz, float3(0, 0, 0)), 1);
+					}
+					else if(state == 2)
+					{
+						color = float4(OffsetHSL(color.xyz, float3(0, 0.5, 0.1)), 1);
+					}				
 				}
 				else
 				{

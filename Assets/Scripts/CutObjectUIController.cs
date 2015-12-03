@@ -9,12 +9,13 @@ using UnityEngine.Assertions.Must;
 using UnityEngine.UI;
 using UnityEngine.UI.Extensions;
 
+
 public class CutObjectUIController : MonoBehaviour
 {
     public GameObject cutObjectPrefab;
     public ListView listViewUI;
     public Combobox comboBox;
-    public Combobox comboBox2;
+    //public Combobox comboBox2;
 
     public UILineRenderer FuzzinessPlot;
     public Slider FuzzinessSlider;
@@ -22,6 +23,7 @@ public class CutObjectUIController : MonoBehaviour
     public Slider CurveSlider;
     public Slider OcclusionSlider;
     public Slider ApertureSlider;
+    public Slider CutObjectAlphaSlider;
     public Toggle InvertToggle;
 
     private int previousSelectedIndex = -1;
@@ -35,7 +37,7 @@ public class CutObjectUIController : MonoBehaviour
     {
         var t = GameObject.FindObjectsOfType<ComboBox>();
 
-        foreach (var cutObject in SceneManager.Instance.CutObjects)
+        foreach (var cutObject in SceneManager.Get.CutObjects)
         {
             listViewUI.Add(cutObject.name);
         }
@@ -49,14 +51,17 @@ public class CutObjectUIController : MonoBehaviour
             }
         }
 
-        if (comboBox2.ListView.DataSource.Count == 0)
-        {
-            comboBox2.ListView.Add("Show Current");
-            comboBox2.ListView.Add("Show All");
-            comboBox2.ListView.Add("Hide All");
-        }
+        CutObjectAlphaSlider.value = CutObject.CutObjectAlpha;
 
-        comboBox2.Set("Show Current", false);
+        //if (comboBox2.ListView.DataSource.Count == 0)
+        //{
+        //    comboBox2.ListView.Add("Show Current");
+        //    comboBox2.ListView.Add("Show All");
+        //    comboBox2.ListView.Add("Hide All");
+        //}
+
+        //comboBox2.Set("Show Current", false);
+
     }
 
     private bool ignoreUIChanges = false;
@@ -70,33 +75,68 @@ public class CutObjectUIController : MonoBehaviour
         if (listViewUI.SelectedIndex >= listViewUI.DataSource.Count)
         {
             listViewUI.SelectedIndex = listViewUI.DataSource.Count - 1;
-            SceneManager.Instance.SelectedCutObject = listViewUI.SelectedIndex;
+            SceneManager.Get.SelectedCutObject = listViewUI.SelectedIndex;
         }
 
         if (listViewUI.SelectedIndex != previousSelectedIndex)
         {
-            for (int i = 0; i < SceneManager.Instance.CutObjects.Count; i++)
+            for (int i = 0; i < SceneManager.Get.CutObjects.Count; i++)
             {
-                if (i != listViewUI.SelectedIndex) SceneManager.Instance.CutObjects[i].SetHidden(true);
-                else SceneManager.Instance.CutObjects[i].SetHidden(false, true);
+                if (i != listViewUI.SelectedIndex) SceneManager.Get.CutObjects[i].SetHidden(true);
+                else SceneManager.Get.CutObjects[i].SetHidden(false, true);
             }
             previousSelectedIndex = listViewUI.SelectedIndex;
-            comboBox.Set(SceneManager.Instance.CutObjects[listViewUI.SelectedIndex].CutType.ToString(), false);
+            comboBox.Set(SceneManager.Get.CutObjects[listViewUI.SelectedIndex].CutType.ToString(), false);
 
-            SceneManager.Instance.SelectedCutObject = listViewUI.SelectedIndex;
+            SceneManager.Get.SelectedCutObject = listViewUI.SelectedIndex;
 
             previousComboBoxSelectedIndex =
                 comboBox.ListView.FindIndex(
-                    SceneManager.Instance.CutObjects[listViewUI.SelectedIndex].CutType.ToString());
+                    SceneManager.Get.CutObjects[listViewUI.SelectedIndex].CutType.ToString());
 
             OnSelectedCutObjectChange();
         }
         else if (previousComboBoxSelectedIndex != comboBox.ListView.SelectedIndex)
         {
-            SceneManager.Instance.GetSelectedCutObject().CutType = GetCutTypeFromName(comboBox.ListView.DataSource[comboBox.ListView.SelectedIndex]);
-            SceneManager.Instance.GetSelectedCutObject().SetHidden(false, true);
+            SceneManager.Get.GetSelectedCutObject().CutType = GetCutTypeFromName(comboBox.ListView.DataSource[comboBox.ListView.SelectedIndex]);
+            SceneManager.Get.GetSelectedCutObject().SetHidden(false, true);
             previousComboBoxSelectedIndex = comboBox.ListView.SelectedIndex;
         }
+
+        if (Input.GetKey(KeyCode.Tab))
+        {
+            CutObject.CutObjectAlpha = Mathf.Max(0.25f, CutObject.CutObjectAlpha);
+            SceneManager.Get.GetSelectedCutObject().GetComponent<MeshRenderer>().sharedMaterial.SetFloat("_CutObjectAlpha", Mathf.Max(0.25f, CutObject.CutObjectAlpha));
+            
+
+            for (int i = 0; i < SceneManager.Get.CutObjects.Count; i++)
+            {
+                if (i == listViewUI.SelectedIndex) SceneManager.Get.CutObjects[i].SetHidden(false);
+                else
+                {
+                    SceneManager.Get.CutObjects[i].SetHidden(false);
+                    if (SceneManager.Get.CutObjects[i].GetComponent<TransformHandle>().IsEnabled())
+                    {
+
+                        listViewUI.Set(SceneManager.Get.CutObjects[i].name, false);
+                        //  SelectionManager.Instance.SetHandleSelected();
+                    }
+                }
+            }
+        }
+
+        if (Input.GetKeyUp(KeyCode.Tab))
+        {
+            CutObject.CutObjectAlpha = CutObjectAlphaSlider.value;
+            SceneManager.Get.GetSelectedCutObject().GetComponent<MeshRenderer>().sharedMaterial.SetFloat("_CutObjectAlpha", CutObject.CutObjectAlpha);
+
+            for (int i = 0; i < SceneManager.Get.CutObjects.Count; i++)
+            {
+                if (i != listViewUI.SelectedIndex) SceneManager.Get.CutObjects[i].SetHidden(true);
+                else SceneManager.Get.CutObjects[i].SetHidden(false);
+            }
+        }
+
     }
 
     // Set UI values
@@ -148,26 +188,33 @@ public class CutObjectUIController : MonoBehaviour
 
     public void OnInvertValueChanged(bool value)
     {
-        SceneManager.Instance.GetSelectedCutObject().Inverse = value;
+        SceneManager.Get.GetSelectedCutObject().Inverse = value;
     }
 
     public void OnFuzzinessValueChanged(float value)
     {
-        int a = 0;
+        FuzzinessPlot.Decay = FuzzinessSlider.value;
+        FuzzinessPlot.Gamma = CurveSlider.value;
+        FuzzinessPlot.SetVerticesDirty();
     }
 
     public void OnDistanceValueChanged(float value)
     {
-        FuzzinessPlot.Decay = DistanceSlider.value;
-        FuzzinessPlot.Gamma = CurveSlider.value;
-        FuzzinessPlot.SetVerticesDirty();
+        
     }
 
     public void OnCurveValueChanged(float value)
     {
-        FuzzinessPlot.Decay = DistanceSlider.value;
+        FuzzinessPlot.Decay = FuzzinessSlider.value;
         FuzzinessPlot.Gamma = CurveSlider.value;
         FuzzinessPlot.SetVerticesDirty();
+    }
+
+    public void OnObjectAlphaValueChanged(float value)
+    {
+        CutObject.CutObjectAlpha = value;
+        SceneManager.Get.GetSelectedCutObject().GetComponent<MeshRenderer>().sharedMaterial.SetFloat("_CutObjectAlpha", value);
+        MyHandleUtility.HandleMaterial.SetFloat("_CutObjectAlpha", value);
     }
 
     public void AddCutObject()
@@ -191,7 +238,7 @@ public class CutObjectUIController : MonoBehaviour
             foreach (var index in selected)
             {
                 listViewUI.Remove(listViewUI.DataSource[index]);
-                var go = SceneManager.Instance.CutObjects[index].gameObject;
+                var go = SceneManager.Get.CutObjects[index].gameObject;
                 DestroyImmediate(go);
             }
         }

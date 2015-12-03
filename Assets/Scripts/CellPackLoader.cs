@@ -152,10 +152,10 @@ public static class CellPackLoader
         LoadIngredients(path);
 
         Debug.Log("*****");
-        Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
+        Debug.Log("Total protein atoms number: " + SceneManager.Get.TotalNumProteinAtoms);
 
         // Upload scene data to the GPU
-        SceneManager.Instance.UploadAllData();
+        SceneManager.Get.UploadAllData();
         #endif
     }
 
@@ -337,7 +337,7 @@ public static class CellPackLoader
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);
 	
-		SceneManager.Instance.AddProteinIngredient(path, bounds, atomSpheres, color, clusterLevels,oneLOD);
+		SceneManager.Get.AddProteinIngredient(path, bounds, atomSpheres, color, clusterLevels,oneLOD);
         int instanceCount = 0;
         
         for (int k = 0; k < ingredientDictionary["results"].Count; k++)
@@ -356,7 +356,7 @@ public static class CellPackLoader
             {
                 // Find centered position
                 if (!center) position += MyUtility.QuaternionTransform(rotation, centerPosition);
-                SceneManager.Instance.AddProteinInstance(path, position, rotation);
+                SceneManager.Get.AddProteinInstance(path, position, rotation);
                 instanceCount++;
             }
             else
@@ -372,7 +372,7 @@ public static class CellPackLoader
 					var biomtInstanceRot = rotation * rotBiomt;//Helper.RotationMatrixToQuaternion(transform);
 					var biomtInstancePos = rotation * posBiomt + position;
 
-					SceneManager.Instance.AddProteinInstance(path, biomtInstancePos, biomtInstanceRot);
+					SceneManager.Get.AddProteinInstance(path, biomtInstancePos, biomtInstanceRot);
                     instanceCount++;
                 }
             }
@@ -393,7 +393,7 @@ public static class CellPackLoader
         var curveIngredientName = prefix + "_" + ingredientDictionary["name"].Value;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
 
-        SceneManager.Instance.AddCurveIngredient(curveIngredientName, pdbName);
+        SceneManager.Get.AddCurveIngredient(curveIngredientName, pdbName);
         
         for (int i = 0; i < numCurves; i++)
         {
@@ -407,7 +407,7 @@ public static class CellPackLoader
                 controlPoints.Add(new Vector4(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat, 1));
             }
 
-            SceneManager.Instance.AddCurveIntance(curveIngredientName, controlPoints);
+            SceneManager.Get.AddCurveIntance(curveIngredientName, controlPoints);
             //break;
         }
 
@@ -440,10 +440,10 @@ public static class CellPackLoader
         var path = EditorUtility.OpenFilePanel("Select .mbr", directory, "mbr");
         if (string.IsNullOrEmpty(path)) return;
 
-        SceneManager.Instance.AddMembrane(path, Vector3.zero, Quaternion.identity);
+        SceneManager.Get.AddMembrane(path, Vector3.zero, Quaternion.identity);
 
         // Upload scene data to the GPU
-        SceneManager.Instance.UploadAllData();
+        SceneManager.Get.UploadAllData();
 #endif
     }
 }

@@ -36,7 +36,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     void Start()
     {
         if (_rootNodes == null) _rootNodes = new List<BaseItem>();
-        foreach (var path in SceneManager.Instance.SceneHierarchy)
+        foreach (var path in SceneManager.Get.SceneHierarchy)
         {
             AddNodeObject(path, new object[] { MyUtility.GetNameFromUrlPath(path) }, "Text");
         }
@@ -47,11 +47,15 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             node.SetFoldedState(FoldedAtLaunch);
             node.PointerClick += OnNodePointerClick;
+            node.PointerExit += OnNodePointerExit;
+            node.PointerEnter += OnNodePointerEnter;
             node.RangeFieldItem.CustomRangeSliderUi.RangeSliderDrag += OnRangeSliderDrag;
         }
 
         SetSelectedNode(_rootNodes[0]);
         cutObjectUiController.OnSelectedCutObjectChange += OnSelectedCutObjectChange;
+
+        OnNodePointerExit(null);
     }
 
     public void FixedUpdate()
@@ -61,6 +65,46 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     }
 
     //*** Selection ****//
+
+    public void OnNodePointerEnter(BaseItem enterNode)
+    {
+        SceneManager.Get.AllIngredientStates.Clear();
+        var selectedLeaveNames = GetAllLeaveNodesFrom(enterNode).Select(leave => leave.Path).ToList();
+
+        for (int i = 0; i < SceneManager.Get.AllIngredientNames.Count; i++)
+        {
+            var highlighted = selectedLeaveNames.Contains(SceneManager.Get.AllIngredientNames[i]);
+            SceneManager.Get.AllIngredientStates.Add(highlighted ? 2 : 1);
+        }
+
+        GPUBuffers.Instance.IngredientStates.SetData(SceneManager.Get.AllIngredientStates.ToArray());
+    }
+
+    public void OnNodePointerExit(BaseItem exitNode)
+    {
+        SceneManager.Get.AllIngredientStates.Clear();
+
+        for (int i = 0; i < SceneManager.Get.AllIngredientNames.Count; i++)
+        {
+            SceneManager.Get.AllIngredientStates.Add(0);
+        }
+
+        GPUBuffers.Instance.IngredientStates.SetData(SceneManager.Get.AllIngredientStates.ToArray());
+    }
+
+    public void UpdateSelectedIngredientStates()
+    {
+        SceneManager.Get.AllIngredientStates.Clear();
+        var selectedLeaveNames = GetAllLeaveNodesFrom(_selectedNode).Select(leave => leave.Path).ToList();
+
+        for (int i = 0; i < SceneManager.Get.AllIngredientNames.Count; i++)
+        {
+            var highlighted = selectedLeaveNames.Contains(SceneManager.Get.AllIngredientNames[i]);
+            SceneManager.Get.AllIngredientStates.Add(highlighted ? 1 : 0);
+        }
+
+        GPUBuffers.Instance.IngredientStates.SetData(SceneManager.Get.AllIngredientStates.ToArray());
+    }
 
     public void OnNodeFoldClick(BaseItem selectedNode)
     {
@@ -75,17 +119,19 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     public void SetSelectedNode(BaseItem selectedNode)
     {
-        SceneManager.Instance.GetSelectedCutObject().LastNodeFocusId = selectedNode.Id;
+        SceneManager.Get.GetSelectedCutObject().LastNodeFocusId = selectedNode.Id;
         _selectedNode = selectedNode;
         UpdateSelectedNodeFuzziValue();
         UpdateSelectedNodeApertureValue();
         UpdateSelectedNodeOcclusionValue();
         UpdateHideShowOcclusionUIFields();
+
+        //UpdateSelectedIngredientStates();
     }
 
     public void OnSelectedCutObjectChange()
     {
-        if (_rootNodes == null || SceneManager.Instance.HistogramData == null) return;
+        if (_rootNodes == null || SceneManager.Get.HistogramData == null) return;
 
         UpdateAllToggles();
         UpdateInvertValue();
@@ -96,9 +142,9 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         UpdateThreeStateToogleStates();
         UpdateVisibilityToogleStates();
 
-        if (SceneManager.Instance.GetSelectedCutObject().LastNodeFocusId != -1)
+        if (SceneManager.Get.GetSelectedCutObject().LastNodeFocusId != -1)
         {
-            SetSelectedNode(_rootNodes[SceneManager.Instance.GetSelectedCutObject().LastNodeFocusId]);
+            SetSelectedNode(_rootNodes[SceneManager.Get.GetSelectedCutObject().LastNodeFocusId]);
         }
     }
 
@@ -106,7 +152,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     void UpdateInvertValue()
     {
-        cutObjectUiController.SetInvertToggleValue(SceneManager.Instance.GetSelectedCutObject().Inverse);
+        cutObjectUiController.SetInvertToggleValue(SceneManager.Get.GetSelectedCutObject().Inverse);
     }
 
     //*** Aperture ****//
@@ -116,7 +162,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     void UpdateSelectedNodeApertureValue()
     {
         _ignoreApertureUIChangeFlag = true;
-        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));
+        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaveNodesFrom(_selectedNode));
         SetApertureUIValue(averageValues.Aperture);
     }
 
@@ -129,11 +175,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         if (!_ignoreApertureUIChangeFlag)
         {
-            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            foreach (var leafNodes in GetAllLeaveNodesFrom(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+                foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].Aperture = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].Aperture = value;
                 }
             }
         }
@@ -154,7 +200,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     public void UpdateSelectedNodeFuzziValue()
     {
         _ignoreFuzzinessUIChangeFlag = _ignoreDistanceUIChangesFlag = _ignoreCurveUIChangesFlag = true;
-        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));
+        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaveNodesFrom(_selectedNode));
         SetFuzzinessUIValues(averageValues.fuzziness, averageValues.fuzzinessDistance, averageValues.fuzzinessCurve);
     }
 
@@ -162,11 +208,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         if (!_ignoreFuzzinessUIChangeFlag)
         {
-            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            foreach (var leafNodes in GetAllLeaveNodesFrom(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+                foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzziness = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].fuzziness = value;
                 }
             }
         }
@@ -180,11 +226,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         if (!_ignoreDistanceUIChangesFlag)
         {
-            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            foreach (var leafNodes in GetAllLeaveNodesFrom(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+                foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzzinessDistance = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].fuzzinessDistance = value;
                 }
             }
         }
@@ -198,11 +244,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         if (!_ignoreCurveUIChangesFlag)
         {
-            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            foreach (var leafNodes in GetAllLeaveNodesFrom(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+                foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].fuzzinessCurve = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].fuzzinessCurve = value;
                 }
             }
         }
@@ -231,7 +277,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     public void UpdateSelectedNodeOcclusionValue()
     {
         _ignoreOcclusionUIChangeFlag = true;
-        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));
+        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaveNodesFrom(_selectedNode));
         SetOcclusionUIValue(averageValues.value2);
     }
 
@@ -239,11 +285,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
     {
         if (!_ignoreOcclusionUIChangeFlag)
         {
-            foreach (var leafNodes in GetAllLeaves(_selectedNode))
+            foreach (var leafNodes in GetAllLeaveNodesFrom(_selectedNode))
             {
-                foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+                foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[leafNodes.Id]].value2 = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].value2 = value;
                 }
             }
         }
@@ -273,16 +319,16 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             if (node.IsLeafNode())
             {
-                var toggleState = SceneManager.Instance.GetSelectedCutObject().IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[node.Id]].IsFocus;
+                var toggleState = SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[node.Id]].IsFocus;
                 node.RangeFieldItem.Toggle.SetState(toggleState);
                 node.RangeFieldItem.LockToggle.gameObject.SetActive(toggleState);
 
-                if (toggleState && SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Unlocked)
+                if (toggleState && SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Unlocked)
                 {
                     node.RangeFieldItem.LockToggle.SetState(false);
                 }
 
-                if (toggleState && SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Locked)
+                if (toggleState && SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Locked)
                 {
                     node.RangeFieldItem.LockToggle.SetState(true);
                 }
@@ -297,12 +343,12 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 node.RangeFieldItem.Toggle.SetState(toggleState);
                 node.RangeFieldItem.LockToggle.gameObject.SetActive(toggleState);
 
-                if (toggleState && SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Unlocked || SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Restore)
+                if (toggleState && SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Unlocked || SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Restore)
                 {
                     node.RangeFieldItem.LockToggle.SetState(false);
                 }
 
-                if (toggleState && SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Locked || SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Consumed)
+                if (toggleState && SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Locked || SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Consumed)
                 {
                     node.RangeFieldItem.LockToggle.SetState(true);
                 }
@@ -318,14 +364,14 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
                 node.RangeFieldItem.LockToggle.SetState(value);
         }
 
-        if (value && SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Unlocked)
+        if (value && SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Unlocked)
         {
-            SceneManager.Instance.GetSelectedCutObject().CurrentLockState = LockState.Locked;
+            SceneManager.Get.GetSelectedCutObject().CurrentLockState = LockState.Locked;
         }
 
-        if (!value && SceneManager.Instance.GetSelectedCutObject().CurrentLockState == LockState.Consumed)
+        if (!value && SceneManager.Get.GetSelectedCutObject().CurrentLockState == LockState.Consumed)
         {
-            SceneManager.Instance.GetSelectedCutObject().CurrentLockState = LockState.Restore;
+            SceneManager.Get.GetSelectedCutObject().CurrentLockState = LockState.Restore;
         }
     }
 
@@ -366,16 +412,16 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
         if (item.IsLeafNode())
         {
-            var cutObject = SceneManager.Instance.GetSelectedCutObject();
-            SceneManager.Instance.GetSelectedCutObject().IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[item.Id]].IsFocus = value;
+            var cutObject = SceneManager.Get.GetSelectedCutObject();
+            SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[item.Id]].IsFocus = value;
         }
 
         foreach (var child in item.GetAllChildren())
         {
             if (child.IsLeafNode())
             {
-                var cutObject = SceneManager.Instance.GetSelectedCutObject();
-                SceneManager.Instance.GetSelectedCutObject().IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[child.Id]].IsFocus = value;
+                var cutObject = SceneManager.Get.GetSelectedCutObject();
+                SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[child.Id]].IsFocus = value;
             }
 
             child.RangeFieldItem.Toggle.SetState(value);
@@ -396,16 +442,16 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
         if (baseItem.IsLeafNode())
         {
-            var cutObject = SceneManager.Instance.GetSelectedCutObject();
-            SceneManager.Instance.GetSelectedCutObject().IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[baseItem.Id]].value1 = value1;
+            var cutObject = SceneManager.Get.GetSelectedCutObject();
+            SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[baseItem.Id]].value1 = value1;
         }
 
         foreach (var child in baseItem.GetAllChildren())
         {
             if (child.IsLeafNode())
             {
-                var cutObject = SceneManager.Instance.GetSelectedCutObject();
-                SceneManager.Instance.GetSelectedCutObject().IngredientCutParameters[SceneManager.Instance.NodeToProteinLookup[child.Id]].value1 = value1;
+                var cutObject = SceneManager.Get.GetSelectedCutObject();
+                SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[child.Id]].value1 = value1;
             }
 
             child.RangeFieldItem.ThreeStateToggle.SetState(value1);
@@ -414,11 +460,11 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     //*** Utils ****//
 
-    private List<BaseItem> GetAllLeaves(BaseItem baseItem)
+    private List<BaseItem> GetAllLeaveNodesFrom(BaseItem baseItem)
     {
         var selectedLeafNodes = new List<BaseItem>();
-        if (_selectedNode.IsLeafNode()) selectedLeafNodes.Add(_selectedNode);
-        else selectedLeafNodes.AddRange(_selectedNode.GetAllLeafChildren());
+        if (baseItem.IsLeafNode()) selectedLeafNodes.Add(baseItem);
+        else selectedLeafNodes.AddRange(baseItem.GetAllLeafChildren());
         return selectedLeafNodes;
     }
 
@@ -428,10 +474,10 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
         foreach (var leafNode in leafNodes)
         {
-            var index = SceneManager.Instance.NodeToProteinLookup[leafNode.Id];
+            var index = SceneManager.Get.NodeToProteinLookup[leafNode.Id];
             if(index < 0) throw new Exception("Node to protein lookup error");
 
-            foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+            foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
             {
                 var cutParam = cutObject.GetCutParametersFor(index);
                 cutParams.IsFocus |= cutParam.IsFocus;
@@ -444,7 +490,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             }
         }
 
-        var averageTotalCount = (float)(leafNodes.Count * SceneManager.Instance.GetSelectedCutObjects().Count);
+        var averageTotalCount = (float)(leafNodes.Count * SceneManager.Get.GetSelectedCutObjects().Count);
         cutParams.value1 /= averageTotalCount;
         cutParams.value2 /= averageTotalCount;
         cutParams.fuzziness /= averageTotalCount;
@@ -490,10 +536,10 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         // Set new cut params values
         foreach (var child in selectedLeafNodes)
         {
-            var index = SceneManager.Instance.NodeToProteinLookup[child.Id];
+            var index = SceneManager.Get.NodeToProteinLookup[child.Id];
             if (index < 0) throw new Exception("Node to protein lookup error");
             
-            foreach (var cutObject in SceneManager.Instance.GetSelectedCutObjects())
+            foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
             {
                 if (rangeIndex == 0)
                 {
@@ -514,17 +560,17 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
     public void UpdateHideShowOcclusionUIFields()
     {
-        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaves(_selectedNode));
+        var averageValues = GetAverageCutParamsFromLeafNodes(GetAllLeaveNodesFrom(_selectedNode));
         HideOcclusionUIPanel(averageValues.IsFocus);
     }
 
     public void UpdateHistograms()
     {
-        if (_rootNodes == null || SceneManager.Instance.HistogramData == null) return;
+        if (_rootNodes == null || SceneManager.Get.HistogramData == null) return;
 
         foreach (var node in _rootNodes)
         {
-            var histData = SceneManager.Instance.HistogramData[node.Id];
+            var histData = SceneManager.Get.HistogramData[node.Id];
             if (histData.all <= 0)
             {
                 continue;

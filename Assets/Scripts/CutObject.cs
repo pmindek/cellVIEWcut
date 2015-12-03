@@ -45,6 +45,7 @@ public class CutParameters
 {
     public int Id;
     public bool IsFocus;
+    public bool IsHighlighted;
     public float Aperture;
 
     public float range0;
@@ -65,6 +66,8 @@ public class CutParameters
 [ExecuteInEditMode]
 public class CutObject : MonoBehaviour
 {
+    public static float CutObjectAlpha = 0.2f;
+
     public int LastNodeFocusId = -1;
     public static int UniqueId;
     
@@ -134,7 +137,7 @@ public class CutObject : MonoBehaviour
 
     public void InitCutParameters()
     {
-        var ingredientsCount = SceneManager.Instance.NumAllIngredients;
+        var ingredientsCount = SceneManager.Get.NumAllIngredients;
         IngredientCutParameters.Clear();
 
         for (int i = 0; i < ingredientsCount; i++)
@@ -144,6 +147,7 @@ public class CutObject : MonoBehaviour
                 {
                     Id = i,
                     IsFocus = false,
+                    IsHighlighted = false,
                     Aperture = 0.0f,
                     range0 = 0.0f,
                     range1 = 0.0f,
@@ -411,6 +415,8 @@ public class CutObject : MonoBehaviour
 	        previousHiddenValue = Hidden;
             SetHidden(Hidden);
 	    }
+
+        GetComponent<MeshRenderer>().sharedMaterial.SetFloat("_CutObjectAlpha", CutObjectAlpha);
     }
 
     void Awake()
@@ -424,24 +430,25 @@ public class CutObject : MonoBehaviour
         InitCutParameters();
 
         // Register this object in the cut object cache
-        if (!SceneManager.Instance.CutObjects.Contains(this))
+        if (!SceneManager.Get.CutObjects.Contains(this))
         {
-            SceneManager.Instance.CutObjects.Add(this);
+            SceneManager.Get.CutObjects.Add(this);
         }
 
         SetMesh();
+        
     }
 
     void OnDisable()
     {
         // De-register this object in the cut object cache
-        if (SceneManager.CheckInstance() && SceneManager.Instance.CutObjects.Contains(this))
+        if (SceneManager.CheckInstance() && SceneManager.Get.CutObjects.Contains(this))
         {
             if (CurrentLockState != LockState.Unlocked)
             {
-                SceneManager.Instance.ResetCutSnapshot = Id;
+                SceneManager.Get.ResetCutSnapshot = Id;
             }
-            SceneManager.Instance.CutObjects.Remove(this);
+            SceneManager.Get.CutObjects.Remove(this);
         }
     }
 

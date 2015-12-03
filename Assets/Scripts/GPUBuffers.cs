@@ -27,11 +27,13 @@ public class GPUBuffers : MonoBehaviour
 
     public ComputeBuffer LodInfo;
     public ComputeBuffer SphereBatches;
+    
+    public ComputeBuffer IngredientStates;
+    public ComputeBuffer IngredientMaskParams;
 
     // Protein buffers
     public ComputeBuffer ProteinRadii;
     public ComputeBuffer ProteinColors;
-    public ComputeBuffer IngredientMaskParams;
 
     public ComputeBuffer ProteinAtoms;
     public ComputeBuffer ProteinAtomCount;
@@ -119,8 +121,10 @@ public class GPUBuffers : MonoBehaviour
     public void InitBuffers ()
     {
         if (LodInfo == null) LodInfo = new ComputeBuffer(8, 16);
-        if (IngredientMaskParams == null) IngredientMaskParams = new ComputeBuffer(NumIngredientMax, 4);
         if (SphereBatches == null) SphereBatches = new ComputeBuffer(NumProteinSphereBatchesMax, 16, ComputeBufferType.Append);
+
+        if (IngredientStates == null) IngredientStates = new ComputeBuffer(NumIngredientMax, 4);
+        if (IngredientMaskParams == null) IngredientMaskParams = new ComputeBuffer(NumIngredientMax, 4);
 
         //*****//
         if (ProteinRadii == null) ProteinRadii = new ComputeBuffer(NumProteinMax, 4);
@@ -196,12 +200,14 @@ public class GPUBuffers : MonoBehaviour
 
         if (LodInfo != null) { LodInfo.Release(); LodInfo = null; }
         if (SphereBatches != null) { SphereBatches.Release(); SphereBatches = null; }
+        
+        if (IngredientStates != null) { IngredientStates.Release(); IngredientStates = null; }
+        if (IngredientMaskParams != null) { IngredientMaskParams.Release(); IngredientMaskParams = null; }
 
         //*****//
 
         if (ProteinRadii != null) { ProteinRadii.Release(); ProteinRadii = null; }
         if (ProteinColors != null) { ProteinColors.Release(); ProteinColors = null; }
-	    if (IngredientMaskParams != null) { IngredientMaskParams.Release(); IngredientMaskParams = null; }
         
         if (ProteinAtoms != null) { ProteinAtoms.Release(); ProteinAtoms = null; }
 	    if (ProteinAtomCount != null) { ProteinAtomCount.Release(); ProteinAtomCount = null; }

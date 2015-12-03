@@ -97,6 +97,11 @@ public class TransformHandle : MonoBehaviour
         _enabled = false;
     }
 
+    public bool IsEnabled()
+    {
+        return _enabled;
+    }
+
     public void SetSelectionState(HandleSelectionState state)
     {
         _state = state;
@@ -427,6 +432,23 @@ public class TransformHandle : MonoBehaviour
 
         _handleSize = MyHandleUtility.GetHandleSize(transform.position);
 
+        if (GetComponent<MeshRenderer>() && GetComponent<MeshRenderer>().enabled)
+        {
+            MyHandleUtility.DrawWireMesh(GetComponent<MeshFilter>().sharedMesh, transform, new Color(0.5f, 0.8f, 0.5f));
+        }
+        else if(GetComponent<SphereCollider>() && GetComponent<SphereCollider>().enabled)
+        {
+            Color color = new Color(0.5f, 0.8f, 0.5f);
+            var sphereCollider = GetComponent<SphereCollider>();
+
+            Vector3 lossyScale = sphereCollider.transform.lossyScale;
+            float num1 = Mathf.Max(Mathf.Max(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.y)), Mathf.Abs(lossyScale.z));
+            float radius = Mathf.Max(Mathf.Abs(num1 * sphereCollider.radius), 1E-05f);
+            Vector3 position = sphereCollider.transform.TransformPoint(sphereCollider.center);
+            Quaternion rotation = sphereCollider.transform.rotation;
+            MyHandleUtility.DoRadiusHandle(rotation, position, radius, color);
+        }
+
         switch (_state)
         {
             case HandleSelectionState.Scale:
@@ -442,23 +464,6 @@ public class TransformHandle : MonoBehaviour
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
-        }
-        
-        if (GetComponent<SphereCollider>() && GetComponent<SphereCollider>().enabled)
-        {
-            Color color = new Color(0.5f, 0.8f, 0.5f);
-            var sphereCollider = GetComponent<SphereCollider>();
-
-            Vector3 lossyScale = sphereCollider.transform.lossyScale;
-            float num1 = Mathf.Max(Mathf.Max(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.y)), Mathf.Abs(lossyScale.z));
-            float radius = Mathf.Max(Mathf.Abs(num1 * sphereCollider.radius), 1E-05f);
-            Vector3 position = sphereCollider.transform.TransformPoint(sphereCollider.center);
-            Quaternion rotation = sphereCollider.transform.rotation;
-            MyHandleUtility.DoRadiusHandle(rotation, position, radius, color);
-        }
-        else if(GetComponent<MeshFilter>())
-        {
-            MyHandleUtility.DrawWireMesh(GetComponent<MeshFilter>().sharedMesh, transform, new Color(0.5f, 0.8f, 0.5f));
         }
     }
 

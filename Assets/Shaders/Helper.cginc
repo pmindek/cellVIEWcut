@@ -78,7 +78,7 @@ float3 ColorCorrection(float3 color)
 	float3 c = RGBtoHSL(color);		
 	
 	c.z = 0.5;
-	c.y = 0.5;
+	c.y = 0.65;
 
 	return 	HSLtoRGB(c);	
 }

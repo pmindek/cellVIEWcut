@@ -17,17 +17,17 @@ public class CustomWindow : EditorWindow
     [MenuItem("cellVIEW/Load cellPACK results")]
     public static void LoadCellPackResults()
     {
-        SceneManager.Instance.ClearScene();
+        SceneManager.Get.ClearScene();
         CellPackLoader.LoadCellPackResults();
-        EditorUtility.SetDirty(SceneManager.Instance);
+        EditorUtility.SetDirty(SceneManager.Get);
     }
 
     // Add menu item named "My Window" to the Window menu
     [MenuItem("cellVIEW/Clear scene")]
     public static void ClearScene()
     {
-        SceneManager.Instance.ClearScene();
-        EditorUtility.SetDirty(SceneManager.Instance);
+        SceneManager.Get.ClearScene();
+        EditorUtility.SetDirty(SceneManager.Get);
     }
 
     // Add menu item named "My Window" to the Window menu
@@ -168,7 +168,7 @@ public class CustomWindow : EditorWindow
                         PersistantSettings.Instance.FirstLevelOffset = EditorGUILayout.FloatField("First Level Being Range", PersistantSettings.Instance.FirstLevelOffset);
 
                         EditorGUI.indentLevel++;
-                        for (int i = 0; i <= SceneManager.Instance.NumLodLevels; i++)
+                        for (int i = 0; i <= SceneManager.Get.NumLodLevels; i++)
                         {
                             EditorGUILayout.LabelField("Level " + i, EditorStyles.boldLabel);
                             EditorGUI.indentLevel++;
