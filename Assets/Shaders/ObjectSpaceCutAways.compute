@@ -45,12 +45,7 @@ uniform RWStructuredBuffer<HistStruct> _Histograms;
 uniform float _Scale;
 uniform	int _NumInstances;
 uniform	int _NumIngredientTypes;
-uniform	StructuredBuffer<float> _ProteinRadii;	
-uniform	RWStructuredBuffer<float4> _ProteinInstanceInfo;
-uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
-uniform StructuredBuffer<int> _ProteinInstanceOcclusionFlags;
-uniform StructuredBuffer<int> _ProteinInstanceVisibilityFlags;
-uniform RWStructuredBuffer<int> _ProteinInstanceCullFlags;
+
 
 uniform float3 _CameraForward;
 
@@ -160,7 +155,7 @@ float d(float3 sphere, int type, float3 position, float4 rotation, float3 scale)
 
 float CutAwayTest(float4 sphere, int proteinType, int id)
 {
-	_ProteinInstanceInfo[id.x].z = 1.0;
+	//_ProteinInstanceInfo[id.x].z = 1.0;
 
     bool cut = false;
     for (int i = 0; i < _NumCutObjects; i++)
@@ -241,42 +236,49 @@ float CutAwayTest(float4 sphere, int proteinType, int id)
 			//	cut = true;
 			//}
 
+//if (abs(distance) < 20.0 && distance >= 0.0 &&
+//						(	_ProteinInstanceInfo[id.x].x < 31 ||
+//							(info.info.x == 1 && scale.x > 40.0) ||
+//							(_ProteinInstanceInfo[id.x].x > 36 && _ProteinInstanceInfo[id.x].x < 45)
+//						)
+//				)
+//			{
+//				float shading = 0.0;
 
+//				float3 no;
 
-if (abs(distance) < 20.0 && distance >= 0.0 &&
-						(	_ProteinInstanceInfo[id.x].x < 31 ||
-							(info.info.x == 1 && scale.x > 40.0) ||
-							(_ProteinInstanceInfo[id.x].x > 36 && _ProteinInstanceInfo[id.x].x < 45)
-						)
-				)
-			{
-				float shading = 0.0;
+//				float e = 0.1;
 
-				float3 no;
+//				no.x = d(sphere.xyz + float3(e,0.0,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(e,0.0,0.0), info.info.x, position, rotation, scale);
+//				no.y = d(sphere.xyz + float3(0.0,e,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,e,0.0), info.info.x, position, rotation, scale);
+//				no.z = d(sphere.xyz + float3(0.0,0.0,e), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,0.0,e), info.info.x, position, rotation, scale);
 
-				float e = 0.1;
+//				no=normalize(no);
 
-				no.x = d(sphere.xyz + float3(e,0.0,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(e,0.0,0.0), info.info.x, position, rotation, scale);
-				no.y = d(sphere.xyz + float3(0.0,e,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,e,0.0), info.info.x, position, rotation, scale);
-				no.z = d(sphere.xyz + float3(0.0,0.0,e), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,0.0,e), info.info.x, position, rotation, scale);
-
-				no=normalize(no);
-
-				float3 light = normalize(_CameraForward); //float3(0.0, 0.0, 1.0);
+//				float3 light = normalize(_CameraForward); //float3(0.0, 0.0, 1.0);
 		
-				float3 halfv=normalize(normalize(_CameraForward)+light);
-				//float ndotl=max(dot(no,halfv),0.0);
-				float ndotl=abs(dot(no,halfv));
+//				float3 halfv=normalize(normalize(_CameraForward)+light);
+//				//float ndotl=max(dot(no,halfv),0.0);
+//				float ndotl=abs(dot(no,halfv));
 			
-				shading = max(abs(ndotl),0.5);
+//				shading = max(abs(ndotl),0.5);
 
-				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
-			}
+//				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
+//			}
         }    
     }
 
     return cut;
 }
+
+
+uniform	StructuredBuffer<float> _ProteinRadii;	
+uniform	RWStructuredBuffer<float4> _ProteinInstanceInfo;
+uniform	StructuredBuffer<float4> _ProteinInstancePositions;	
+uniform StructuredBuffer<int> _ProteinInstanceVisibilityFlags;
+uniform RWStructuredBuffer<int> _ProteinInstanceCullFlags;
+
+//uniform StructuredBuffer<int> _ProteinInstanceOcclusionFlags;
 
 [numthreads(64,1,1)]
 void ComputeObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
@@ -311,6 +313,7 @@ void ComputeObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
 	
 uniform StructuredBuffer<float4> _LipidInstanceInfo;	
 uniform StructuredBuffer<float4> _LipidInstancePositions;
+uniform StructuredBuffer<int> _LipidInstanceVisibilityFlags;
 uniform RWStructuredBuffer<int> _LipidInstanceCullFlags;	
 
 [numthreads(64,1,1)]
@@ -333,9 +336,9 @@ void ComputeLipidObjectSpaceCutAways (uint3 id : SV_DispatchThreadID)
 		InterlockedAdd(_Histograms[addWhere].cutaway, 1);
 	}	
 
-	//int isVisible = _ProteinInstanceVisibilityFlags[id.x];
-	//if(isVisible)
-	//{
-	//	InterlockedAdd(_Histograms[addWhere].visible, 1);
-	//}
+	int isVisible = _LipidInstanceVisibilityFlags[id.x];
+	if(isVisible)
+	{
+		InterlockedAdd(_Histograms[addWhere].visible, 1);
+	}
 }

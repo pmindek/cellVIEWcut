@@ -59,7 +59,9 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
     {
         IsFolded = value;
         SetChildrenVisibility(!value);
+        ViewController.OnNodeFoldClick(this);
         ViewController.UpdateLayout();
+
     }
 
     public void SetFoldedState(bool value)
@@ -261,7 +263,7 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
     {
         foreach (var child in GetAllLeafChildren())
         {
-            if (!child.RangeFieldItem.Toggle.isOn) return false;
+            if (!child.RangeFieldItem.Toggle.GetState()) return false;
         }
 
         return true;
@@ -271,7 +273,7 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler
     {
         foreach (var child in GetAllLeafChildren())
         {
-            if (child.RangeFieldItem.Toggle.isOn) return true;
+            if (child.RangeFieldItem.Toggle.GetState()) return true;
         }
 
         return false;

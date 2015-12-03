@@ -6,9 +6,11 @@ using System.Collections.Generic;
 public class RangeFieldItem : MonoBehaviour, IItemInterface
 {
     public Text TextUI;
-    public LockToggle LockToggle;
-    public CustomRangeSlider CustomRangeSliderUi;
     public CustomToggle Toggle;
+    public GameObject VisibilityToggle;
+    public LockToggle LockToggle;
+    public ThreeStateToggle ThreeStateToggle;
+    public CustomRangeSlider CustomRangeSliderUi;
 
     /// <summary>
     /// Parameters = new object[]{ string DisplayText }   OR
@@ -24,12 +26,19 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
     public void Start()
     {
         baseItem = transform.parent.GetComponent<BaseItem>();
-        Toggle.isOn = false;
-        LockToggle.gameObject.SetActive(false);
+        //Toggle.isOn = false;
+        //LockToggle.gameObject.SetActive(false);
+
         LockToggle.LockToggleEvent += OnLockToggleClick;
         Toggle.CustomToggleClickEvent += OnCustomToggleClick;
+        ThreeStateToggle.ThreeStateToggleClickEvent += OnThreeStateToggleClick;
     }
-    
+
+    public List<float> GetRangeValues()
+    {
+        return CustomRangeSliderUi.rangeValues;
+    }
+
     public void SetRangeValues(List<float> rangeValues)
     {
         /*CustomRangeSliderUi.rangeValues.Clear();
@@ -44,21 +53,23 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
             CustomRangeSliderUi.rangeValues[2] = 1.0f - CustomRangeSliderUi.rangeValues[0] - CustomRangeSliderUi.rangeValues[1];
     }
 
-    public void SetFakeRangeValues(List<float> fakeRangeValues)
-    {
-        /*CustomRangeSliderUi.rangeValues.Clear();
-        CustomRangeSliderUi.rangeValues.AddRange(rangeValues);*/
-        for (int i = 0; i < fakeRangeValues.Count; i++)
-        {
-            if (CustomRangeSliderUi.fakeRangeValues.Count > i)
-                CustomRangeSliderUi.fakeRangeValues[i] = fakeRangeValues[i];
-        }
+    //public void SetFakeRangeValues(List<float> fakeRangeValues)
+    //{
+    //    /*CustomRangeSliderUi.rangeValues.Clear();
+    //    CustomRangeSliderUi.rangeValues.AddRange(rangeValues);*/
+    //    for (int i = 0; i < fakeRangeValues.Count; i++)
+    //    {
+    //        if (CustomRangeSliderUi.fakeRangeValues.Count > i)
+    //            CustomRangeSliderUi.fakeRangeValues[i] = fakeRangeValues[i];
+    //    }
 
-        if (CustomRangeSliderUi.fakeRangeValues.Count >= 3)
-            CustomRangeSliderUi.fakeRangeValues[2] = 1.0f - CustomRangeSliderUi.fakeRangeValues[0] - CustomRangeSliderUi.fakeRangeValues[1];
+    //    if (CustomRangeSliderUi.fakeRangeValues.Count >= 3)
+    //        CustomRangeSliderUi.fakeRangeValues[2] = 1.0f - CustomRangeSliderUi.fakeRangeValues[0] - CustomRangeSliderUi.fakeRangeValues[1];
 
-        CustomRangeSliderUi.useFakeRangeValues = true;
-    }
+    //    CustomRangeSliderUi.useFakeRangeValues = true;
+    //}
+
+    //******* Event Callbacks *********//
 
     public void OnLockToggleClick(bool value)
     {
@@ -70,9 +81,9 @@ public class RangeFieldItem : MonoBehaviour, IItemInterface
         baseItem.ViewController.OnFocusToggleClick(baseItem);
     }
 
-    public List<float> GetRangeValues()
+    public void OnThreeStateToggleClick(ThreeStateToggleState value)
     {
-        return CustomRangeSliderUi.rangeValues;
+        baseItem.ViewController.OnThreeStateToggleClick(baseItem);
     }
 
     public object[] Parameters

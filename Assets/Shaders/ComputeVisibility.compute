@@ -16,11 +16,15 @@ void ClearVisibilityFlags(uint3 id : SV_DispatchThreadID)
     _FlagBuffer[id.x] = 0;
 }
 
+RWStructuredBuffer<int> _ProteinInstanceVisibilityFlags;
+RWStructuredBuffer<int> _LipidInstanceVisibilityFlags;
+
 [numthreads(8, 8, 1)]
 void ComputeVisibility(uint3 id : SV_DispatchThreadID)
 {
     int idx = _ItemBuffer[id.xy];
-    if (idx >= 0) _FlagBuffer[idx] = 1;
+    if (idx >= 0 && idx < 100000) _ProteinInstanceVisibilityFlags[idx] = 1;
+    if (idx >= 0 && idx >= 100000) _LipidInstanceVisibilityFlags[idx-100000] = 1;
 }
 
 //histograms
@@ -60,6 +64,7 @@ struct CutInfoStruct
 };
 
 int _CutObjectId;
+int _CutObjectIndex;
 int _NumIngredients;
 int _ConsumeRestoreState;
 
@@ -75,7 +80,7 @@ void DiscardOccludingProteinInstances(uint3 id : SV_DispatchThreadID)
 {	
 	float4 info = _ProteinInstanceInfo[id.x];
 	//float cullProbability = _IngredientMaskParams[info.x];
-	float cullProbability = _CutInfo[info.x + _CutObjectId * _NumIngredients].info.z;
+	float cullProbability = _CutInfo[info.x + _CutObjectIndex * _NumIngredients].info.z;
 
 	if(_ConsumeRestoreState == 2 && info.w == _CutObjectId)
 	{
@@ -120,7 +125,7 @@ RWStructuredBuffer<int> _LipidInstanceOcclusionFlags;
 void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
 {	
 	float4 info = _LipidInstanceInfo[id.x];
-	float cullProbability = _CutInfo[info.x + _CutObjectId * _NumIngredients].info.z;
+	float cullProbability = _CutInfo[info.x + _CutObjectIndex * _NumIngredients].info.z;
 		
 	if(_ConsumeRestoreState == 2 && info.w == _CutObjectId)
 	{

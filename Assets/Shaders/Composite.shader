@@ -123,7 +123,8 @@
 					if(id >= 100000)
 					{		
 						float4 lipidInfo = _LipidInstanceInfo[id - 100000];		
-						if(lipidInfo.x > 43) color = float4(1,1,1,1);
+						if(lipidInfo.x > 42) color = float4(1,1,1,1);
+						if(lipidInfo.x > 42) color = float4(1,1,1,1);
 						else color = float4(0,1,1,1);
 						//color = float4(0,1,1,1);
 					}

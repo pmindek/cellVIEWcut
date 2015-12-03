@@ -101,6 +101,12 @@ public class CutObjectUIController : MonoBehaviour
 
     // Set UI values
 
+    public void HideOcclusionUIFields(bool value)
+    {
+        ApertureSlider.transform.parent.gameObject.SetActive(!value);
+        OcclusionSlider.transform.parent.gameObject.SetActive(!value);
+    }
+
     public void SetInvertToggleValue(bool value)
     {
         InvertToggle.isOn = value;

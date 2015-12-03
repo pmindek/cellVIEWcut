@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class LockToggle : MonoBehaviour, IPointerClickHandler
 {
-    public bool Locked = false;
+    private bool Locked = false;
 
     public Image LockedImage;
     public Image OpenImage;
@@ -16,7 +16,7 @@ public class LockToggle : MonoBehaviour, IPointerClickHandler
     // Use this for initialization
     void Start ()
 	{
-	    UpdateSprite();
+	    //UpdateSprite();
 	}
 	
 	// Update is called once per frame
@@ -24,6 +24,11 @@ public class LockToggle : MonoBehaviour, IPointerClickHandler
     {
 	
 	}
+
+    public bool GetState()
+    {
+        return Locked;
+    }
 
     public void SetState(bool value)
     {

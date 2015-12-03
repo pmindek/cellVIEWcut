@@ -54,6 +54,7 @@ public class GPUBuffers : MonoBehaviour
     public ComputeBuffer LipidInstancePositions;
     public ComputeBuffer LipidInstanceCullFlags;
     public ComputeBuffer LipidInstanceOcclusionFlags;
+    public ComputeBuffer LipidInstanceVisibilityFlags;
 
     // Curve ingredients buffers
     public ComputeBuffer CurveIngredientsInfo;
@@ -147,6 +148,7 @@ public class GPUBuffers : MonoBehaviour
         if (LipidInstancePositions == null) LipidInstancePositions = new ComputeBuffer(NumLipidInstancesMax, 16);
         if (LipidInstanceCullFlags == null) LipidInstanceCullFlags = new ComputeBuffer(NumLipidInstancesMax, 4);
         if (LipidInstanceOcclusionFlags == null) LipidInstanceOcclusionFlags = new ComputeBuffer(NumLipidInstancesMax, 4);
+        if (LipidInstanceVisibilityFlags == null) LipidInstanceVisibilityFlags = new ComputeBuffer(NumLipidInstancesMax, 4);
 
         //*****//
 
@@ -237,5 +239,6 @@ public class GPUBuffers : MonoBehaviour
         if (LipidInstancePositions != null) { LipidInstancePositions.Release(); LipidInstancePositions = null; }
         if (LipidInstanceCullFlags != null) { LipidInstanceCullFlags.Release(); LipidInstanceCullFlags = null; }
         if (LipidInstanceOcclusionFlags != null) { LipidInstanceOcclusionFlags.Release(); LipidInstanceOcclusionFlags = null; }
+        if (LipidInstanceVisibilityFlags != null) { LipidInstanceVisibilityFlags.Release(); LipidInstanceVisibilityFlags = null; }
     }
 }

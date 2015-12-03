@@ -237,9 +237,13 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffers.Instance.ProteinInstanceVisibilityFlags);
         ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumProteinInstances / 1), 1, 1);
 
+        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(0, "_FlagBuffer", GPUBuffers.Instance.LipidInstanceVisibilityFlags);
+        ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Instance.NumLipidInstances / 1), 1, 1);
+
         // Compute item visibility
         ComputeShaderManager.Instance.ComputeVisibilityCS.SetTexture(1, "_ItemBuffer", itemBuffer);
-        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(1, "_FlagBuffer", GPUBuffers.Instance.ProteinInstanceVisibilityFlags);
+        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(1, "_ProteinInstanceVisibilityFlags", GPUBuffers.Instance.ProteinInstanceVisibilityFlags);
+        ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(1, "_LipidInstanceVisibilityFlags", GPUBuffers.Instance.LipidInstanceVisibilityFlags);
         ComputeShaderManager.Instance.ComputeVisibilityCS.Dispatch(1, Mathf.CeilToInt(itemBuffer.width / 8.0f), Mathf.CeilToInt(itemBuffer.height / 8.0f), 1);
     }
 
@@ -338,6 +342,7 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstanceInfo", GPUBuffers.Instance.LipidInstanceInfo);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstancePositions", GPUBuffers.Instance.LipidInstancePositions);
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstanceCullFlags", GPUBuffers.Instance.LipidInstanceCullFlags);
+        ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.SetBuffer(1, "_LipidInstanceVisibilityFlags", GPUBuffers.Instance.LipidInstanceVisibilityFlags);
 
         ComputeShaderManager.Instance.ObjectSpaceCutAwaysCS.Dispatch(1, Mathf.CeilToInt(SceneManager.Instance.NumLipidInstances / 64.0f), 1, 1);
     }
@@ -668,7 +673,7 @@ public class SceneRenderer : MonoBehaviour
                 // Set the render target
                 Graphics.SetRenderTarget(tempBuffer);
 
-                OcclusionQueriesMaterial.SetInt("_CutObjectId", cutObjectId);
+                OcclusionQueriesMaterial.SetInt("_CutObjectIndex", cutObjectId);
                 OcclusionQueriesMaterial.SetInt("_NumIngredients", SceneManager.Instance.NumAllIngredients);
                 OcclusionQueriesMaterial.SetBuffer("_CutInfo", GPUBuffers.Instance.CutInfo);
                 OcclusionQueriesMaterial.SetTexture("_DistanceField", _floodFillTexturePong);
@@ -684,12 +689,12 @@ public class SceneRenderer : MonoBehaviour
                 Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
                 Graphics.ClearRandomWriteTargets();
 
-                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObjectId);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectIndex", cutObjectId);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_NumIngredients", SceneManager.Instance.NumAllIngredients);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_CutInfo", GPUBuffers.Instance.CutInfo);
 
                 //// Discard occluding instances according to value2
-                //ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_ConsumeRestoreState", internalState);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_Histograms", GPUBuffers.Instance.Histograms);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(3, "_HistogramsLookup", GPUBuffers.Instance.HistogramsLookup);
@@ -728,7 +733,7 @@ public class SceneRenderer : MonoBehaviour
                 // Set the render target
                 Graphics.SetRenderTarget(tempBuffer);
 
-                OcclusionQueriesMaterial.SetInt("_CutObjectId", cutObjectId);
+                OcclusionQueriesMaterial.SetInt("_CutObjectIndex", cutObjectId);
                 OcclusionQueriesMaterial.SetInt("_NumIngredients", SceneManager.Instance.NumAllIngredients);
                 OcclusionQueriesMaterial.SetBuffer("_CutInfo", GPUBuffers.Instance.CutInfo);
                 OcclusionQueriesMaterial.SetTexture("_DistanceField", _floodFillTexturePong);
@@ -743,12 +748,12 @@ public class SceneRenderer : MonoBehaviour
                 Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
                 Graphics.ClearRandomWriteTargets();
 
-                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObjectId);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectIndex", cutObjectId);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_NumIngredients", SceneManager.Instance.NumAllIngredients);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_CutInfo", GPUBuffers.Instance.CutInfo);
 
                 //// Discard occluding instances according to value2
-                //ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
+                ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_CutObjectId", cutObject.Id);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetUniform("_ConsumeRestoreState", internalState);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_Histograms", GPUBuffers.Instance.Histograms);
                 ComputeShaderManager.Instance.ComputeVisibilityCS.SetBuffer(4, "_HistogramsLookup", GPUBuffers.Instance.HistogramsLookup);
@@ -878,7 +883,6 @@ public class SceneRenderer : MonoBehaviour
         {
             ComputeSphereBatches();
             DrawProteinSphereBatches(itemBuffer, depthBuffer);
-            ComputeVisibility(itemBuffer);
         }
 
         // Draw Lipids
@@ -897,7 +901,7 @@ public class SceneRenderer : MonoBehaviour
         //    Graphics.DrawProcedural(MeshTopology.Points, Mathf.Max(SceneManager.Instance.NumDnaSegments - 2, 0)); // Do not draw first and last segments
         //}
 
-        //ComputeVisibility(itemBuffer);
+        ComputeVisibility(itemBuffer);
         FetchHistogramValues();
 
         ///////*** Post processing ***/

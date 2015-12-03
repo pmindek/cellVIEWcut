@@ -65,6 +65,7 @@ public class CutParameters
 [ExecuteInEditMode]
 public class CutObject : MonoBehaviour
 {
+    public int LastNodeFocusId = -1;
     public static int UniqueId;
     
     public LockState CurrentLockState = LockState.Unlocked;

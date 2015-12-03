@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class CustomToggle : MonoBehaviour, IPointerClickHandler
 {
-    public bool isOn = false;
+    private bool isOn = false;
 
     public Image Background;
     public Image Checkmark;
@@ -16,13 +16,18 @@ public class CustomToggle : MonoBehaviour, IPointerClickHandler
     // Use this for initialization
     void Start()
     {
-        UpdateSprite();
+        //UpdateSprite();
     }
 
     // Update is called once per frame
     void Update()
     {
 
+    }
+
+    public bool GetState()
+    {
+        return isOn;
     }
 
     public void SetState(bool value)
