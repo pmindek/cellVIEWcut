@@ -8,6 +8,7 @@ struct CutInfoStruct
 {
 	float4 info;
 	float4 info2;
+	float4 info3;
 };
 
 //histograms
@@ -25,7 +26,6 @@ struct HistStruct
 	int pad2;
 };
 
-
 uniform int _NumCutObjects;
 uniform StructuredBuffer<CutInfoStruct> _CutInfos;
 uniform	StructuredBuffer<float4> _CutScales;
@@ -33,6 +33,8 @@ uniform	StructuredBuffer<float4> _CutPositions;
 uniform StructuredBuffer<float4> _CutRotations;
 uniform StructuredBuffer<int> _HistogramsLookup;
 uniform RWStructuredBuffer<HistStruct> _Histograms;
+
+uniform	StructuredBuffer<float4> _IngredientProperties;	
 
 //uniform StructuredBuffer<int> _ProteinCutFilters;
 //uniform StructuredBuffer<int> _HistogramProteinTypes;
@@ -45,57 +47,9 @@ uniform RWStructuredBuffer<HistStruct> _Histograms;
 uniform float _Scale;
 uniform	int _NumInstances;
 uniform	int _NumIngredientTypes;
-
-
 uniform float3 _CameraForward;
 
-/*float CutAwayTest(float4 sphere, int proteinType)
-{
-    bool cut = false;
-    for (int i = 0; i < _NumCutObjects; i++)
-    {
-        int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
-
-        if (proteinCutFilter == 1)
-        {
-            CutInfoStruct info = _CutInfos[proteinType * _NumCutObjects + i];
-            float3 position = _CutPositions[i].xyz;
-            float4 rotation = _CutRotations[i];
-            float3 scale = _CutScales[i].xyz;
-           
-            if (info.info.x == 0)  //plane
-            {
-                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
-                float4 plane = ComputePlane(normal, position);
-                bool test = SpherePlaneTest(plane, float4(sphere.xyz, 0));
-                if (test) return true;
-            }
-            else if (info.info.x == 1)  //sphere
-            {
-                bool test = SphereSphereTest(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
-                if (test) return true;
-            }
-            else if (info.info.x == 2)  //cube
-            {
-                bool test = SphereCubeTest(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
-                if (test) return true;
-            }
-        }
-    }
-
-    return cut;
-}*/
-
-//float rand_(in int id)
-//{
-//	float2 uv = normalize(float2(id, id * 3543543));
-
-//	uint2 uvi = uint2(id % noiseTextureW, id / noiseTextureH);
-
-//	//float2 noise = noiseTexture[uvi].x;
-//    float2 noise = frac(sin(dot(uv, float2(12.9898,78.233)*2.0)) * 43758.5453) * noiseTexture[uvi].xy;
-//    return abs(noise.x + noise.y) * 0.5;
-//}
+uniform int _WeightThreshold;
 
 bool adjustDistanceTest(in int id, in float parameter, in float distance, in float pSize, in float pFuzziness, in float pFuzzinessCurve)
 {
@@ -153,119 +107,94 @@ float d(float3 sphere, int type, float3 position, float4 rotation, float3 scale)
 	return distance;
 }
 
-float CutAwayTest(float4 sphere, int proteinType, int id)
+float CutAwayTest(float4 sphere, int ingredientType, int id)
 {
-	//_ProteinInstanceInfo[id.x].z = 1.0;
-
     bool cut = false;
     for (int i = 0; i < _NumCutObjects; i++)
     {
-        //int proteinCutFilter = _ProteinCutFilters[proteinType * _NumCutObjects + i];
-		//int histogramFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
-		//int proteinCutFilter = _HistogramProteinTypes[proteinType * _NumCutObjects + i];
+        CutInfoStruct info = _CutInfos[ingredientType + _NumIngredientTypes * i];
+        float3 position = _CutPositions[i].xyz;
+        float4 rotation = _CutRotations[i];
+		float3 scale = _CutScales[i].xyz;
 
-		/*if (proteinType != 3)
-			return true;*/
-		/*if (_ProteinCutFilters[proteinType * _NumCutObjects + i] != 1)
+		float distance = d(sphere.xyz, info.info.x, position, rotation, scale);
+					
+		//inverse
+		if (info.info.w == 1)
 		{
-			return true;
-		}*/
+			distance *= -1;
+		}
 
-        //if (proteinCutFilter == 1)
-        {
-            CutInfoStruct info = _CutInfos[proteinType + _NumIngredientTypes * i];
-            float3 position = _CutPositions[i].xyz;
-            float4 rotation = _CutRotations[i];
-			float3 scale = _CutScales[i].xyz;
+		bool test = distance <= 0.0;
 
-			float distance = d(sphere.xyz, info.info.x, position, rotation, scale);
+		//bool fuzzTest = rand(id) * 3.0 * info.info.y <= pow(abs(distance), info.info.z * 1.0);
+		//bool fuzzTest = rand(id) < info.info.y;
+		bool fuzzTest = true;
+		bool adjustTest = true;
+		bool adjustVisibilityTest = true;
+				
+		float adjustCut = -1.0 + info.info.y * 2.0;
+		float adjustOcl = -1.0 + info.info.z * 2.0;;
 
+		float pFuzziness = 1.0 - info.info2.x;
+		float pSize = info.info2.y;
+		float pFuzzinessCurve = info.info2.z;
+
+		//pFuzziness = 1.0;
+		//pSize = 1.0;
+		//pFuzzinessCurve = 1.0;
 			
-			//inverse
-			if (info.info.w == 1)
-			{
-				distance *= -1;
-			}
+		if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+		{
+			adjustTest = false;
+		}
+		if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !adjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+		{
+			test = true;
+		}		
 
-			bool test = distance <= 0.0;
-			//bool fuzzTest = rand(id) * 3.0 * info.info.y <= pow(abs(distance), info.info.z * 1.0);
-			//bool fuzzTest = rand(id) < info.info.y;
-			bool fuzzTest = true;
-			bool adjustTest = true;
-			bool adjustVisibilityTest = true;
+		int atomicWeight = _IngredientProperties[ingredientType].x;
+		if(atomicWeight < _WeightThreshold) test = true;
 
-			//if (histogramFilter == 1) //if this is uncommented, fuzzy filtering works only for the selected protein types (selected rather than checked)
-			{
-				float adjustCut = -1.0 + info.info.y * 2.0;
-				float adjustOcl = -1.0 + info.info.z * 2.0;;
+        if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
+			cut = cut | true;
 
-				float pFuzziness = 1.0 - info.info2.x;
-				float pSize = info.info2.y;
-				float pFuzzinessCurve = info.info2.z;
-
-				//pFuzziness = 1.0;
-				//pSize = 1.0;
-				//pFuzzinessCurve = 1.0;
-			
-				if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
-				{
-					adjustTest = false;
-				}
-				if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !adjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
-				{
-					test = true;
-				}
-
-
-				//if (_ProteinInstanceOcclusionFlags[id] != 0 && adjustOcl > 0 && /*pow(rand(id), 0.5) < adjustOcl*/ !adjustDistanceTest(id, adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
-				//{
-				//	adjustVisibilityTest = false;
-				//}
-				//if (_ProteinInstanceOcclusionFlags[id] != 0 && !test && adjustOcl < 0 && /*pow(rand(id), 0.5) < -adjustOcl*/ !adjustDistanceTest(id, -adjustOcl, distance, pSize, pFuzziness, pFuzzinessCurve))
-				//{
-				//	test = true;
-				//}
-
-			}
-
-            if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
-				cut = cut | true;
-
-			//if (_ProteinInstanceInfo[id].w == 1)
-			//{
-			//	cut = true;
-			//}
-
-//if (abs(distance) < 20.0 && distance >= 0.0 &&
-//						(	_ProteinInstanceInfo[id.x].x < 31 ||
-//							(info.info.x == 1 && scale.x > 40.0) ||
-//							(_ProteinInstanceInfo[id.x].x > 36 && _ProteinInstanceInfo[id.x].x < 45)
-//						)
-//				)
-//			{
-//				float shading = 0.0;
-
-//				float3 no;
-
-//				float e = 0.1;
-
-//				no.x = d(sphere.xyz + float3(e,0.0,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(e,0.0,0.0), info.info.x, position, rotation, scale);
-//				no.y = d(sphere.xyz + float3(0.0,e,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,e,0.0), info.info.x, position, rotation, scale);
-//				no.z = d(sphere.xyz + float3(0.0,0.0,e), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,0.0,e), info.info.x, position, rotation, scale);
-
-//				no=normalize(no);
-
-//				float3 light = normalize(_CameraForward); //float3(0.0, 0.0, 1.0);
 		
-//				float3 halfv=normalize(normalize(_CameraForward)+light);
-//				//float ndotl=max(dot(no,halfv),0.0);
-//				float ndotl=abs(dot(no,halfv));
-			
-//				shading = max(abs(ndotl),0.5);
 
-//				_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
-//			}
-        }    
+		//if (_ProteinInstanceInfo[id].w == 1)
+		//{
+		//	cut = true;
+		//}
+
+		//if (abs(distance) < 20.0 && distance >= 0.0 &&
+		//			(	_ProteinInstanceInfo[id.x].x < 31 ||
+		//				(info.info.x == 1 && scale.x > 40.0) ||
+		//				(_ProteinInstanceInfo[id.x].x > 36 && _ProteinInstanceInfo[id.x].x < 45)
+		//			)
+		//	)
+		//{
+		//	float shading = 0.0;
+
+		//	float3 no;
+
+		//	float e = 0.1;
+
+		//	no.x = d(sphere.xyz + float3(e,0.0,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(e,0.0,0.0), info.info.x, position, rotation, scale);
+		//	no.y = d(sphere.xyz + float3(0.0,e,0.0), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,e,0.0), info.info.x, position, rotation, scale);
+		//	no.z = d(sphere.xyz + float3(0.0,0.0,e), info.info.x, position, rotation, scale) - d(sphere.xyz - float3(0.0,0.0,e), info.info.x, position, rotation, scale);
+
+		//	no=normalize(no);
+
+		//	float3 light = normalize(_CameraForward); //float3(0.0, 0.0, 1.0);
+		
+		//	float3 halfv=normalize(normalize(_CameraForward)+light);
+		//	//float ndotl=max(dot(no,halfv),0.0);
+		//	float ndotl=abs(dot(no,halfv));
+			
+		//	shading = max(abs(ndotl),0.5);
+
+		//	_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
+		//}            
     }
 
     return cut;

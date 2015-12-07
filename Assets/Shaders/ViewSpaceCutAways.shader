@@ -10,6 +10,7 @@
 	{
 		float4 info;
 		float4 info2;
+		float4 info3;
 	};
 
 	float _Scale;
@@ -158,6 +159,8 @@
 
 	SubShader
 	{
+		// Protein MASK LEQUAL
+
 		Pass
 		{
 			ZWrite On
@@ -212,6 +215,8 @@
 			ENDCG
 		}
 
+		// Lipid MASK LEQUAL
+
 		Pass
 		{
 			ZWrite On
@@ -264,6 +269,65 @@
 
 			ENDCG
 		}
+
+		// Protein mask GEQUAL
+
+		Pass
+		{
+			ZWrite On
+			ZTest Gequal
+
+			// These stencil values will write 1 in the stencil channel for each instance drawn
+			Stencil
+			{
+				Ref 1
+				Comp always
+				Pass replace
+			}
+
+			CGPROGRAM
+
+			#include "UnityCG.cginc"
+
+			#pragma only_renderers d3d11
+			#pragma target 5.0				
+
+			#pragma vertex vs_protein			
+			#pragma geometry gs_sphere			
+			#pragma fragment fs_sphere
+
+			ENDCG
+		}
+
+		// Lipid mask GEQUAL
+
+		Pass
+		{
+			ZWrite On
+			ZTest Gequal
+
+			// These stencil values will write 1 in the stencil channel for each instance drawn
+			Stencil
+			{
+				Ref 1
+				Comp always
+				Pass replace
+			}
+
+			CGPROGRAM
+
+			#include "UnityCG.cginc"
+
+			#pragma only_renderers d3d11
+			#pragma target 5.0				
+
+			#pragma vertex vs_lipid			
+			#pragma geometry gs_sphere			
+			#pragma fragment fs_sphere
+
+			ENDCG
+		}
+
 	}
 	Fallback Off
 }

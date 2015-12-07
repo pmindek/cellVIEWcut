@@ -137,6 +137,9 @@ public class SelectionManager : MonoBehaviour
         }
     }
 
+    private CameraController controller;
+
+
     public void SetSelectedObject(int instanceID)
     {
         if (instanceID > 100000) return;
@@ -164,7 +167,12 @@ public class SelectionManager : MonoBehaviour
 
                     // Enable handle
                     SelectionGameObject.GetComponent<TransformHandle>().Enable();
-                    Camera.main.GetComponent<NavigateCamera>().TargetGameObject = SelectionGameObject;
+                    //Camera.main.GetComponent<NavigateCamera>().TargetGameObject = SelectionGameObject;
+                    if (controller == null)
+                    {
+                        controller = GameObject.FindObjectOfType<CameraController>();
+                    }
+                    controller.TargetTransform = SelectionGameObject.transform; 
 
                     if (_selectedTransformHandle)
                     {

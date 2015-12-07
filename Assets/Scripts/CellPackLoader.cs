@@ -205,7 +205,7 @@ public static class CellPackLoader
         {
             usedColors.Add(current_color, new List<int>());
             baseColor = new Color(1.0f, 107.0f / 255.0f, 66.0f / 255.0f);
-            AddRecipeIngredients(resultData["cytoplasme"]["ingredients"], baseColor, "cytoplasme");
+            AddRecipeIngredients(resultData["cytoplasme"]["ingredients"], baseColor, "root", "cytoplasme");
             current_color += 1;
         }
 
@@ -216,13 +216,13 @@ public static class CellPackLoader
             baseColor = new Color(148.0f / 255.0f, 66.0f / 255.0f, 255.0f / 255.0f);
             usedColors.Add(current_color, new List<int>());
 
-            AddRecipeIngredients(resultData["compartments"][i]["interior"]["ingredients"], baseColor, compartmentName, "interior");
+            AddRecipeIngredients(resultData["compartments"][i]["interior"]["ingredients"], baseColor, "root", compartmentName, "interior");
 
             current_color += 1;
             baseColor = new Color(173.0f / 255.0f, 255.0f / 255.0f, 66.0f / 255.0f);
             usedColors.Add(current_color, new List<int>());
 
-            AddRecipeIngredients(resultData["compartments"][i]["surface"]["ingredients"], baseColor, compartmentName, "surface");
+            AddRecipeIngredients(resultData["compartments"][i]["surface"]["ingredients"], baseColor, "root", compartmentName, "surface");
             current_color += 1;
         }
     }
@@ -377,6 +377,8 @@ public static class CellPackLoader
                 }
             }
         }
+
+        SceneManager.Get.AddIngredientProperties(atomSpheres.Count, instanceCount);
 
         Debug.Log("*****");
         Debug.Log("Added ingredient: " + path);

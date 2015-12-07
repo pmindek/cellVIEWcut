@@ -186,6 +186,228 @@
 			}
 			ENDCG
 		}
+
+
+		// Collect Shadows
+		Pass
+		{
+			Cull Off ZWrite Off ZTest Always
+
+			CGPROGRAM
+
+			#pragma target 5.0	
+			#pragma fragment frag
+			#pragma vertex vert_img
+						
+			#include "UnityCG.cginc"
+			#include "HLSLSupport.cginc"
+			#include "Poisson.cginc"
+			
+			sampler2D _MainTex;
+			sampler2D_float _DepthTexture; 
+			float4x4 _InverseView;
+			
+			sampler2D_float _ShadowMap;
+			float4x4 _ShadowCameraViewMatrix;
+			float4x4 _ShadowCameraViewProjMatrix;
+ 			
+			float _LightSize;  // 2.0
+			float _ShadowOffset;  // 0.25 
+			float _ShadowFactor; // 2
+			float _ShadowBias;
+
+			// Custom texture lookup functions from http://codeflow.org/entries/2013/feb/15/soft-shadow-mapping/
+			float texture2DCompare(sampler2D depths, float2 uv, float compare)
+			{
+				float depth = tex2D(depths, uv).r;
+
+				if(abs(depth-compare) < _ShadowBias) return 1;
+
+				return step(compare, depth);
+			}
+
+			float texture2DShadowLerp(sampler2D depths, float2 size, float2 uv, float compare)
+			{
+				float2 texelSize = float2(1.0,1.0)/size;
+				float2 f = frac(uv*size+0.5);
+				float2 centroidUV = floor(uv*size+0.5)/size;
+
+				float lb = texture2DCompare(depths, centroidUV+texelSize*float2(0.0, 0.0), compare);
+				float lt = texture2DCompare(depths, centroidUV+texelSize*float2(0.0, 1.0), compare);
+				float rb = texture2DCompare(depths, centroidUV+texelSize*float2(1.0, 0.0), compare);
+				float rt = texture2DCompare(depths, centroidUV+texelSize*float2(1.0, 1.0), compare);
+				float a = lerp(lb, lt, f.y);
+				float b = lerp(rb, rt, f.y);
+				float c = lerp(a, b, f.x);
+				return c;
+			}
+			
+			#define PCF_FILTER_STEP_COUNT 5
+			#define PCF_DIM (PCF_FILTER_STEP_COUNT * 2 + 1)
+			#define PCF_COUNT (PCF_DIM * PCF_DIM)
+
+            float PCF(sampler2D depths, float2 size, float2 uv, float compare) 
+			{
+                float result = 0.0;
+                for(int x=-PCF_FILTER_STEP_COUNT; x<=PCF_FILTER_STEP_COUNT; x++)
+				{
+                    for(int y=-PCF_FILTER_STEP_COUNT; y<=PCF_FILTER_STEP_COUNT; y++)
+					{
+                            float2 offset = float2(x,y)/size * _LightSize;
+                            result += texture2DShadowLerp(depths, size, uv + offset, compare);
+                    }
+                }
+                return result/PCF_COUNT;
+            }
+
+			//#define PCF_POISSON_COUNT 32
+			//#define PCF_POISSON Poisson32
+
+			//#define PCF_POISSON_COUNT 64
+			//#define PCF_POISSON Poisson64
+
+			//#define PCF_POISSON_COUNT 100
+			//#define PCF_POISSON Poisson100
+
+			#define PCF_POISSON_COUNT 128
+			#define PCF_POISSON Poisson128
+
+			#define ENABLE_SHADOWS 1
+
+            float PCF_Poisson(sampler2D depths, float2 size, float2 uv, float compare) 
+			{
+                float result = 0.0;
+                for (int i = 0; i < PCF_POISSON_COUNT; ++i)
+				{
+					float2 offset = PCF_POISSON[i] / size  * _LightSize;					
+					result += texture2DShadowLerp(depths, size, uv + offset, compare);
+				}	
+                return result/PCF_POISSON_COUNT;
+            }
+
+			fixed4 frag (v2f_img i) : SV_Target
+			{
+				float vz = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_DepthTexture, i.uv));
+				float2 p11_22 = float2(unity_CameraProjection._11, unity_CameraProjection._22);
+				float3 vpos = float3((i.uv * 2 - 1) / p11_22, -1) * vz;
+				float4 wpos = mul(_InverseView, float4(vpos, 1));
+
+				float shadow = 1.0;
+				half4 source = tex2D(_MainTex, i.uv);
+
+				#if ENABLE_SHADOWS == 1
+
+					//float eyePos = abs(mul(_ShadowCameraViewMatrix, float4(wpos.xyz, 1)).z) - 0.5;
+					float eyePos = abs(mul(_ShadowCameraViewMatrix, float4(wpos.xyz, 1)).z) - _ShadowBias;
+
+					float4 fragmentLightProjPos = mul(_ShadowCameraViewProjMatrix, float4(wpos.xyz, 1));
+					fragmentLightProjPos /= fragmentLightProjPos.w;
+															
+					float2 uv = fragmentLightProjPos.xy * 0.5 + 0.5;	
+					float z = fragmentLightProjPos.z;	
+
+					//shadowFactor = clamp(PCF(_ShadowMap, float2(1024,1024), uv, z - 0.000001) * 1, 0,1);
+					//shadow = PCF(_ShadowMap, float2(1024,1024), uv, eyePos);
+					shadow = PCF_Poisson(_ShadowMap, float2(1024,1024), uv, eyePos);
+
+				#endif	
+
+				return half4(source.xyz * min(_ShadowOffset + shadow * _ShadowFactor, 1), 1);	
+
+				//if(false)
+				//{
+				//	// Find the view position of the current fragment from the ligth point of view
+				//	float shadowCameraViewPos = abs(mul(_ShadowCameraViewMatrix, float4(wpos.xyz, 1)).z)- 0.5;
+
+				//	// Find the projected position of the current fragment from the ligth point of view
+				//	float4 shadowCameraProjPos = mul(_ShadowCameraViewProjMatrix, float4(wpos.xyz, 1));
+					
+				//	// Find the UV coordinate of the fragment in the texture map
+				//	float2 shadowMapTexCoord =	shadowCameraProjPos.xy /= shadowCameraProjPos.w;
+				//	shadowMapTexCoord.xy = shadowMapTexCoord.xy * 0.5 + 0.5;
+					
+				//	float 
+					
+				//	//shadowMapTexCoord.y = 1 - shadowMapTexCoord.y;
+
+				//	// Get the depth of the closest fragment to the light camera
+				//	float shadowMapBlockerViewPos = tex2D(_ShadowMap, shadowMapTexCoord.xy);		
+					
+				//	// Find shadow factor					
+				//	//shadowFactor = (shadowMapBlockerViewPos > shadowCameraViewPos ) ? 0.5 : 1.0;
+				//	shadowFactor = ( shadowMapBlockerViewPos <= shadowCameraViewPos ) ? 0.55 : 0.99;					
+
+				//	float sum = 0;
+
+				//	//float2 stepUV = float2(0.01, 0.01) / PCF_FILTER_STEP_COUNT;
+				//	//for (float x = -PCF_FILTER_STEP_COUNT; x <= PCF_FILTER_STEP_COUNT; ++x)
+				//	//{
+				//	//	for (float y = -PCF_FILTER_STEP_COUNT; y <= PCF_FILTER_STEP_COUNT; ++y)
+				//	//	{
+				//	//		float2 offset = float2(x, y) * stepUV;
+				//	//		float z = BiasedZ(z0, dz_duv, offset);
+				//	//		sum += g_shadowMap.SampleCmpLevelZero(PCF_Sampler, uv + offset, z);
+				//	//	}
+				//	//}
+
+				//	shadowFactor = sum / PCF_COUNT;
+				//}	
+			}
+			ENDCG
+		}
+
+		Pass 
+		{
+			ZTest Always
+
+            CGPROGRAM
+            #pragma vertex vert_img
+            #pragma fragment frag	
+					
+			#pragma target 5.0	
+			#pragma only_renderers d3d11	
+
+            #include "UnityCG.cginc"
+			#include "Helper.cginc"	
+
+			sampler2D _MainTex;
+			Texture2D<int> _IdTexture; 
+			StructuredBuffer<int> _ProteinInstanceShadowFlags;	
+			
+			StructuredBuffer<float4> _ProteinInstanceInfo;	
+			StructuredBuffer<int> _ProteinAtomCount;		
+
+            void frag(v2f_img i, out float4 color : COLOR0) 
+			{   
+				int2 uv = i.uv * _ScreenParams.xy; 
+				int id = _IdTexture[uv];
+			
+				if(id >= 0)
+				{	
+					float4 info = _ProteinInstanceInfo[id];
+					int atomCount = _ProteinAtomCount[info.x];
+
+					half4 source = tex2D(_MainTex, i.uv);				
+					int shadowFlag = _ProteinInstanceShadowFlags[id];	
+					
+					int threshold = max(atomCount / 500, 1);
+
+					//float acc = clamp(shadowFlag * 10 / atomCount, 0, 0.5);
+					float acc = clamp(shadowFlag * 1000 / atomCount , 0, 0.15);
+					//acc = 0;
+											
+					color = source * (0.8 + acc);	
+					//color = atomCount > 4000 ? source * 0.5 : source;	
+					//color = source;	
+				}
+				else
+				{
+					discard;
+				}
+            }
+            
+            ENDCG
+        }
 	}	
 
 	FallBack "Diffuse"

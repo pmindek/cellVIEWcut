@@ -20,6 +20,7 @@ struct CutInfoStruct
 {
     public Vector4 info;
     public Vector4 info2;
+    public Vector4 info3;
 }
 
 public struct HistStruct
@@ -85,12 +86,14 @@ public class SceneManager : MonoBehaviour
     // Scene data
     public List<string> SceneHierarchy = new List<string>();
 
+    public List<Vector4> IngredientProperties = new List<Vector4>();
+
     // Lipid data 
     public List<string> LipidIngredientNames = new List<string>();
     public List<Vector4> LipidAtomPositions = new List<Vector4>();
     public List<Vector4> LipidInstanceInfos = new List<Vector4>();
     public List<Vector4> LipidInstancePositions = new List<Vector4>();
-
+    
     // Protein ingredients data
     public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
     public List<Vector4> ProteinInstancePositions = new List<Vector4>();
@@ -271,6 +274,11 @@ public class SceneManager : MonoBehaviour
 
     //*** Protein Ingredients ****//
 
+    public void AddIngredientProperties(int atomCount, int instanceCount)
+    {
+        IngredientProperties.Add(new Vector4(atomCount, instanceCount));
+    }
+
     public void AddProteinIngredient(string path, Bounds bounds, List<Vector4> atomSpheres, Color color,
         List<float> clusterLevels = null,
         bool nolod = false)
@@ -288,7 +296,9 @@ public class SceneManager : MonoBehaviour
             color = MyUtility.GetRandomColor();
         }
 
+        
         AddIngredientToHierarchy(path);
+
 
         ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
@@ -432,8 +442,8 @@ public class SceneManager : MonoBehaviour
 
     public void AddMembrane(string filePath, Vector3 position, Quaternion rotation)
     {
-        var pathInner = "membrane.inner_membrane";
-        var pathOuter = "membrane.outer_membrane";
+        var pathInner = "root.membrane.inner_membrane";
+        var pathOuter = "root.membrane.outer_membrane";
 
         AddIngredientToHierarchy(pathInner);
         AddIngredientToHierarchy(pathOuter);
@@ -546,7 +556,8 @@ public class SceneManager : MonoBehaviour
                 CutInfos.Add(new CutInfoStruct
                 {
                     info = new Vector4((float) cut.CutType, cutParam.value1, cutParam.value2, cut.Inverse ? 1.0f : 0.0f),
-                    info2 = new Vector4(cutParam.fuzziness, cutParam.fuzzinessDistance, cutParam.fuzzinessCurve, cutParam.Aperture)
+                    info2 = new Vector4(cutParam.fuzziness, cutParam.fuzzinessDistance, cutParam.fuzzinessCurve, cutParam.Aperture),
+                    info3 = new Vector4(0,0,0,0)
                 });
             }
         }
@@ -665,7 +676,11 @@ public class SceneManager : MonoBehaviour
 
         CheckBufferSizes();
         GPUBuffers.Instance.InitBuffers();
-        
+        GPUBuffers.Instance.ArgBuffer.SetData(new[] { 0, 1, 0, 0 });
+
+
+        GPUBuffers.Instance.IngredientProperties.SetData(IngredientProperties.ToArray());
+
         // Upload histogram info
         GPUBuffers.Instance.Histograms.SetData(HistogramData.ToArray());
         GPUBuffers.Instance.HistogramsLookup.SetData(ProteinToNodeLookup.ToArray());
@@ -770,4 +785,6 @@ public class SceneManager : MonoBehaviour
     }
     
     #endregion
+
+    
 }

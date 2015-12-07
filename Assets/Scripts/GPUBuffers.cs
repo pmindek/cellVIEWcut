@@ -25,10 +25,12 @@ public class GPUBuffers : MonoBehaviour
     public static int NumCurveIngredientAtomsMax = 1000;
     public static int NumCurveControlPointsMax = 1000000;
 
+    public ComputeBuffer ArgBuffer;
     public ComputeBuffer LodInfo;
     public ComputeBuffer SphereBatches;
     
     public ComputeBuffer IngredientStates;
+    public ComputeBuffer IngredientProperties;
     public ComputeBuffer IngredientMaskParams;
 
     // Protein buffers
@@ -120,11 +122,15 @@ public class GPUBuffers : MonoBehaviour
     
     public void InitBuffers ()
     {
+        if (ArgBuffer == null) ArgBuffer = new ComputeBuffer(4, sizeof(int), ComputeBufferType.DrawIndirect);
+
+
         if (LodInfo == null) LodInfo = new ComputeBuffer(8, 16);
         if (SphereBatches == null) SphereBatches = new ComputeBuffer(NumProteinSphereBatchesMax, 16, ComputeBufferType.Append);
 
         if (IngredientStates == null) IngredientStates = new ComputeBuffer(NumIngredientMax, 4);
         if (IngredientMaskParams == null) IngredientMaskParams = new ComputeBuffer(NumIngredientMax, 4);
+        if (IngredientProperties == null) IngredientProperties = new ComputeBuffer(NumIngredientMax, 16);
 
         //*****//
         if (ProteinRadii == null) ProteinRadii = new ComputeBuffer(NumProteinMax, 4);
@@ -170,7 +176,7 @@ public class GPUBuffers : MonoBehaviour
 
         //*****//
         
-        if (CutInfo == null) CutInfo = new ComputeBuffer(NumCutsMax * NumProteinMax, 32);
+        if (CutInfo == null) CutInfo = new ComputeBuffer(NumCutsMax * NumProteinMax, 48);
         if (CutScales == null) CutScales = new ComputeBuffer(NumCutsMax, 16);
         if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
         if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);
@@ -185,6 +191,8 @@ public class GPUBuffers : MonoBehaviour
 	// Flush buffers on exit
 	void ReleaseBuffers ()
     {
+        if (ArgBuffer != null) { ArgBuffer.Release(); ArgBuffer = null; }
+
         // Cutaways
         if (CutInfo != null) { CutInfo.Release(); CutInfo = null; }
         if (CutScales != null) { CutScales.Release(); CutScales = null; }
@@ -203,6 +211,7 @@ public class GPUBuffers : MonoBehaviour
         
         if (IngredientStates != null) { IngredientStates.Release(); IngredientStates = null; }
         if (IngredientMaskParams != null) { IngredientMaskParams.Release(); IngredientMaskParams = null; }
+        if (IngredientProperties != null) { IngredientProperties.Release(); IngredientProperties = null; }
 
         //*****//
 

@@ -6,6 +6,7 @@
 #pragma kernel ClearHistograms
 #pragma kernel DiscardOccludingProteinInstances
 #pragma kernel DiscardOccludingLipidInstances
+#pragma kernel ComputeShadows
 
 Texture2D<int> _ItemBuffer;
 RWStructuredBuffer<int> _FlagBuffer;
@@ -61,6 +62,7 @@ struct CutInfoStruct
 {
 	float4 info;
 	float4 info2;
+	float4 info3;
 };
 
 int _CutObjectId;
@@ -176,4 +178,13 @@ void DiscardOccludingLipidInstances(uint3 id : SV_DispatchThreadID)
 	//	}
 	//	//_ProteinInstanceOcclusionFlags[id.x] = 0;
 	//}     
+}
+
+Texture2D<int> _ItemBuffer2;
+
+[numthreads(8, 8, 1)]
+void ComputeShadows(uint3 id : SV_DispatchThreadID)
+{
+    int idx = (_ItemBuffer2[id.xy]);
+	InterlockedAdd(_ProteinInstanceVisibilityFlags[idx], 1);
 }

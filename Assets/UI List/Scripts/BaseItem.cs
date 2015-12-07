@@ -72,6 +72,11 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         SetArrowState(IsFolded);
     }
 
+    public void OnEnable()
+    {
+        SetArrowState(IsFolded);
+    }
+
     public void Initialize(string name, string path, string type, object[] args, bool isFolded, TreeViewController controller, int id)
 	{
         Name = name;
@@ -166,7 +171,11 @@ public class BaseItem : MonoBehaviour, IPointerClickHandler, IPointerEnterHandle
         foreach (var child in Children)
         {
             child.gameObject.SetActive(value);
-            child.SetChildrenVisibility(value);
+
+            if (!child.IsFolded)
+            {
+                child.SetChildrenVisibility(value);
+            }
         }
     }
 

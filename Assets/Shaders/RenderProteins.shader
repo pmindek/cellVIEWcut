@@ -61,6 +61,7 @@ Shader "Custom/RenderProteins"
 		nointerpolation int id : INT0;				
 		nointerpolation float radius : FLOAT0;	
 		nointerpolation float3 color : FLOAT30;		
+		nointerpolation float3 eyePos : FLOAT31;		
 				
 		float2 uv: TEXCOORD0;	
 		centroid float4 pos : SV_Position;	
@@ -145,6 +146,7 @@ Shader "Custom/RenderProteins"
 		float4 offset = mul(UNITY_MATRIX_P, float4(input[0].radius, input[0].radius, 0, 0));
 
 		fs_input output;	
+		output.eyePos = abs(viewPos.z);
 		output.id = input[0].id;		
 		output.color = input[0].color;			
 		output.radius = input[0].radius;
@@ -187,6 +189,34 @@ Shader "Custom/RenderProteins"
 		id = input.id; 
 	}
 
+	//--------------------------------------------------------------------------------------
+	
+	//// Shadow map using depth buffer only
+	//void fs_shadow(fs_input input)
+	//{		
+	//	float lensqr = dot(input.uv, input.uv);   
+	//	if(lensqr > 1) discard;
+			
+	//	// Find normal
+	//	float3 normal = normalize(float3(input.uv, sqrt(1.0 - lensqr)));	
+	//}
+
+	// Shadow map using eye depth
+	void fs_shadow(fs_input input, out float eyeDepth : SV_TARGET0) //, out float depth : sv_depthgreaterequal)
+	{		
+		float lensqr = dot(input.uv, input.uv);   
+		if(lensqr > 1) discard;
+			
+		eyeDepth = input.eyePos;
+
+		//// Find normal
+		//float3 normal = normalize(float3(input.uv, sqrt(1.0 - lensqr)));		
+
+		//// Find depth
+		//float eyeDepth = LinearEyeDepth(input.pos.z) + input.radius * (1-normal.z);
+		//depth = 1 / (eyeDepth * _ZBufferParams.z) - _ZBufferParams.w / _ZBufferParams.z;
+	}
+
 	ENDCG
 	
 	//--------------------------------------------------------------------------------------
@@ -210,6 +240,27 @@ Shader "Custom/RenderProteins"
 			#pragma domain ds_protein				
 			#pragma geometry gs_protein			
 			#pragma fragment fs_protein
+						
+			ENDCG
+		}
+		
+		Pass 
+	    {
+			ZTest Lequal
+			ZWrite On
+
+	    	CGPROGRAM			
+	    		
+			#include "UnityCG.cginc"
+			
+			#pragma only_renderers d3d11
+			#pragma target 5.0				
+			
+			#pragma vertex vs_protein
+			#pragma hull hs_protein
+			#pragma domain ds_protein				
+			#pragma geometry gs_protein			
+			#pragma fragment fs_shadow
 						
 			ENDCG
 		}	
