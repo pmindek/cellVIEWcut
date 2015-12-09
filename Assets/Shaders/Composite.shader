@@ -408,6 +408,60 @@
             
             ENDCG
         }
+
+		Pass
+		{
+			ZWrite On
+			ZTest Always
+
+
+			CGPROGRAM
+#pragma target 5.0	
+			#pragma fragment frag
+			#pragma vertex vert_img
+
+			#include "UnityCG.cginc"
+
+			sampler2D_float _DepthTexture;
+
+			void frag(v2f_img i,  out float4 color : COLOR, out float depth : DEPTH)
+			{
+				color = float4(1,1,1,1);
+				depth = tex2D(_DepthTexture, i.uv);
+			}
+			ENDCG
+		}
+
+		Pass
+		{
+			ZWrite On
+			ZTest Always
+			Blend SrcAlpha OneMinusSrcAlpha 
+
+			CGPROGRAM
+			#pragma target 5.0	
+			#pragma fragment frag
+			#pragma vertex vert_img
+
+			
+
+			#include "UnityCG.cginc"
+
+			sampler2D _MainTex;
+
+			void frag(v2f_img i,  out float4 color : COLOR) //, out float depth : DEPTH)
+			{				
+				float4 edgeColor = tex2D(_MainTex, i.uv);
+
+				if(edgeColor.x != 1  && edgeColor.y != 1 && edgeColor.z != 1)
+					color = float4(edgeColor.xyz,0.25);
+
+
+
+				else discard;
+			}
+			ENDCG
+		}
 	}	
 
 	FallBack "Diffuse"

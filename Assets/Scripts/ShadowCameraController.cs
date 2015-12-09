@@ -25,12 +25,12 @@ public class ShadowCameraController : MonoBehaviour
             {
                 AngleX = 0;
                 AngleY = 0;
-                OffsetZ = 0;
+                //OffsetZ = 0;
             }
 
             _angleX = CameraController._currentAngleX + AngleX;
             _angleY = CameraController._currentAngleY + AngleY;
-            _offsetZ = Mathf.Max(0, CameraController.GetRealDistance()) + OffsetZ;
+            //_offsetZ = Mathf.Max(0, CameraController.GetRealDistance()) + OffsetZ;
             TargetPosition = CameraController.TargetPosition;
 
             _previousFollowCamera = true;
@@ -41,19 +41,16 @@ public class ShadowCameraController : MonoBehaviour
             {
                 AngleX = _angleX;
                 AngleY = _angleY;
-                OffsetZ = _offsetZ;
+                //OffsetZ = _offsetZ;
                 TargetPosition = Vector3.zero;
             }
 
             _angleX = AngleX;
             _angleY = AngleY;
-            _offsetZ = OffsetZ;
-
-
             _previousFollowCamera = false;
         }
-        
 
+        _offsetZ = OffsetZ;
         //var distance = CameraController.Distance;
 
         //var lookAt = CameraController.TargetPosition;

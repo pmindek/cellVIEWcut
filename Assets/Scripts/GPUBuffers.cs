@@ -4,26 +4,73 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class GPUBuffers : MonoBehaviour
 {
-
     public static int NumIngredientMax = 100;
-    public static int NumSceneHierarchyNodes = 200;
+    public static void CheckNumIngredientMax(int value)
+    {
+        if (value >= NumIngredientMax) throw new Exception("GPU buffer overflow");
+    }
 
     public static int NumLipidAtomMax = 10000000;
+    public static void CheckNumLipidAtomMax(int value)
+    {
+        if (value >= NumLipidAtomMax) throw new Exception("GPU buffer overflow");
+    }
+
     public static int NumLipidInstancesMax = 1000000;
-
-    //cutaways
-    public static int NumCutsMax = 100;
-
-    public static int NumLodMax = 10;
-    public static int NumProteinMax = 100;
+    public static void CheckNumLipidInstancesMax(int value)
+    {
+        if (value >= NumLipidInstancesMax) throw new Exception("GPU buffer overflow");
+    }
+    
+    public static int NumProteinTypeMax = 100;
+    public static void CheckNumProteinTypeMax(int value)
+    {
+        if (value >= NumProteinTypeMax) throw new Exception("GPU buffer overflow");
+    }
+    
     public static int NumProteinAtomMax = 3000000;
-    public static int NumProteinAtomClusterMax = 100000;
+    public static void CheckNumProteinAtomMax(int value)
+    {
+        if (value >= NumProteinAtomMax) throw new Exception("GPU buffer overflow");
+    }
+    
+    public static int NumProteinAtomClusterMax = 1000000;
+    public static void CheckNumProteinAtomClusterMax(int value)
+    {
+        if (value >= NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
+    }
+    
     public static int NumProteinInstancesMax = 100000;
-    public static int NumProteinSphereBatchesMax = 1000000;
+    public static void CheckNumProteinInstancesMax(int value)
+    {
+        if (value >= NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
+    }
 
-    public static int NumCurveIngredientMax = 10;
-    public static int NumCurveIngredientAtomsMax = 1000;
+    public static int NumCurveIngredientMax = 100;
+    public static void CheckNumCurveIngredientMax(int value)
+    {
+        if (value >= NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
+    }
+
+
     public static int NumCurveControlPointsMax = 1000000;
+    public static void CheckNumCurveControlPointsMax(int value)
+    {
+        if (value >= NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
+    }
+
+    public static int NumCurveIngredientAtomsMax = 10000;
+    public static void CheckNumCurveIngredientAtomsMax(int value)
+    {
+        if (value >= NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+    }
+    
+    public static int NumLodMax = 10;
+    public static int NumCutsMax = 100;
+    public static int NumSceneHierarchyNodes = 200;
+    public static int NumProteinSphereBatchesMax = 2500000;
+
+    /********************************/
 
     public ComputeBuffer ArgBuffer;
     public ComputeBuffer LodInfo;
@@ -32,6 +79,7 @@ public class GPUBuffers : MonoBehaviour
     public ComputeBuffer IngredientStates;
     public ComputeBuffer IngredientProperties;
     public ComputeBuffer IngredientMaskParams;
+    public ComputeBuffer IngredientEdgeOpacity;
 
     // Protein buffers
     public ComputeBuffer ProteinRadii;
@@ -131,18 +179,19 @@ public class GPUBuffers : MonoBehaviour
         if (IngredientStates == null) IngredientStates = new ComputeBuffer(NumIngredientMax, 4);
         if (IngredientMaskParams == null) IngredientMaskParams = new ComputeBuffer(NumIngredientMax, 4);
         if (IngredientProperties == null) IngredientProperties = new ComputeBuffer(NumIngredientMax, 16);
+        if (IngredientEdgeOpacity == null) IngredientEdgeOpacity = new ComputeBuffer(NumIngredientMax, 4);
 
         //*****//
-        if (ProteinRadii == null) ProteinRadii = new ComputeBuffer(NumProteinMax, 4);
-        if (ProteinColors == null) ProteinColors = new ComputeBuffer(NumProteinMax, 16);
+        if (ProteinRadii == null) ProteinRadii = new ComputeBuffer(NumProteinTypeMax, 4);
+        if (ProteinColors == null) ProteinColors = new ComputeBuffer(NumProteinTypeMax, 16);
 
         if (ProteinAtoms == null) ProteinAtoms = new ComputeBuffer(NumProteinAtomMax, 16);
         if (ProteinAtomClusters == null) ProteinAtomClusters = new ComputeBuffer(NumProteinAtomClusterMax, 16);
 
-        if (ProteinAtomCount == null) ProteinAtomCount = new ComputeBuffer(NumProteinMax, 4);
-        if (ProteinAtomStart == null) ProteinAtomStart = new ComputeBuffer(NumProteinMax, 4);
-        if (ProteinAtomClusterCount == null) ProteinAtomClusterCount = new ComputeBuffer(NumProteinMax * NumLodMax, 4);
-        if (ProteinAtomClusterStart == null) ProteinAtomClusterStart = new ComputeBuffer(NumProteinMax * NumLodMax, 4);
+        if (ProteinAtomCount == null) ProteinAtomCount = new ComputeBuffer(NumProteinTypeMax, 4);
+        if (ProteinAtomStart == null) ProteinAtomStart = new ComputeBuffer(NumProteinTypeMax, 4);
+        if (ProteinAtomClusterCount == null) ProteinAtomClusterCount = new ComputeBuffer(NumProteinTypeMax * NumLodMax, 4);
+        if (ProteinAtomClusterStart == null) ProteinAtomClusterStart = new ComputeBuffer(NumProteinTypeMax * NumLodMax, 4);
 
         if (ProteinInstanceInfo == null) ProteinInstanceInfo = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstancePositions == null) ProteinInstancePositions = new ComputeBuffer(NumProteinInstancesMax, 16);
@@ -176,14 +225,14 @@ public class GPUBuffers : MonoBehaviour
 
         //*****//
         
-        if (CutInfo == null) CutInfo = new ComputeBuffer(NumCutsMax * NumProteinMax, 48);
+        if (CutInfo == null) CutInfo = new ComputeBuffer(NumCutsMax * NumProteinTypeMax, 48);
         if (CutScales == null) CutScales = new ComputeBuffer(NumCutsMax, 16);
         if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
         if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);
         //if (ProteinCutFilters == null) ProteinCutFilters = new ComputeBuffer(NumCutsMax * NumProteinMax, 4);
         //if (HistogramProteinTypes == null) HistogramProteinTypes = new ComputeBuffer(NumCutsMax * NumProteinMax, 4);
         //if (HistogramStatistics == null) HistogramStatistics = new ComputeBuffer(4, 4);
-        if (HistogramsLookup == null) HistogramsLookup = new ComputeBuffer(NumProteinMax, 4);
+        if (HistogramsLookup == null) HistogramsLookup = new ComputeBuffer(NumProteinTypeMax, 4);
         if (Histograms == null) Histograms = new ComputeBuffer(NumSceneHierarchyNodes, 32);
 
     }
@@ -212,6 +261,7 @@ public class GPUBuffers : MonoBehaviour
         if (IngredientStates != null) { IngredientStates.Release(); IngredientStates = null; }
         if (IngredientMaskParams != null) { IngredientMaskParams.Release(); IngredientMaskParams = null; }
         if (IngredientProperties != null) { IngredientProperties.Release(); IngredientProperties = null; }
+        if (IngredientEdgeOpacity != null) { IngredientEdgeOpacity.Release(); IngredientEdgeOpacity = null; }
 
         //*****//
 

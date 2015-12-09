@@ -87,6 +87,7 @@ public class SceneManager : MonoBehaviour
     public List<string> SceneHierarchy = new List<string>();
 
     public List<Vector4> IngredientProperties = new List<Vector4>();
+    public List<float> IngredientEdgeOpacity = new List<float>();
 
     // Lipid data 
     public List<string> LipidIngredientNames = new List<string>();
@@ -114,7 +115,8 @@ public class SceneManager : MonoBehaviour
     public List<int> CurveIngredientsAtomStart = new List<int>();
     public List<int> CurveIngredientsAtomCount = new List<int>();
     public List<int> CurveIngredientToggleFlags = new List<int>();
-    public List<string> CurveIngredientsNames = new List<string>();
+
+    public List<string> CurveIngredientNames = new List<string>();
     public List<Vector4> CurveIngredientsAtoms = new List<Vector4>();
     public List<Vector4> CurveIngredientsInfos = new List<Vector4>();
     public List<Vector4> CurveIngredientsColors = new List<Vector4>();
@@ -129,10 +131,10 @@ public class SceneManager : MonoBehaviour
     public List<HistStruct> HistogramData = new List<HistStruct>();
 
     [NonSerialized]
-    public List<int> ProteinToNodeLookup = new List<int>();
+    public List<int> IngredientToNodeLookup = new List<int>();
 
     [NonSerialized]
-    public List<int> NodeToProteinLookup = new List<int>();
+    public List<int> NodeToIngredientLookup = new List<int>();
 
     //*****
 
@@ -169,6 +171,7 @@ public class SceneManager : MonoBehaviour
                 _ingredientNames.Clear();
                 _ingredientNames.AddRange(ProteinIngredientNames);
                 _ingredientNames.AddRange(LipidIngredientNames);
+                _ingredientNames.AddRange(CurveIngredientNames);
             }
 
             return _ingredientNames;
@@ -345,40 +348,46 @@ public class SceneManager : MonoBehaviour
 
     //*** Curve Ingredients ****//
 
-    public void AddCurveIngredient(string name, string pdbName)
+    public void AddCurveIngredient(string path, string pdbName)
     {
-        if (ProteinIngredientNames.Contains(name)) return;
+        if (SceneHierarchy.Contains(path)) throw new Exception("Invalid curve ingredient path: " + path);
+        if (CurveIngredientNames.Contains(path)) throw new Exception("Invalid curve ingredient path: " + path);
 
-        int numSteps = 1;
-        float twistAngle = 0;
-        float segmentLength = 34.0f;
-        var color = MyUtility.GetRandomColor();
+        AddIngredientToHierarchy(path);
+        CurveIngredientNames.Add(path);
 
-        if (name.Contains("DNA"))
+        var numSteps = 1;
+        var twistAngle = 0.0f;
+        var segmentLength = 34.0f;
+        var color = new Color(1,1,1,1);
+
+        if (path.Contains("DNA"))
         {
             numSteps = 12;
             twistAngle = 34.3f;
             segmentLength = 34.0f;
             color = Color.yellow;
 
-            var atomSpheres = PdbLoader.LoadAtomSpheresBiomt(pdbName);
-            CurveIngredientsAtomCount.Add(atomSpheres.Count);
+            var atomSpheres = PdbLoader.LoadAtomSpheres(pdbName);
+
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
+            CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
         }
-        else if (name.Contains("mRNA"))
+        else if (path.Contains("mRNA"))
         {
             numSteps = 12;
             twistAngle = 34.3f;
             segmentLength = 34.0f;
             color = Color.red;
 
-            var atomSpheres = PdbLoader.LoadAtomSpheresBiomt(pdbName);
-            CurveIngredientsAtomCount.Add(atomSpheres.Count);
+            var atomSpheres = PdbLoader.LoadAtomSpheres(pdbName);
+
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
+            CurveIngredientsAtomCount.Add(atomSpheres.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
         }
-        else if (name.Contains("peptide"))
+        else if (path.Contains("peptide"))
         {
             numSteps = 10;
             twistAngle = 0;
@@ -386,11 +395,11 @@ public class SceneManager : MonoBehaviour
             color = Color.magenta;
 
             var atomSphere = new Vector4(0, 0, 0, 3);
-            CurveIngredientsAtomCount.Add(1);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
+            CurveIngredientsAtomCount.Add(1);
             CurveIngredientsAtoms.Add(atomSphere);
         }
-        else if (name.Contains("lypoglycane"))
+        else if (path.Contains("lypoglycane"))
         {
             numSteps = 10;
             twistAngle = 0;
@@ -398,8 +407,8 @@ public class SceneManager : MonoBehaviour
             color = Color.green;
 
             var atomSphere = new Vector4(0, 0, 0, 8);
-            CurveIngredientsAtomCount.Add(1);
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
+            CurveIngredientsAtomCount.Add(1);
             CurveIngredientsAtoms.Add(atomSphere);
         }
         else
@@ -407,25 +416,24 @@ public class SceneManager : MonoBehaviour
             throw new Exception("Curve ingredient unknown");
         }
 
-        CurveIngredientsNames.Add(name);
         CurveIngredientsColors.Add(color);
         CurveIngredientToggleFlags.Add(1);
-        CurveIngredientsInfos.Add(new Vector4(numSteps, twistAngle, segmentLength));
+        CurveIngredientsInfos.Add(new Vector4(numSteps, twistAngle, segmentLength, 0));
     }
 
-    public void AddCurveIntance(string name, List<Vector4> path)
+    public void AddCurveIntance(string path, List<Vector4> curvePath)
     {
-        if (!CurveIngredientsNames.Contains(name))
+        if (!CurveIngredientNames.Contains(path))
         {
             throw new Exception("Curve ingredient type do not exists");
         }
 
-        var curveIngredientId = CurveIngredientsNames.IndexOf(name);
-        var positions = MyUtility.ResampleControlPoints(path, CurveIngredientsInfos[curveIngredientId].z);
+        var curveIngredientId = CurveIngredientNames.IndexOf(path);
+        var positions = MyUtility.ResampleControlPoints(curvePath, CurveIngredientsInfos[curveIngredientId].z);
         var normals = MyUtility.GetSmoothNormals(positions);
 
         var curveId = CurveControlPointsPositions.Count;
-        var curveType = CurveIngredientsNames.IndexOf(name);
+        var curveType = CurveIngredientNames.IndexOf(path);
 
         for (int i = 0; i < positions.Count; i++)
         {
@@ -569,6 +577,8 @@ public class SceneManager : MonoBehaviour
         //GPUBuffer.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
         //GPUBuffer.Instance.HistogramProteinTypes.SetData(HistogramProteinTypes.ToArray());
         //GPUBuffer.Instance.HistogramStatistics.SetData(new[] { 0, 1, 2, 3 });
+
+        GPUBuffers.Instance.IngredientEdgeOpacity.SetData(IngredientEdgeOpacity.ToArray());
     }
 
     public void UpdateCutObjectParams()
@@ -653,18 +663,18 @@ public class SceneManager : MonoBehaviour
 
     private void CheckBufferSizes()
     {
-        if (Get.NumCutObjects >= GPUBuffers.NumCutsMax) throw new Exception("GPU buffer overflow");
-        //if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Get.NumLodLevels >= GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Get.ProteinIngredientNames.Count >= GPUBuffers.NumProteinMax) throw new Exception("GPU buffer overflow");
-        if (Get.ProteinAtoms.Count >= GPUBuffers.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
-        if (Get.ProteinAtomClusters.Count >= GPUBuffers.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
-        if (Get.ProteinAtomClusterCount.Count >= GPUBuffers.NumProteinMax * GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
-        if (Get.ProteinInstancePositions.Count >= GPUBuffers.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
-
-        if (Get.CurveIngredientsNames.Count >= GPUBuffers.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
-        if (Get.CurveControlPointsPositions.Count >= GPUBuffers.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
-        if (Get.CurveIngredientsAtoms.Count >= GPUBuffers.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+        GPUBuffers.CheckNumIngredientMax(AllIngredientNames.Count);
+        GPUBuffers.CheckNumLipidAtomMax(LipidAtomPositions.Count);
+        GPUBuffers.CheckNumLipidInstancesMax(LipidInstancePositions.Count);
+        GPUBuffers.CheckNumProteinTypeMax(ProteinIngredientNames.Count);
+        GPUBuffers.CheckNumProteinAtomMax(ProteinAtoms.Count);
+        GPUBuffers.CheckNumProteinAtomClusterMax(ProteinAtomClusters.Count);
+        GPUBuffers.CheckNumProteinInstancesMax(ProteinInstancePositions.Count);
+        GPUBuffers.CheckNumCurveIngredientMax(CurveIngredientNames.Count);
+        GPUBuffers.CheckNumCurveControlPointsMax(CurveControlPointsPositions.Count);
+        GPUBuffers.CheckNumCurveIngredientAtomsMax(CurveIngredientsAtoms.Count);
+           
+        if (Get.ProteinAtomClusterCount.Count >= GPUBuffers.NumProteinTypeMax * GPUBuffers.NumLodMax) throw new Exception("GPU buffer overflow");
     }
 
     public void UploadAllData()
@@ -683,7 +693,7 @@ public class SceneManager : MonoBehaviour
 
         // Upload histogram info
         GPUBuffers.Instance.Histograms.SetData(HistogramData.ToArray());
-        GPUBuffers.Instance.HistogramsLookup.SetData(ProteinToNodeLookup.ToArray());
+        GPUBuffers.Instance.HistogramsLookup.SetData(IngredientToNodeLookup.ToArray());
 
         // Upload Lod levels info
         GPUBuffers.Instance.LodInfo.SetData(PersistantSettings.Instance.LodLevels);
@@ -755,29 +765,29 @@ public class SceneManager : MonoBehaviour
 
         //*******************************//
 
-        ProteinToNodeLookup.Clear();
+        IngredientToNodeLookup.Clear();
 
         foreach (var ingredientName in AllIngredientNames)
         {
             if (SceneHierarchy.Contains(ingredientName))
             {
-                ProteinToNodeLookup.Add(SceneHierarchy.IndexOf(ingredientName));
+                IngredientToNodeLookup.Add(SceneHierarchy.IndexOf(ingredientName));
             }
         }
 
         //*******************************//
 
-        NodeToProteinLookup.Clear();
+        NodeToIngredientLookup.Clear();
 
         foreach (var path in SceneHierarchy)
         {
             if (AllIngredientNames.Contains(path))
             {
-                NodeToProteinLookup.Add(AllIngredientNames.IndexOf(path));
+                NodeToIngredientLookup.Add(AllIngredientNames.IndexOf(path));
             }
             else
             {
-                NodeToProteinLookup.Add(-1);
+                NodeToIngredientLookup.Add(-1);
             }
         }
 

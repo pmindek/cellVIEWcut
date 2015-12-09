@@ -24,7 +24,7 @@ public class SelectionManager : MonoBehaviour
                 var go = GameObject.Find("_SelectionManager");
                 if (go != null) DestroyImmediate(go);
 
-                go = new GameObject("_SelectionManager") { hideFlags = HideFlags.HideInInspector };
+                go = new GameObject("_SelectionManager") { hideFlags = HideFlags.None };
                 _instance = go.AddComponent<SelectionManager>();
             }
             return _instance;
@@ -142,12 +142,11 @@ public class SelectionManager : MonoBehaviour
 
     public void SetSelectedObject(int instanceID)
     {
-        if (instanceID > 100000) return;
+        if (!ValidateInstanceID(_selectedObjectID)) return;
 
         Debug.Log("Selected element id: " + instanceID);
 
         if (instanceID > 0) Debug.Log("Selected element type: " + SceneManager.Get.ProteinInstanceInfos[instanceID].x);
-
         if (instanceID >= SceneManager.Get.ProteinInstancePositions.Count) return;
 
         // If element id is different than the currently selected element
@@ -205,6 +204,8 @@ public class SelectionManager : MonoBehaviour
         _selectedTransformHandle = handle;
     }
 
+    CameraController _cameraController;
+
     private void DoCutObjectPicking()
     {
         var mousePos = Event.current.mousePosition;
@@ -236,7 +237,12 @@ public class SelectionManager : MonoBehaviour
                 transformHandle.Enable();
                 transformHandle.SetSelectionState(_currentState);
                 _selectedTransformHandle = transformHandle;
-                Camera.main.GetComponent<NavigateCamera>().TargetGameObject = hit.collider.gameObject;
+
+                if (_cameraController == null)
+                    _cameraController = GameObject.FindObjectOfType<CameraController>();
+
+                _cameraController.TargetTransform = hit.collider.gameObject.transform;
+                //Camera.main.GetComponent<NavigateCamera>().TargetGameObject = hit.collider.gameObject;
             }
             // If we hit a non-selectable object
             else if (transformHandle == null && _selectedTransformHandle != null)
@@ -262,8 +268,17 @@ public class SelectionManager : MonoBehaviour
         UpdateSelectedElement();
     }
     
+    private bool ValidateInstanceID(int value)
+    {
+        if (value > 100000) return false;
+        if (value < 0 || value > SceneManager.Get.NumProteinInstances) return false;
+        return true;
+    }
+
     private void UpdateSelectedElement()
     {
+        if (!ValidateInstanceID(_selectedObjectID)) _selectedObjectID = -1;
+
         if (_selectedObjectID == -1)
         {
             //SelectedElement.SetActive(false);

@@ -231,3 +231,52 @@ float rand(uint value)
 {
 	return float(wang_hash(value)) * (1.0 / 4294967296.0);
 }
+
+bool AdjustDistanceTest(in int id, in float parameter, in float distance, in float pSize, in float pFuzziness, in float pFuzzinessCurve)
+{
+	float normalizedDistance = pow(abs(distance) / (0.01 + pSize * 250.0), pFuzzinessCurve);
+
+	if (normalizedDistance > 1.0)
+	{
+		return true;
+	}
+	else
+	{
+		return rand(id) < 1.0 - parameter * lerp(1.0, pFuzziness, pow(normalizedDistance, 1.0));
+	}
+	return true;
+}
+
+float GetSignedDistance(float3 sphere, int type, float3 position, float4 rotation, float3 scale)
+{
+	float distance = 0.0;
+
+    if (type == 0)
+    {
+	    float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+        float4 plane = ComputePlane(normal, position);
+        distance = SpherePlaneSD(plane, float4(sphere.xyz, 0));
+    }
+	else if (type == 1)
+	{
+		distance = SphereSphereSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+	}
+	else if (type == 2)
+	{
+		distance = SphereCubeSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+	}
+	else if (type == 3)
+	{
+		distance = SphereCylinderSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
+	}
+	else if (type == 4)
+	{
+		distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+	}
+	else if (type == 5)
+	{
+		distance = 0.1;
+	}
+
+	return distance;
+}

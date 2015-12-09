@@ -25,6 +25,8 @@ public class RenderShadowMap : MonoBehaviour
 
     void OnPostRender()
     {
+        if (!Camera.main.GetComponent<SceneRenderer>().EnableShadows) return;
+
         Graphics.SetRenderTarget(ShadowMap2);
         GL.Clear(true, true, Color.black);
 

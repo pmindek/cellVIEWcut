@@ -233,7 +233,7 @@ public static class CellPackLoader
 		{
             if (recipeDictionary[j]["nbCurve"] != null)
             {
-                //AddCurveIngredients(recipeDictionary[j], pathElements);
+                AddCurveIngredients(recipeDictionary[j], pathElements);
             }
             else
             {
@@ -387,15 +387,14 @@ public static class CellPackLoader
         //Debug.Log("Pdb name: " + pdbName + " *** " + "Num atoms: " + atomSet.Count + " *** " + "Num instances: " + instanceCount + " *** " + "Total atom count: " + atomSet.Count * instanceCount);
     }
 
-    public static void AddCurveIngredients(JSONNode ingredientDictionary, string prefix)
+    public static void AddCurveIngredients(JSONNode ingredientDictionary , params string[] pathElements)
     {
-        //in case there is curveN, grab the data if more than 4 points
-        //use the given PDB for the representation.
+        var name = ingredientDictionary["name"];
+        var path = MyUtility.GetUrlPath(pathElements.ToList(), name);
         var numCurves = ingredientDictionary["nbCurve"].AsInt;
-        var curveIngredientName = prefix + "_" + ingredientDictionary["name"].Value;
         var pdbName = ingredientDictionary["source"]["pdb"].Value.Replace(".pdb", "");
 
-        SceneManager.Get.AddCurveIngredient(curveIngredientName, pdbName);
+        SceneManager.Get.AddCurveIngredient(path, pdbName);
         
         for (int i = 0; i < numCurves; i++)
         {
@@ -409,12 +408,12 @@ public static class CellPackLoader
                 controlPoints.Add(new Vector4(-p[0].AsFloat, p[1].AsFloat, p[2].AsFloat, 1));
             }
 
-            SceneManager.Get.AddCurveIntance(curveIngredientName, controlPoints);
+            SceneManager.Get.AddCurveIntance(path, controlPoints);
             //break;
         }
 
         Debug.Log("*****");
-        Debug.Log("Added curve ingredient: " + curveIngredientName);
+        Debug.Log("Added curve ingredient: " + path);
         Debug.Log("Num curves: " + numCurves);
     }
 	

@@ -2,7 +2,7 @@
 {	
 	CGINCLUDE
 
-	#include "UnityCG.cginc"
+	#include "UnityCG.cginc" 
 	#include "Helper.cginc"		
 	
 	#define NUM_STEPS_PER_SEGMENT_MAX 16
@@ -43,6 +43,60 @@
 		inFrustrum = inFrustrum & SpherePlaneTest(_FrustrumPlane_5, sphere);	
 
 		return !inFrustrum;
+	}
+
+	// Cutaways
+	struct CutInfoStruct
+	{
+		float4 info;
+		float4 info2;
+		float4 info3;
+	};
+
+	//histograms
+	struct HistStruct
+	{
+		int parent; //also write data to this id, unless it is < 0
+
+		int all;
+		int cutaway;
+		int occluding;
+		int visible;
+
+		int pad0;
+		int pad1;
+		int pad2;
+	};
+
+	uniform int _NumCutObjects;
+	uniform	int _NumIngredientTypes;
+	uniform	int _IngredientIdOffset;
+	uniform StructuredBuffer<CutInfoStruct> _CutInfos;
+	uniform	StructuredBuffer<float4> _CutScales;
+	uniform	StructuredBuffer<float4> _CutPositions;	
+	uniform StructuredBuffer<float4> _CutRotations;
+
+	float CutAwayTest(float4 sphere, int ingredientType, int instanceId)
+	{
+		bool cut = false;
+		for (int i = 0; i < _NumCutObjects; i++)
+		{
+			CutInfoStruct cutInfo = _CutInfos[(_IngredientIdOffset + ingredientType) + _NumIngredientTypes * i];
+			float3 position = _CutPositions[i].xyz;
+			float4 rotation = _CutRotations[i];
+			float3 scale = _CutScales[i].xyz;
+
+			float distance = GetSignedDistance(sphere.xyz, cutInfo.info.x, position, rotation, scale);
+					
+			//inverse
+			if (cutInfo.info.w == 1) distance *= -1;
+		
+			if(cutInfo.info.y < 0.5) cut = true;	
+			if(cutInfo.info.y > 0.5) cut = cut | false;	
+			else if(distance <= 0.0) cut = true;				
+			     
+		}
+		return cut;
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -96,15 +150,18 @@
 		// Check if must discard
 		bool frustrumTest = SphereFrustrumTest_2(boundingSphere);
 		bool endCurve = info0.x != info1.x || info1.x != info2.x || info2.x != info3.x;
-		bool crossSection = SpherePlaneTest(_CrossSectionPlane, float4(pos1.xyz  * _Scale, 0)) && _EnableCrossSection == 1;
-		bool toggleIngredient = _CurveIngredientsToggleFlags[curveType] == 0;
+
+		bool cutAway = CutAwayTest(boundingSphere, curveType, id);
+
+		//bool toggleIngredient = _CurveIngredientsToggleFlags[curveType] == 0;
+		//bool crossSection = SpherePlaneTest(_CrossSectionPlane, float4(pos1.xyz  * _Scale, 0)) && _EnableCrossSection == 1;		
 
 		output.segmentId = id.x;	  	
 		output.numSteps = numSteps;	
 		output.curveType = curveType;	
 		output.twist = ingredientInfo.y;
 		output.color = ColorCorrection(ingredientColor);
-		output.localSphereCount = (endCurve || frustrumTest || crossSection || toggleIngredient) ? 0 : _CurveIngredientsAtomCount[curveType];	
+		output.localSphereCount = (endCurve || frustrumTest || cutAway) ? 0 : _CurveIngredientsAtomCount[curveType];	
 		output.localSphereStart = _CurveIngredientsAtomStart[curveType];		
 		output.globalSphereCount = numSteps * output.localSphereCount;
 			

@@ -10,7 +10,8 @@
 		Tags {"Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent"}
 		LOD 100
 	
-		Cull Off
+		//Cull Off
+		Cull Front
 		ZWrite Off
 		ZTest LEqual
 	

@@ -13,10 +13,15 @@ public static class PdbLoader
 {
     public static string DefaultPdbDirectory = Application.dataPath + "/../Data/proteins/";
 
-    public static List<Atom> LoadAtomSet(string fileName, bool center = true)
+    public static List<Atom> LoadAtomSet(string fileName)
     {
         var path = GetPdbFile(fileName, DefaultPdbDirectory);
         return ReadAtomData(path);
+    }
+
+    public static List<Vector4> LoadAtomSpheres(string fileName)
+    {
+        return AtomHelper.GetAtomSpheres(ReadAtomData(GetPdbFile(fileName, DefaultPdbDirectory)));
     }
 
     public static List<Matrix4x4> LoadBiomtTransforms(string fileName)

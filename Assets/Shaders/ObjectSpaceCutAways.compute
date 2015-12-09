@@ -51,62 +51,6 @@ uniform float3 _CameraForward;
 
 uniform int _WeightThreshold;
 
-bool adjustDistanceTest(in int id, in float parameter, in float distance, in float pSize, in float pFuzziness, in float pFuzzinessCurve)
-{
-	//bool fuzzTest = rand(id) * 3.0 * pSize <= pow(abs(distance), pFuzziness * 1.0);
-	//return pow(rand(id), 0.5) < parameter;
-	//return rand(id) < lerp(1.0, 0.5, normalizedDistance) * parameter;
-
-	
-	float normalizedDistance = pow(abs(distance) / (0.01 + pSize * 250.0), pFuzzinessCurve);
-
-	if (normalizedDistance > 1.0)
-	{
-		return true;
-	}
-	else
-	{
-		return rand(id) < 1.0 - parameter * lerp(1.0, pFuzziness, pow(normalizedDistance, 1.0));
-	}
-
-	return true;
-
-}
-
-float d(float3 sphere, int type, float3 position, float4 rotation, float3 scale)
-{
-	float distance = 0.0;
-
-    if (type == 0)
-    {
-	    float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
-        float4 plane = ComputePlane(normal, position);
-        distance = SpherePlaneSD(plane, float4(sphere.xyz, 0));
-    }
-	else if (type == 1)
-	{
-		distance = SphereSphereSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
-	}
-	else if (type == 2)
-	{
-		distance = SphereCubeSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
-	}
-	else if (type == 3)
-	{
-		distance = SphereCylinderSD(position, rotation, scale * 0.50, float4(sphere.xyz, 0));
-	}
-	else if (type == 4)
-	{
-		distance = SphereInfiniteConeSD(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
-	}
-	else if (type == 5)
-	{
-		distance = 0.1;
-	}
-
-	return distance;
-}
-
 float CutAwayTest(float4 sphere, int ingredientType, int id)
 {
     bool cut = false;
@@ -117,7 +61,7 @@ float CutAwayTest(float4 sphere, int ingredientType, int id)
         float4 rotation = _CutRotations[i];
 		float3 scale = _CutScales[i].xyz;
 
-		float distance = d(sphere.xyz, info.info.x, position, rotation, scale);
+		float distance = GetSignedDistance(sphere.xyz, info.info.x, position, rotation, scale);
 					
 		//inverse
 		if (info.info.w == 1)
@@ -127,8 +71,6 @@ float CutAwayTest(float4 sphere, int ingredientType, int id)
 
 		bool test = distance <= 0.0;
 
-		//bool fuzzTest = rand(id) * 3.0 * info.info.y <= pow(abs(distance), info.info.z * 1.0);
-		//bool fuzzTest = rand(id) < info.info.y;
 		bool fuzzTest = true;
 		bool adjustTest = true;
 		bool adjustVisibilityTest = true;
@@ -139,16 +81,13 @@ float CutAwayTest(float4 sphere, int ingredientType, int id)
 		float pFuzziness = 1.0 - info.info2.x;
 		float pSize = info.info2.y;
 		float pFuzzinessCurve = info.info2.z;
-
-		//pFuzziness = 1.0;
-		//pSize = 1.0;
-		//pFuzzinessCurve = 1.0;
 			
-		if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !adjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+		if (adjustCut > 0 && /*pow(rand(id), 0.5) < adjustCut*/ !AdjustDistanceTest(id, adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
 		{
 			adjustTest = false;
 		}
-		if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !adjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
+
+		if (!test && adjustCut < 0 && /*pow(rand(id), 0.5) < -adjustCut*/ !AdjustDistanceTest(id, -adjustCut, distance, pSize, pFuzziness, pFuzzinessCurve))
 		{
 			test = true;
 		}		
@@ -158,8 +97,6 @@ float CutAwayTest(float4 sphere, int ingredientType, int id)
 
         if (test /*&& fuzzTest*/ && adjustTest && adjustVisibilityTest)
 			cut = cut | true;
-
-		
 
 		//if (_ProteinInstanceInfo[id].w == 1)
 		//{
@@ -196,10 +133,8 @@ float CutAwayTest(float4 sphere, int ingredientType, int id)
 		//	_ProteinInstanceInfo[id.x].z *= lerp(shading, 1.0, abs(distance) / 20.0);
 		//}            
     }
-
     return cut;
 }
-
 
 uniform	StructuredBuffer<float> _ProteinRadii;	
 uniform	RWStructuredBuffer<float4> _ProteinInstanceInfo;

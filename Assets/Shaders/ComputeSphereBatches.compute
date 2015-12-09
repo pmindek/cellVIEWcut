@@ -4,6 +4,7 @@
 #pragma kernel ComputeProteinOcclusionMask
 #pragma kernel ComputeLipidSphereBatches
 #pragma kernel ComputeLipidOcclusionMask
+#pragma kernel ComputeProteinSphereBatchesClipped
 
 #define MAX_SPHERE_COUNT_PER_BATCH 100
 
@@ -143,4 +144,55 @@ void ComputeLipidOcclusionMask (uint3 id : SV_DispatchThreadID)
 	{
 		_OccludeeSphereBatches.Append(int4(id.x, 0, 0, 0));
 	}
+}
+
+
+/**************************************************/
+
+[numthreads(64,1,1)]
+void ComputeProteinSphereBatchesClipped (uint3 id : SV_DispatchThreadID)
+{
+	if(id.x >= (uint)_NumInstances) return;
+
+    float4 infos = _ProteinInstanceInfo[id.x];	
+	float radius = _ProteinRadii[infos.x] * _Scale;
+	float3 pos = _ProteinInstancePositions[id.x].xyz * _Scale;	
+	float4 sphere = float4(pos, radius);
+    	
+	//int occlusionFlag = _ProteinInstanceOcclusionFlags[id.x];
+	//if(occlusionFlag == 1) return;
+
+	int cullFlag = _ProteinInstanceCullFlags[id.x];
+	if(cullFlag == 0) return;
+
+	bool frustrumTest = SphereFrustrumTest(_FrustrumPlanes, sphere);	
+    if (frustrumTest) return;
+    //if (frustrumTest || cutAwayTest /*|| _ProteinVisibilityFlag[infos.x] == 0*/) return;
+
+    int lodLevel = 0;		
+	float cameraDistance = dot(sphere.xyz - _CameraPosition.xyz, _CameraForward.xyz);
+		
+	// Compute lod level from lod infos
+	for(int k = 0; k < _NumLevels; k++) { lodLevel = (cameraDistance < _LodLevelsInfos[k].x) ? lodLevel : k+1; }	
+
+	lodLevel = _EnableLod == 0 ? 0 : lodLevel;
+	int clusterLevel = max(lodLevel - 1, 0);	
+		
+	// Find the count / start index of the protein
+	int sphereCount = (lodLevel == 0) ? _ProteinAtomCount[infos.x] : _ProteinClusterCount[infos.x * _NumLevels + clusterLevel];
+	int sphereStart = (lodLevel == 0) ? _ProteinAtomStart[infos.x] : _ProteinClusterStart[infos.x * _NumLevels + clusterLevel];
+
+	// Find the number of batches for this protein
+	int numBatches = ceil((float)sphereCount / (float)MAX_SPHERE_COUNT_PER_BATCH);	
+	int sphereCountPerBatch = ceil(float(sphereCount) / float(numBatches));
+
+	int batchStart = 0;
+	int batchCount = sphereCountPerBatch;
+
+    for (int j = 0; j < numBatches; j++)
+	{
+		batchCount = min(batchStart + sphereCountPerBatch, sphereCount) - batchStart;			
+		_ProteinSphereBatchInfos.Append(int4(id.x, lodLevel, batchCount, sphereStart + batchStart));
+		batchStart += batchCount;
+	}		
 }

@@ -179,7 +179,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             {
                 foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].Aperture = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[leafNodes.Id]].Aperture = value;
                 }
             }
         }
@@ -212,7 +212,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             {
                 foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].fuzziness = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[leafNodes.Id]].fuzziness = value;
                 }
             }
         }
@@ -230,7 +230,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             {
                 foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].fuzzinessDistance = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[leafNodes.Id]].fuzzinessDistance = value;
                 }
             }
         }
@@ -248,7 +248,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             {
                 foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].fuzzinessCurve = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[leafNodes.Id]].fuzzinessCurve = value;
                 }
             }
         }
@@ -289,7 +289,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             {
                 foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
                 {
-                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[leafNodes.Id]].value2 = value;
+                    cutObject.IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[leafNodes.Id]].value2 = value;
                 }
             }
         }
@@ -319,7 +319,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         {
             if (node.IsLeafNode())
             {
-                var toggleState = SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[node.Id]].IsFocus;
+                var toggleState = SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[node.Id]].IsFocus;
                 node.RangeFieldItem.Toggle.SetState(toggleState);
                 node.RangeFieldItem.LockToggle.gameObject.SetActive(toggleState);
 
@@ -413,7 +413,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         if (item.IsLeafNode())
         {
             var cutObject = SceneManager.Get.GetSelectedCutObject();
-            SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[item.Id]].IsFocus = value;
+            SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[item.Id]].IsFocus = value;
         }
 
         foreach (var child in item.GetAllChildren())
@@ -421,7 +421,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             if (child.IsLeafNode())
             {
                 var cutObject = SceneManager.Get.GetSelectedCutObject();
-                SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[child.Id]].IsFocus = value;
+                SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[child.Id]].IsFocus = value;
             }
 
             child.RangeFieldItem.Toggle.SetState(value);
@@ -443,7 +443,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         if (baseItem.IsLeafNode())
         {
             var cutObject = SceneManager.Get.GetSelectedCutObject();
-            SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[baseItem.Id]].value1 = value1;
+            SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[baseItem.Id]].value1 = value1;
         }
 
         foreach (var child in baseItem.GetAllChildren())
@@ -451,7 +451,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
             if (child.IsLeafNode())
             {
                 var cutObject = SceneManager.Get.GetSelectedCutObject();
-                SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToProteinLookup[child.Id]].value1 = value1;
+                SceneManager.Get.GetSelectedCutObject().IngredientCutParameters[SceneManager.Get.NodeToIngredientLookup[child.Id]].value1 = value1;
             }
 
             child.RangeFieldItem.ThreeStateToggle.SetState(value1);
@@ -474,7 +474,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
 
         foreach (var leafNode in leafNodes)
         {
-            var index = SceneManager.Get.NodeToProteinLookup[leafNode.Id];
+            var index = SceneManager.Get.NodeToIngredientLookup[leafNode.Id];
             if(index < 0) throw new Exception("Node to protein lookup error");
 
             foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())
@@ -536,7 +536,7 @@ public class TreeViewController : MonoBehaviour, IEventSystemHandler
         // Set new cut params values
         foreach (var child in selectedLeafNodes)
         {
-            var index = SceneManager.Get.NodeToProteinLookup[child.Id];
+            var index = SceneManager.Get.NodeToIngredientLookup[child.Id];
             if (index < 0) throw new Exception("Node to protein lookup error");
             
             foreach (var cutObject in SceneManager.Get.GetSelectedCutObjects())

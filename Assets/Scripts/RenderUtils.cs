@@ -27,6 +27,8 @@ public static class RenderUtils
         Graphics.DrawProceduralIndirect(MeshTopology.Points, GPUBuffers.Instance.ArgBuffer);
     }
 
+    
+
     public static void ComputeSphereBatches(Camera camera)
     {
         if (SceneManager.Get.NumProteinInstances <= 0) return;
@@ -56,6 +58,38 @@ public static class RenderUtils
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinSphereBatchInfos", GPUBuffers.Instance.SphereBatches);
 
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, Mathf.CeilToInt(SceneManager.Get.NumProteinInstances / 64.0f), 1, 1);
+        ComputeBuffer.CopyCount(GPUBuffers.Instance.SphereBatches, GPUBuffers.Instance.ArgBuffer, 0);
+    }
+
+    public static void ComputeSphereBatchesClipped(Camera camera)
+    {
+        if (SceneManager.Get.NumProteinInstances <= 0) return;
+
+        // Always clear append buffer before usage
+        GPUBuffers.Instance.SphereBatches.ClearAppendBuffer();
+
+        ComputeShaderManager.Instance.SphereBatchCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumLevels", SceneManager.Get.NumLodLevels);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumInstances", SceneManager.Get.NumProteinInstances);
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
+        ComputeShaderManager.Instance.SphereBatchCS.SetVector("_CameraForward", camera.transform.forward);
+        ComputeShaderManager.Instance.SphereBatchCS.SetVector("_CameraPosition", camera.transform.position);
+        ComputeShaderManager.Instance.SphereBatchCS.SetFloats("_FrustrumPlanes", MyUtility.FrustrumPlanesAsFloats(camera));
+
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinRadii", GPUBuffers.Instance.ProteinRadii);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinAtomCount", GPUBuffers.Instance.ProteinAtomCount);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinAtomStart", GPUBuffers.Instance.ProteinAtomStart);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinClusterCount", GPUBuffers.Instance.ProteinAtomClusterCount);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinClusterStart", GPUBuffers.Instance.ProteinAtomClusterStart);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_LodLevelsInfos", GPUBuffers.Instance.LodInfo);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinInstanceInfo", GPUBuffers.Instance.ProteinInstanceInfo);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinInstancePositions", GPUBuffers.Instance.ProteinInstancePositions);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinInstanceCullFlags", GPUBuffers.Instance.ProteinInstanceCullFlags);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinInstanceVisibilityFlags", GPUBuffers.Instance.ProteinInstanceVisibilityFlags);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinInstanceOcclusionFlags", GPUBuffers.Instance.ProteinInstanceOcclusionFlags);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(4, "_ProteinSphereBatchInfos", GPUBuffers.Instance.SphereBatches);
+
+        ComputeShaderManager.Instance.SphereBatchCS.Dispatch(4, Mathf.CeilToInt(SceneManager.Get.NumProteinInstances / 64.0f), 1, 1);
         ComputeBuffer.CopyCount(GPUBuffers.Instance.SphereBatches, GPUBuffers.Instance.ArgBuffer, 0);
     }
 }
