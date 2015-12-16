@@ -12,8 +12,7 @@ public class AnimationInspector : Editor {
     {
         DrawDefaultInspector();
         //AnimationManager aniManager = (AnimationManager)target;
-
-        base.OnInspectorGUI();
+        //base.OnInspectorGUI();
 
         // Actually draw the list in the inspector
         reorderableList.DoLayoutList();
@@ -45,6 +44,9 @@ public class AnimationInspector : Editor {
 
         reorderableList.onAddCallback += AddItem;
         reorderableList.onRemoveCallback += RemoveItem;
+
+        reorderableList.onReorderCallback += ItemsReordered;
+        reorderableList.onSelectCallback += ItemSelected;
     }
 
     private void OnDisable()
@@ -55,6 +57,9 @@ public class AnimationInspector : Editor {
 
         reorderableList.onAddCallback -= AddItem;
         reorderableList.onRemoveCallback -= RemoveItem;
+
+        reorderableList.onReorderCallback -= ItemsReordered;
+        reorderableList.onSelectCallback += ItemSelected;
     }
 
     /// <summary>
@@ -105,5 +110,20 @@ public class AnimationInspector : Editor {
     }
 
 
+    private void ItemsReordered(ReorderableList list)
+    {
+        //TODO: implement functionality (update order in queue)
+
+        EditorUtility.SetDirty(target);
+    }
+
+
+    private void ItemSelected(ReorderableList list)
+    {
+        //TODO: implement functionality (item de/activated)
+        //..not sure if this is (only) called when interacting with the checkbox....
+
+        EditorUtility.SetDirty(target);
+    }
 }
 

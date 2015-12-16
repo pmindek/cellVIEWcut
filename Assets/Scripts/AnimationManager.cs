@@ -248,7 +248,27 @@ public class AnimationManager : MonoBehaviour
             if (typeTicksWaited > TicksPerType)
             {
                 typeTicksWaited = 0;
-                MoleculeAnimationQueue.Push(SuspendedMolecules.Pop());
+                MoleculeGroup current = SuspendedMolecules.Pop();
+                MoleculeAnimationQueue.Push(current);
+                //bool ready = false;
+                //while(!ready)
+                //{
+                //    if (SuspendedMolecules.Count == 0) ready = true;
+
+                //    MoleculeGroup current = SuspendedMolecules.Pop();
+                //    MoleculeAnimationQueue.Push(current);
+                //    //ugly hack for demo purpose........
+
+                //    foreach(ListItemExample l in list)
+                //    {
+                //        if(l.ID == (int)current.ID)
+                //        {
+                //            if(l.Selected == true)
+                //                ready = true;
+                //            break;
+                //        }
+                //    }
+                //}
             }
             else typeTicksWaited++;
         }
